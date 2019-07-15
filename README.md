@@ -18,7 +18,7 @@ to sync from their local file system to the production Kusto database. This is a
 to production assets.
 
 ## Settings
-###Temporary Databases
+### Temporary Databases
 When the local file system is selected as either the source or the target, Sync Kusto creates a temporary database containing all of the CSL files on the local file system. 
 Specify a Kusto cluster and database where you have permissions to not only create new functions and tables but also to delete all the functions and tables that exist there 
 already. If two users run a comparison pointing to the same temporary database at the same time, they'll get incorrect results. Ideally every user has their own temporary database. 
