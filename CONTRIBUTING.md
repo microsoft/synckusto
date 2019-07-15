@@ -8,7 +8,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)
 or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
-# Building the project
+## Building the project
 Dependencies:
 - [Visual Studio 2017](https://visualstudio.microsoft.com/vs/)
 
@@ -17,15 +17,15 @@ Local development:
 2. Open the project in Visual Studio 2017
 3. Build and run the project
 
-# Maintainers
+## Maintainers
 Sync Kusto is lovingly maintained by:
 - **@benmartens**
 - **@nicksw1**
 - **@srivas15**
 
-# Feature Ideas
+## Feature Ideas
 If you're interested in helping but don't have specific ideas for improvements, here's one that would make a significant difference in the user experience.
-## Temporary Databases
+### Temporary Databases
 The Settings dialog asks for a temporary cluster and database to use during the comparison. Pushing all the local CSL files to a database lets us use ".show database x schema as json" to easily pull the entire schema into a normalized data structure, but it it would be much nicer if the user didn't have to specify this. It would also be a significant perf improvement  since it takes a while to clean out the database each time. Some ideas are:
 1) Using the management api to automatically create and destroy databases.
 2) Build a DatabaseSchema object straight from the files without going through the Kusto cluster
