@@ -99,6 +99,17 @@ namespace SyncKusto.Kusto
                 ClusterSchema clusterSchema = JsonConvert.DeserializeObject<ClusterSchema>(json);
                 result = clusterSchema.Databases.First().Value;
             }
+            foreach (var function in result.Functions.Values)
+            {
+                if (function.Folder == null)
+                {
+                    function.Folder = "";
+                }
+                if (function.DocString == null)
+                {
+                    function.DocString = "";
+                }
+            }
             return result;
         }
 
@@ -115,7 +126,7 @@ namespace SyncKusto.Kusto
                 {
                     // If the CSL files on disk were written with an older version of the tool and did not have the skipvalidation paramter, they will fail.
                     // This code will insert the parameter into the script.
-                    string skipValidationRegEx = @"skipvalidation[\s]*[=]+[\s@']*true";
+                    string skipValidationRegEx = @"skipvalidation[\s]*[=]+[\s""@']*true";
                     if (!Regex.IsMatch(functionCommand, skipValidationRegEx))
                     {
                         string searchString = "(";
