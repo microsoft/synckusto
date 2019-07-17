@@ -2,6 +2,8 @@
 
 The Sync Kusto tool was built to help create a maintainable development process around [Kusto](https://docs.microsoft.com/en-us/azure/data-explorer/). The tool makes it easy to sync database schemas using either the local file system or a Kusto cluster as either the source of the target. It will copy full function definitions along with table schemas. Table data is not synced.
 
+![Screenshot](/screenshot.png)
+
 ## Getting Started
 Assuming that the user already has a Kusto database with functions and tables, set the Kusto database as the source and the local file system as the target. Press the compare button and the tool will find that none of the database objects are in the target. Press the update button to download everything from Kusto to the local file system.
 

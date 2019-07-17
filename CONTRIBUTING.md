@@ -11,6 +11,8 @@ or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any addi
 ## Building the project
 Dependencies:
 - [Visual Studio 2017](https://visualstudio.microsoft.com/vs/)
+  - .NET 4.7.2 - Visual Studio will suggest the download if you need it.
+  - C# 7.3 - If you get an error saying you don't have this, upgrade to the latest version of VS2017
 
 Local development:
 1. Clone the Sync Kusto repo to your local machine
@@ -24,12 +26,14 @@ Sync Kusto is lovingly maintained by:
 - **@srivas15**
 
 ## Feature Ideas
-If you're interested in helping but don't have specific ideas for improvements, here's one that would make a significant difference in the user experience.
+If you're interested in helping but don't have specific ideas for improvements, here are a couple that would make a significant difference in the user experience.
 ### Temporary Databases
 The Settings dialog asks for a temporary cluster and database to use during the comparison. Pushing all the local CSL files to a database lets us use ".show database x schema as json" to easily pull the entire schema into a normalized data structure, but it it would be much nicer if the user didn't have to specify this. It would also be a significant perf improvement  since it takes a while to clean out the database each time. Some ideas are:
 1) Using the management api to automatically create and destroy databases.
 2) Build a DatabaseSchema object straight from the files without going through the Kusto cluster
 3) Host a Kusto cluster locally in memory
+### Swap Source and Target
+Users frequently set up a comparison between a source and a target but then they want to reverse the comparison. Instead of making them type everything in, there could be a button to swap the settings.
 
 ## Submitting Pull Requests
 
