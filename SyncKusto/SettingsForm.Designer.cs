@@ -38,18 +38,19 @@ namespace SyncKusto
             this.txtAuthority = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.txtKustoDatabase = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.txtKustoCluster = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.txtKustoDatabase = new System.Windows.Forms.TextBox();
+            this.label5 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnOk
             // 
-            this.btnOk.Location = new System.Drawing.Point(225, 286);
+            this.btnOk.Location = new System.Drawing.Point(225, 305);
             this.btnOk.Name = "btnOk";
             this.btnOk.Size = new System.Drawing.Size(75, 23);
             this.btnOk.TabIndex = 3;
@@ -59,7 +60,7 @@ namespace SyncKusto
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(306, 286);
+            this.btnCancel.Location = new System.Drawing.Point(306, 305);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 23);
             this.btnCancel.TabIndex = 4;
@@ -71,7 +72,7 @@ namespace SyncKusto
             // 
             this.groupBox1.Controls.Add(this.txtAuthority);
             this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Location = new System.Drawing.Point(12, 180);
+            this.groupBox1.Location = new System.Drawing.Point(12, 199);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(369, 100);
             this.groupBox1.TabIndex = 5;
@@ -95,6 +96,7 @@ namespace SyncKusto
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.label5);
             this.groupBox2.Controls.Add(this.label4);
             this.groupBox2.Controls.Add(this.txtKustoDatabase);
             this.groupBox2.Controls.Add(this.label2);
@@ -102,15 +104,31 @@ namespace SyncKusto
             this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Location = new System.Drawing.Point(12, 12);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(369, 151);
+            this.groupBox2.Size = new System.Drawing.Size(369, 177);
             this.groupBox2.TabIndex = 6;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Temporary Databases";
             // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(6, 146);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(56, 13);
+            this.label4.TabIndex = 7;
+            this.label4.Text = "Database:";
+            // 
+            // txtKustoDatabase
+            // 
+            this.txtKustoDatabase.Location = new System.Drawing.Point(69, 143);
+            this.txtKustoDatabase.Name = "txtKustoDatabase";
+            this.txtKustoDatabase.Size = new System.Drawing.Size(294, 20);
+            this.txtKustoDatabase.TabIndex = 6;
+            // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(6, 99);
+            this.label2.Location = new System.Drawing.Point(6, 120);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(42, 13);
             this.label2.TabIndex = 5;
@@ -118,7 +136,7 @@ namespace SyncKusto
             // 
             // txtKustoCluster
             // 
-            this.txtKustoCluster.Location = new System.Drawing.Point(69, 96);
+            this.txtKustoCluster.Location = new System.Drawing.Point(69, 117);
             this.txtKustoCluster.Name = "txtKustoCluster";
             this.txtKustoCluster.Size = new System.Drawing.Size(294, 20);
             this.txtKustoCluster.TabIndex = 4;
@@ -131,27 +149,20 @@ namespace SyncKusto
             this.label1.TabIndex = 3;
             this.label1.Text = resources.GetString("label1.Text");
             // 
-            // label4
+            // label5
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(6, 125);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(56, 13);
-            this.label4.TabIndex = 7;
-            this.label4.Text = "Database:";
-            // 
-            // txtKustoDatabase
-            // 
-            this.txtKustoDatabase.Location = new System.Drawing.Point(69, 122);
-            this.txtKustoDatabase.Name = "txtKustoDatabase";
-            this.txtKustoDatabase.Size = new System.Drawing.Size(294, 20);
-            this.txtKustoDatabase.TabIndex = 6;
+            this.label5.ForeColor = System.Drawing.Color.Red;
+            this.label5.Location = new System.Drawing.Point(6, 93);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(357, 21);
+            this.label5.TabIndex = 8;
+            this.label5.Text = "Everything in this database will be deleted.";
             // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(393, 320);
+            this.ClientSize = new System.Drawing.Size(393, 337);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.btnCancel);
@@ -178,8 +189,9 @@ namespace SyncKusto
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox txtKustoCluster;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TextBox txtKustoDatabase;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Label label1;
     }
 }
