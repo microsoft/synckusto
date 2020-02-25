@@ -24,5 +24,11 @@ namespace SyncKusto.Validation.ErrorMessages.Specifications
             new OperationErrorMessageSpecification(Spec<Exception>
                     .IsTrue(ex => ex is KustoClientAuthenticationException),
                 "Could not authenticate with AAD. Check the AAD authority in the Settings.");
+
+        public static IOperationErrorMessageSpecification NoPermissions() =>
+            new OperationErrorMessageSpecification(Spec<Exception>
+                    .IsTrue(ex => ex is InvalidOperationException request
+                                  && request.Message.Contains("Sequence contains no elements")),
+                "No schema found. Check database permissions.");
     }
 }
