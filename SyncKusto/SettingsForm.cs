@@ -4,6 +4,7 @@
 using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
+using SyncKusto.Kusto;
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
@@ -56,16 +57,12 @@ namespace SyncKusto
             Cursor.Current = Cursors.WaitCursor;
 
             // Allow for multiple ways of specifying a cluster name
-            string clusterName = txtKustoCluster.Text;
-            if (string.IsNullOrEmpty(clusterName))
+            if (string.IsNullOrEmpty(txtKustoCluster.Text))
             {
                 MessageBox.Show($"No Kusto cluster was specified.", "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            else if (!clusterName.EndsWith(".kusto.windows.net"))
-            {
-                clusterName = $"https://{clusterName}.kusto.windows.net";
-            }
+            string clusterName = QueryEngine.NormalizeClusterName(txtKustoCluster.Text);
 
             string databaseName = txtKustoDatabase.Text;
             if (string.IsNullOrEmpty(databaseName))

@@ -71,20 +71,7 @@ namespace SyncKusto
         {
             get
             {
-                var kcsb = new KustoConnectionStringBuilder($@"https://{txtCluster.Text}.kusto.windows.net")
-                {
-                    InitialCatalog = txtDatabase.Text,
-                    FederatedSecurity = true,
-                    Authority = SettingsWrapper.AADAuthority
-                };
-
-                if (!string.IsNullOrWhiteSpace(txtAppId.Text) && !string.IsNullOrWhiteSpace(txtAppKey.Text))
-                {
-                    kcsb.ApplicationKey = txtAppKey.Text;
-                    kcsb.ApplicationClientId = txtAppId.Text;
-                }
-
-                return kcsb;
+                return QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text, txtAppId.Text, txtAppKey.Text);
             }
         }
 

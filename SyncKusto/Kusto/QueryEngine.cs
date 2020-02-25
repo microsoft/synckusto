@@ -198,5 +198,56 @@ namespace SyncKusto.Kusto
             _queryClient?.Dispose();
             _adminClient?.Dispose();
         }
+
+        /// <summary>
+        /// Create a new connection string builder based on the input parameters
+        /// </summary>
+        /// <param name="cluster">Either the full cluster name or the short one</param>
+        /// <param name="database">The name of the database to connect to</param>
+        /// <param name="aadClientId">Optionally connect with AAD client app</param>
+        /// <param name="aadClientKey">Optional key for AAD client app</param>
+        /// <returns></returns>
+        public static KustoConnectionStringBuilder GetKustoConnectionStringBuilder(string cluster, string database, string aadClientId = null, string aadClientKey = null)
+        {
+            if (string.IsNullOrEmpty(aadClientId) != string.IsNullOrEmpty(aadClientKey))
+            {
+                throw new ArgumentException("If either aadClientId or aadClientKey are specified, they must both be specified.");
+            }
+
+            cluster = NormalizeClusterName(cluster);
+
+            var kcsb = new KustoConnectionStringBuilder(cluster)
+            {
+                FederatedSecurity = true,
+                InitialCatalog = database,
+                Authority = "microsoft.com"
+            };
+            if (!string.IsNullOrWhiteSpace(aadClientId) && !string.IsNullOrWhiteSpace(aadClientKey))
+            {
+                kcsb.ApplicationKey = aadClientKey;
+                kcsb.ApplicationClientId = aadClientId;
+            }
+
+            return kcsb;
+        }
+
+        /// <summary>
+        /// Allow users to specify cluster.eastus2, cluster.eastus2.kusto.windows.net, or https://cluster.eastus2.kusto.windows.net 
+        /// </summary>
+        /// <param name="cluster">Input cluster name</param>
+        /// <returns>Normalized cluster name e.g. https://cluster.eastus2.kusto.windows.net</returns>
+        public static string NormalizeClusterName(string cluster)
+        {
+            if (!cluster.Contains(".com") && !cluster.Contains(".net"))
+            {
+                cluster = $@"https://{cluster}.kusto.windows.net";
+            }
+            if (!cluster.StartsWith("https://"))
+            {
+                cluster = $"https://{cluster}";
+            }
+
+            return cluster;
+        }
     }
 }
