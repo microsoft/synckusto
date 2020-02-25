@@ -238,16 +238,30 @@ namespace SyncKusto.Kusto
         /// <returns>Normalized cluster name e.g. https://cluster.eastus2.kusto.windows.net</returns>
         public static string NormalizeClusterName(string cluster)
         {
-            if (!cluster.Contains(".com") && !cluster.Contains(".net"))
+            if (cluster.StartsWith("https://"))
             {
-                cluster = $@"https://{cluster}.kusto.windows.net";
+                // If it starts with https, take it verbatim and return from the function
+                return cluster;
             }
-            if (!cluster.StartsWith("https://"))
+            else
             {
-                cluster = $"https://{cluster}";
-            }
+                // Trim any spaces and trailing '/'
+                cluster = cluster.TrimEnd('/').Trim();
 
-            return cluster;
+                // If it doesn't end with .com or .net then default to .kusto.windows.net
+                if (!cluster.EndsWith(".com") && !cluster.EndsWith(".net"))
+                {
+                    cluster = $@"https://{cluster}.kusto.windows.net";
+                }
+
+                // Make sure it starts with https
+                if (!cluster.StartsWith("https://"))
+                {
+                    cluster = $"https://{cluster}";
+                }
+
+                return cluster;
+            }
         }
     }
 }
