@@ -99,6 +99,7 @@ namespace SyncKusto
                 {
                     KustoOperationErrorSpecifications.ClusterNotFound(),
                     KustoOperationErrorSpecifications.DatabaseNotFound(),
+                    KustoOperationErrorSpecifications.NoPermissions(),
                     KustoOperationErrorSpecifications.CannotAuthenticate(),
                     FilePathOperationErrorSpecifications.FolderNotFound()
                 });
