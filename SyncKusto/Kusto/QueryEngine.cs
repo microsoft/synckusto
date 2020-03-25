@@ -206,7 +206,7 @@ namespace SyncKusto.Kusto
         /// <param name="database">The name of the database to connect to</param>
         /// <param name="aadClientId">Optionally connect with AAD client app</param>
         /// <param name="aadClientKey">Optional key for AAD client app</param>
-        /// <returns></returns>
+        /// <returns>A connection string for accessing Kusto</returns>
         public static KustoConnectionStringBuilder GetKustoConnectionStringBuilder(string cluster, string database, string aadClientId = null, string aadClientKey = null)
         {
             if (string.IsNullOrEmpty(aadClientId) != string.IsNullOrEmpty(aadClientKey))
@@ -220,7 +220,7 @@ namespace SyncKusto.Kusto
             {
                 FederatedSecurity = true,
                 InitialCatalog = database,
-                Authority = "microsoft.com"
+                Authority = SettingsWrapper.AADAuthority
             };
             if (!string.IsNullOrWhiteSpace(aadClientId) && !string.IsNullOrWhiteSpace(aadClientKey))
             {
