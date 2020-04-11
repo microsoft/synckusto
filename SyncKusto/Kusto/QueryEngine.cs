@@ -21,8 +21,12 @@ namespace SyncKusto.Kusto
         private readonly ICslAdminProvider _adminClient;
         private readonly ICslQueryProvider _queryClient;
         private readonly string _databaseName;
-        private readonly string _cluster;
         private readonly bool _tempDatabaseUsed = false;
+        
+        /// <summary>
+        /// The cluster's name
+        /// </summary>
+        public  string Cluster { get; }
 
         /// <summary>
         /// Constructor which gets ready to make queries to Kusto
@@ -33,7 +37,7 @@ namespace SyncKusto.Kusto
             _adminClient = KustoClientFactory.CreateCslAdminProvider(kustoConnectionStringBuilder);
             _queryClient = KustoClientFactory.CreateCslQueryProvider(kustoConnectionStringBuilder);
             _databaseName = kustoConnectionStringBuilder.InitialCatalog;
-            _cluster = kustoConnectionStringBuilder.DataSource;
+            Cluster = kustoConnectionStringBuilder.DataSource;
         }
 
         /// <summary>
@@ -54,7 +58,7 @@ namespace SyncKusto.Kusto
             _adminClient = KustoClientFactory.CreateCslAdminProvider(connString);
             _queryClient = KustoClientFactory.CreateCslQueryProvider(connString);
             _tempDatabaseUsed = true;
-            _cluster = connString.DataSource;
+            Cluster = connString.DataSource;
 
             CleanDatabase();
         }

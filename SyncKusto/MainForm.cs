@@ -365,11 +365,20 @@ namespace SyncKusto
                 }
             }
 
+            DialogResult dialogResult = DialogResult.None;
+
             void DeleteFromTarget(IKustoSchema schema)
             {
                 if (spcTarget.SourceSelection == SourceSelection.Kusto())
                 {
-                    schema.DeleteFromKusto(kustoQueryEngine);
+                    if (dialogResult == DialogResult.None)
+                        dialogResult = MessageBox.Show(
+                            $"The schema: \"{schema.Name}\" is going to be deleted from the cluster: \"{kustoQueryEngine.Cluster}\". " +
+                            $"{Environment.NewLine}" +
+                            $"Are you sure you want to continue? (This answer will be remembered for the next schemas)",
+                            "Warning", MessageBoxButtons.YesNo);
+                    if (dialogResult == DialogResult.Yes)
+                        schema.DeleteFromKusto(kustoQueryEngine);
                 }
                 else
                 {
