@@ -62,5 +62,22 @@ namespace SyncKusto
                 Settings.Default.Save();
             }
         }
+
+        /// <summary>
+        /// Prompt the user before dropping any tables from the target as part of an Update operation
+        /// </summary>
+        public static bool KustoObjectDropWarning
+        {
+            get
+            {
+                bool? currentSetting = Settings.Default["KustoObjectDropWarning"] as bool?;
+                return currentSetting??false;
+            }
+            set
+            {
+                Settings.Default["KustoObjectDropWarning"] = value;
+                Settings.Default.Save();
+            }
+        }
     }
 }

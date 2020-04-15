@@ -38,21 +38,25 @@ namespace SyncKusto
             this.txtAuthority = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.label5 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.txtKustoDatabase = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.txtKustoCluster = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
+            this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.chkTableDropWarning = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
+            this.groupBox3.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnOk
             // 
-            this.btnOk.Location = new System.Drawing.Point(225, 305);
+            this.btnOk.Location = new System.Drawing.Point(339, 560);
+            this.btnOk.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnOk.Name = "btnOk";
-            this.btnOk.Size = new System.Drawing.Size(75, 23);
+            this.btnOk.Size = new System.Drawing.Size(112, 35);
             this.btnOk.TabIndex = 3;
             this.btnOk.Text = "O&K";
             this.btnOk.UseVisualStyleBackColor = true;
@@ -60,9 +64,10 @@ namespace SyncKusto
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(306, 305);
+            this.btnCancel.Location = new System.Drawing.Point(460, 560);
+            this.btnCancel.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(75, 23);
+            this.btnCancel.Size = new System.Drawing.Size(112, 35);
             this.btnCancel.TabIndex = 4;
             this.btnCancel.Text = "&Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
@@ -72,25 +77,29 @@ namespace SyncKusto
             // 
             this.groupBox1.Controls.Add(this.txtAuthority);
             this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Location = new System.Drawing.Point(12, 199);
+            this.groupBox1.Location = new System.Drawing.Point(18, 306);
+            this.groupBox1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(369, 100);
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.groupBox1.Size = new System.Drawing.Size(554, 154);
             this.groupBox1.TabIndex = 5;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "AAD Authority";
             // 
             // txtAuthority
             // 
-            this.txtAuthority.Location = new System.Drawing.Point(6, 74);
+            this.txtAuthority.Location = new System.Drawing.Point(9, 114);
+            this.txtAuthority.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtAuthority.Name = "txtAuthority";
-            this.txtAuthority.Size = new System.Drawing.Size(357, 20);
+            this.txtAuthority.Size = new System.Drawing.Size(534, 26);
             this.txtAuthority.TabIndex = 6;
             // 
             // label3
             // 
-            this.label3.Location = new System.Drawing.Point(6, 16);
+            this.label3.Location = new System.Drawing.Point(9, 25);
+            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(357, 55);
+            this.label3.Size = new System.Drawing.Size(536, 85);
             this.label3.TabIndex = 4;
             this.label3.Text = resources.GetString("label3.Text");
             // 
@@ -102,72 +111,102 @@ namespace SyncKusto
             this.groupBox2.Controls.Add(this.label2);
             this.groupBox2.Controls.Add(this.txtKustoCluster);
             this.groupBox2.Controls.Add(this.label1);
-            this.groupBox2.Location = new System.Drawing.Point(12, 12);
+            this.groupBox2.Location = new System.Drawing.Point(18, 18);
+            this.groupBox2.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(369, 177);
+            this.groupBox2.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.groupBox2.Size = new System.Drawing.Size(554, 272);
             this.groupBox2.TabIndex = 6;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Temporary Databases";
             // 
+            // label5
+            // 
+            this.label5.ForeColor = System.Drawing.Color.Red;
+            this.label5.Location = new System.Drawing.Point(9, 143);
+            this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(536, 32);
+            this.label5.TabIndex = 8;
+            this.label5.Text = "Everything in this database will be deleted.";
+            // 
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(6, 146);
+            this.label4.Location = new System.Drawing.Point(9, 225);
+            this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(56, 13);
+            this.label4.Size = new System.Drawing.Size(83, 20);
             this.label4.TabIndex = 7;
             this.label4.Text = "Database:";
             // 
             // txtKustoDatabase
             // 
-            this.txtKustoDatabase.Location = new System.Drawing.Point(69, 143);
+            this.txtKustoDatabase.Location = new System.Drawing.Point(104, 220);
+            this.txtKustoDatabase.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtKustoDatabase.Name = "txtKustoDatabase";
-            this.txtKustoDatabase.Size = new System.Drawing.Size(294, 20);
+            this.txtKustoDatabase.Size = new System.Drawing.Size(439, 26);
             this.txtKustoDatabase.TabIndex = 6;
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(6, 120);
+            this.label2.Location = new System.Drawing.Point(9, 185);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(42, 13);
+            this.label2.Size = new System.Drawing.Size(63, 20);
             this.label2.TabIndex = 5;
             this.label2.Text = "Cluster:";
             // 
             // txtKustoCluster
             // 
-            this.txtKustoCluster.Location = new System.Drawing.Point(69, 117);
+            this.txtKustoCluster.Location = new System.Drawing.Point(104, 180);
+            this.txtKustoCluster.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtKustoCluster.Name = "txtKustoCluster";
-            this.txtKustoCluster.Size = new System.Drawing.Size(294, 20);
+            this.txtKustoCluster.Size = new System.Drawing.Size(439, 26);
             this.txtKustoCluster.TabIndex = 4;
             // 
             // label1
             // 
-            this.label1.Location = new System.Drawing.Point(6, 21);
+            this.label1.Location = new System.Drawing.Point(9, 32);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(357, 72);
+            this.label1.Size = new System.Drawing.Size(536, 111);
             this.label1.TabIndex = 3;
             this.label1.Text = resources.GetString("label1.Text");
             // 
-            // label5
+            // groupBox3
             // 
-            this.label5.ForeColor = System.Drawing.Color.Red;
-            this.label5.Location = new System.Drawing.Point(6, 93);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(357, 21);
-            this.label5.TabIndex = 8;
-            this.label5.Text = "Everything in this database will be deleted.";
+            this.groupBox3.Controls.Add(this.chkTableDropWarning);
+            this.groupBox3.Location = new System.Drawing.Point(18, 469);
+            this.groupBox3.Name = "groupBox3";
+            this.groupBox3.Size = new System.Drawing.Size(554, 83);
+            this.groupBox3.TabIndex = 7;
+            this.groupBox3.TabStop = false;
+            this.groupBox3.Text = "Warnings";
+            // 
+            // chkTableDropWarning
+            // 
+            this.chkTableDropWarning.AutoSize = true;
+            this.chkTableDropWarning.Location = new System.Drawing.Point(13, 35);
+            this.chkTableDropWarning.Name = "chkTableDropWarning";
+            this.chkTableDropWarning.Size = new System.Drawing.Size(438, 24);
+            this.chkTableDropWarning.TabIndex = 0;
+            this.chkTableDropWarning.Text = "Ask before dropping objects in the target Kusto database";
+            this.chkTableDropWarning.UseVisualStyleBackColor = true;
             // 
             // SettingsForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(393, 337);
+            this.ClientSize = new System.Drawing.Size(590, 607);
+            this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnOk);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.Name = "SettingsForm";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.Text = "Settings";
@@ -176,6 +215,8 @@ namespace SyncKusto
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
+            this.groupBox3.ResumeLayout(false);
+            this.groupBox3.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -193,5 +234,7 @@ namespace SyncKusto
         private System.Windows.Forms.TextBox txtKustoDatabase;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.CheckBox chkTableDropWarning;
     }
 }

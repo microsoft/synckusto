@@ -34,6 +34,7 @@ namespace SyncKusto
             txtKustoCluster.Text = SettingsWrapper.KustoClusterForTempDatabases;
             txtKustoDatabase.Text = SettingsWrapper.TemporaryKustoDatabase;
             txtAuthority.Text = SettingsWrapper.AADAuthority;
+            chkTableDropWarning.Checked = SettingsWrapper.KustoObjectDropWarning;
         }
 
         /// <summary>
@@ -98,6 +99,7 @@ namespace SyncKusto
                 SettingsWrapper.KustoClusterForTempDatabases = clusterName;
                 SettingsWrapper.TemporaryKustoDatabase = databaseName;
                 SettingsWrapper.AADAuthority = txtAuthority.Text;
+                SettingsWrapper.KustoObjectDropWarning = chkTableDropWarning.Checked;
 
                 this.Close();
             }
