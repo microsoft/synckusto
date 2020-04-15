@@ -66,16 +66,16 @@ namespace SyncKusto
         /// <summary>
         /// Prompt the user before dropping any tables from the target as part of an Update operation
         /// </summary>
-        public static bool TargetTableDropWarning
+        public static bool KustoObjectDropWarning
         {
             get
             {
-                bool? currentSetting = Settings.Default["TargetTableDropWarning"] as bool?;
+                bool? currentSetting = Settings.Default["KustoObjectDropWarning"] as bool?;
                 return currentSetting??false;
             }
             set
             {
-                Settings.Default["TargetTableDropWarning"] = value;
+                Settings.Default["KustoObjectDropWarning"] = value;
                 Settings.Default.Save();
             }
         }

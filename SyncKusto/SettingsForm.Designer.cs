@@ -190,9 +190,9 @@ namespace SyncKusto
             this.chkTableDropWarning.AutoSize = true;
             this.chkTableDropWarning.Location = new System.Drawing.Point(13, 35);
             this.chkTableDropWarning.Name = "chkTableDropWarning";
-            this.chkTableDropWarning.Size = new System.Drawing.Size(430, 24);
+            this.chkTableDropWarning.Size = new System.Drawing.Size(438, 24);
             this.chkTableDropWarning.TabIndex = 0;
-            this.chkTableDropWarning.Text = "Ask before dropping tables in the target Kusto database";
+            this.chkTableDropWarning.Text = "Ask before dropping objects in the target Kusto database";
             this.chkTableDropWarning.UseVisualStyleBackColor = true;
             // 
             // SettingsForm

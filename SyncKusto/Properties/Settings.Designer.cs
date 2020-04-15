@@ -74,12 +74,12 @@ namespace SyncKusto.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool TargetTableDropWarning {
+        public bool KustoObjectDropWarning {
             get {
-                return ((bool)(this["TargetTableDropWarning"]));
+                return ((bool)(this["KustoObjectDropWarning"]));
             }
             set {
-                this["TargetTableDropWarning"] = value;
+                this["KustoObjectDropWarning"] = value;
             }
         }
     }
