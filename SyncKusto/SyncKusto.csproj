@@ -104,6 +104,12 @@
     <Compile Include="ChangeModel\Schema\FunctionSchemaDifference.cs" />
     <Compile Include="ChangeModel\KustoSchemaDifferenceMapper.cs" />
     <Compile Include="ChangeModel\KustoSchemaExtensions.cs" />
+    <Compile Include="DropWarningForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DropWarningForm.Designer.cs">
+      <DependentUpon>DropWarningForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="SettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -178,6 +184,9 @@
     <Compile Include="SettingsWrapper.cs" />
     <Compile Include="SyncSources\SourceMode.cs" />
     <Compile Include="SyncSources\SourceSelection.cs" />
+    <EmbeddedResource Include="DropWarningForm.resx">
+      <DependentUpon>DropWarningForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="SettingsForm.resx">
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </EmbeddedResource>

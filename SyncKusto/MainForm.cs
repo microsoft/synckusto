@@ -324,7 +324,6 @@ namespace SyncKusto
                 return;
             }
 
-
             // Save the changes either to disk or to Kusto
             if (spcTarget.SourceSelection == SourceSelection.FilePath())
             {
@@ -332,6 +331,16 @@ namespace SyncKusto
             }
             else
             {
+                if (SettingsWrapper.KustoObjectDropWarning && selectedNodes.Any(n => n.Parent.Text == "Only In Target"))
+                {
+                    var dialogResult = new DropWarningForm().ShowDialog();
+                    if (dialogResult != DialogResult.Yes)
+                    {
+                        MessageBox.Show("Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
+                }
+
                 using (var kustoQueryEngine = new QueryEngine(spcTarget.KustoConnection))
                 {
                     PersistChanges(selectedNodes, kustoQueryEngine);
