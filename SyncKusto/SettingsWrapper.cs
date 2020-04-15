@@ -62,5 +62,22 @@ namespace SyncKusto
                 Settings.Default.Save();
             }
         }
+
+        /// <summary>
+        /// Prompt the user before dropping any tables from the target as part of an Update operation
+        /// </summary>
+        public static bool TargetTableDropWarning
+        {
+            get
+            {
+                bool? currentSetting = Settings.Default["TargetTableDropWarning"] as bool?;
+                return currentSetting??false;
+            }
+            set
+            {
+                Settings.Default["TargetTableDropWarning"] = value;
+                Settings.Default.Save();
+            }
+        }
     }
 }
