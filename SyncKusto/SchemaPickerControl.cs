@@ -71,7 +71,9 @@ namespace SyncKusto
         {
             get
             {
-                return QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text, txtAppId.Text, txtAppKey.Text);
+                return rbApplication.Checked
+                    ? QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text, txtAppId.Text, txtAppKey.Text)
+                    : QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text);
             }
         }
 
