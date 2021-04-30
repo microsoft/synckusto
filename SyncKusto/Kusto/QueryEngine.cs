@@ -71,17 +71,13 @@ namespace SyncKusto.Kusto
             }
 
             var schema = GetDatabaseSchema();
-            foreach (var function in schema.Functions)
-            {
-                string command = CslCommandGenerator.GenerateFunctionDropCommand(function.Value.Name, true);
-                _adminClient.ExecuteControlCommand(command);
-            }
-
-            foreach (var table in schema.Tables)
-            {
-                string command = CslCommandGenerator.GenerateTableDropCommand(table.Value.Name, true);
-                _adminClient.ExecuteControlCommand(command);
-            }
+            
+            _adminClient.ExecuteControlCommand(
+                CslCommandGenerator.GenerateFunctionsDropCommand(
+                    schema.Functions.Select(f => f.Value.Name), true));
+            _adminClient.ExecuteControlCommand(
+                CslCommandGenerator.GenerateTablesDropCommand(
+                    schema.Tables.Select(f => f.Value.Name), true));
         }
 
         /// <summary>
