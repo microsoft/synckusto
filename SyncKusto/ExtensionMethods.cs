@@ -108,7 +108,7 @@ namespace SyncKusto
                 Directory.CreateDirectory(tableFolder);
             }
 
-            File.WriteAllText(destinationFile, CslCommandGenerator.GenerateTableCreateCommand(tableSchema, true));
+            File.WriteAllText(destinationFile, FormattedCslCommandGenerator.GenerateTableCreateCommand(tableSchema, true));
         }
 
         /// <summary>
@@ -118,7 +118,7 @@ namespace SyncKusto
         /// <param name="kustoQueryEngine">An initialized query engine for issuing the Kusto command</param>
         public static void WriteToKusto(this TableSchema tableSchema, QueryEngine kustoQueryEngine)
         {
-            kustoQueryEngine.CreateOrAlterTableAsync(CslCommandGenerator.GenerateTableCreateCommand(tableSchema, false), tableSchema.Name).Wait();
+            kustoQueryEngine.CreateOrAlterTableAsync(FormattedCslCommandGenerator.GenerateTableCreateCommand(tableSchema, false), tableSchema.Name).Wait();
         }
 
         /// <summary>

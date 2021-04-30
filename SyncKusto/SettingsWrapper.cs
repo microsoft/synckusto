@@ -79,5 +79,31 @@ namespace SyncKusto
                 Settings.Default.Save();
             }
         }
+
+        /// <summary>
+        /// If true, every table field will get it's own line in the resulting CSL file
+        /// </summary>
+        public static bool? TableFieldsOnNewLine
+        {
+            get => Settings.Default["TableFieldsOnNewLine"] as bool?;
+            set
+            {
+                Settings.Default["TableFieldsOnNewLine"] = value;
+                Settings.Default.Save();
+            }
+        }
+
+        /// <summary>
+        /// If true, table create commands will be ".create-merge table" instead of ".create table"
+        /// </summary>
+        public static bool? CreateMergeEnabled
+        {
+            get => Settings.Default["CreateMergeEnabled"] as bool?;
+            set
+            {
+                Settings.Default["CreateMergeEnabled"] = value;
+                Settings.Default.Save();
+            }
+        }
     }
 }

@@ -35,6 +35,8 @@ namespace SyncKusto
             txtKustoDatabase.Text = SettingsWrapper.TemporaryKustoDatabase;
             txtAuthority.Text = SettingsWrapper.AADAuthority;
             chkTableDropWarning.Checked = SettingsWrapper.KustoObjectDropWarning;
+            cbTableFieldsOnNewLine.Checked = SettingsWrapper.TableFieldsOnNewLine ?? false;
+            cbCreateMerge.Checked = SettingsWrapper.CreateMergeEnabled ?? false;
         }
 
         /// <summary>
@@ -56,6 +58,10 @@ namespace SyncKusto
         {
             Cursor lastCursor = Cursor.Current;
             Cursor.Current = Cursors.WaitCursor;
+
+            SettingsWrapper.TableFieldsOnNewLine = cbTableFieldsOnNewLine.Checked;
+            SettingsWrapper.CreateMergeEnabled = cbCreateMerge.Checked;
+            SettingsWrapper.KustoObjectDropWarning = chkTableDropWarning.Checked;
 
             // Allow for multiple ways of specifying a cluster name
             if (string.IsNullOrEmpty(txtKustoCluster.Text))
@@ -99,7 +105,6 @@ namespace SyncKusto
                 SettingsWrapper.KustoClusterForTempDatabases = clusterName;
                 SettingsWrapper.TemporaryKustoDatabase = databaseName;
                 SettingsWrapper.AADAuthority = txtAuthority.Text;
-                SettingsWrapper.KustoObjectDropWarning = chkTableDropWarning.Checked;
 
                 this.Close();
             }

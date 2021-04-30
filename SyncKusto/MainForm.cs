@@ -252,7 +252,7 @@ namespace SyncKusto
 
             if (_sourceSchema.Tables.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_tablesTreeNodeText))
             {
-                sourceText = CslCommandGenerator.GenerateTableCreateCommand(_sourceSchema.Tables[objectName], true);
+                sourceText = FormattedCslCommandGenerator.GenerateTableCreateCommand(_sourceSchema.Tables[objectName], true);
             }
 
             if (_targetSchema.Functions.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_functionTreeNodeText))
@@ -262,7 +262,7 @@ namespace SyncKusto
 
             if (_targetSchema.Tables.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_tablesTreeNodeText))
             {
-                targetText = CslCommandGenerator.GenerateTableCreateCommand(_targetSchema.Tables[objectName], true);
+                targetText = FormattedCslCommandGenerator.GenerateTableCreateCommand(_targetSchema.Tables[objectName], true);
             }
 
             var diffBuilder = new InlineDiffBuilder(new Differ());

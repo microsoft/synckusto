@@ -46,29 +46,36 @@ namespace SyncKusto
             this.label1 = new System.Windows.Forms.Label();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.chkTableDropWarning = new System.Windows.Forms.CheckBox();
+            this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.cbTableFieldsOnNewLine = new System.Windows.Forms.CheckBox();
+            this.cbCreateMerge = new System.Windows.Forms.CheckBox();
+            this.label6 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
+            this.groupBox4.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnOk
             // 
-            this.btnOk.Location = new System.Drawing.Point(339, 560);
+            this.btnOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnOk.Location = new System.Drawing.Point(339, 727);
             this.btnOk.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnOk.Name = "btnOk";
             this.btnOk.Size = new System.Drawing.Size(112, 35);
-            this.btnOk.TabIndex = 3;
+            this.btnOk.TabIndex = 6;
             this.btnOk.Text = "O&K";
             this.btnOk.UseVisualStyleBackColor = true;
             this.btnOk.Click += new System.EventHandler(this.btnOk_Click);
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(460, 560);
+            this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnCancel.Location = new System.Drawing.Point(460, 727);
             this.btnCancel.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(112, 35);
-            this.btnCancel.TabIndex = 4;
+            this.btnCancel.TabIndex = 7;
             this.btnCancel.Text = "&Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
@@ -77,12 +84,12 @@ namespace SyncKusto
             // 
             this.groupBox1.Controls.Add(this.txtAuthority);
             this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Location = new System.Drawing.Point(18, 306);
+            this.groupBox1.Location = new System.Drawing.Point(18, 271);
             this.groupBox1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.groupBox1.Size = new System.Drawing.Size(554, 154);
-            this.groupBox1.TabIndex = 5;
+            this.groupBox1.TabIndex = 106;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "AAD Authority";
             // 
@@ -92,7 +99,7 @@ namespace SyncKusto
             this.txtAuthority.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtAuthority.Name = "txtAuthority";
             this.txtAuthority.Size = new System.Drawing.Size(534, 26);
-            this.txtAuthority.TabIndex = 6;
+            this.txtAuthority.TabIndex = 2;
             // 
             // label3
             // 
@@ -100,7 +107,7 @@ namespace SyncKusto
             this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(536, 85);
-            this.label3.TabIndex = 4;
+            this.label3.TabIndex = 107;
             this.label3.Text = resources.GetString("label3.Text");
             // 
             // groupBox2
@@ -115,7 +122,7 @@ namespace SyncKusto
             this.groupBox2.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.groupBox2.Size = new System.Drawing.Size(554, 272);
+            this.groupBox2.Size = new System.Drawing.Size(554, 243);
             this.groupBox2.TabIndex = 6;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Temporary Databases";
@@ -123,65 +130,65 @@ namespace SyncKusto
             // label5
             // 
             this.label5.ForeColor = System.Drawing.Color.Red;
-            this.label5.Location = new System.Drawing.Point(9, 143);
+            this.label5.Location = new System.Drawing.Point(9, 122);
             this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(536, 32);
-            this.label5.TabIndex = 8;
+            this.label5.TabIndex = 101;
             this.label5.Text = "Everything in this database will be deleted.";
             // 
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(9, 225);
+            this.label4.Location = new System.Drawing.Point(9, 204);
             this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(83, 20);
-            this.label4.TabIndex = 7;
-            this.label4.Text = "Database:";
+            this.label4.TabIndex = 104;
+            this.label4.Text = "&Database:";
             // 
             // txtKustoDatabase
             // 
-            this.txtKustoDatabase.Location = new System.Drawing.Point(104, 220);
+            this.txtKustoDatabase.Location = new System.Drawing.Point(104, 199);
             this.txtKustoDatabase.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtKustoDatabase.Name = "txtKustoDatabase";
             this.txtKustoDatabase.Size = new System.Drawing.Size(439, 26);
-            this.txtKustoDatabase.TabIndex = 6;
+            this.txtKustoDatabase.TabIndex = 1;
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(9, 185);
+            this.label2.Location = new System.Drawing.Point(9, 164);
             this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(63, 20);
-            this.label2.TabIndex = 5;
-            this.label2.Text = "Cluster:";
+            this.label2.TabIndex = 103;
+            this.label2.Text = "C&luster:";
             // 
             // txtKustoCluster
             // 
-            this.txtKustoCluster.Location = new System.Drawing.Point(104, 180);
+            this.txtKustoCluster.Location = new System.Drawing.Point(104, 159);
             this.txtKustoCluster.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtKustoCluster.Name = "txtKustoCluster";
             this.txtKustoCluster.Size = new System.Drawing.Size(439, 26);
-            this.txtKustoCluster.TabIndex = 4;
+            this.txtKustoCluster.TabIndex = 0;
             // 
             // label1
             // 
             this.label1.Location = new System.Drawing.Point(9, 32);
             this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(536, 111);
-            this.label1.TabIndex = 3;
+            this.label1.Size = new System.Drawing.Size(536, 90);
+            this.label1.TabIndex = 100;
             this.label1.Text = resources.GetString("label1.Text");
             // 
             // groupBox3
             // 
             this.groupBox3.Controls.Add(this.chkTableDropWarning);
-            this.groupBox3.Location = new System.Drawing.Point(18, 469);
+            this.groupBox3.Location = new System.Drawing.Point(18, 434);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(554, 83);
-            this.groupBox3.TabIndex = 7;
+            this.groupBox3.TabIndex = 108;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Warnings";
             // 
@@ -191,15 +198,62 @@ namespace SyncKusto
             this.chkTableDropWarning.Location = new System.Drawing.Point(13, 35);
             this.chkTableDropWarning.Name = "chkTableDropWarning";
             this.chkTableDropWarning.Size = new System.Drawing.Size(438, 24);
-            this.chkTableDropWarning.TabIndex = 0;
-            this.chkTableDropWarning.Text = "Ask before dropping objects in the target Kusto database";
+            this.chkTableDropWarning.TabIndex = 3;
+            this.chkTableDropWarning.Text = "&Ask before dropping objects in the target Kusto database";
             this.chkTableDropWarning.UseVisualStyleBackColor = true;
+            // 
+            // groupBox4
+            // 
+            this.groupBox4.Controls.Add(this.label6);
+            this.groupBox4.Controls.Add(this.cbCreateMerge);
+            this.groupBox4.Controls.Add(this.cbTableFieldsOnNewLine);
+            this.groupBox4.Location = new System.Drawing.Point(18, 523);
+            this.groupBox4.Name = "groupBox4";
+            this.groupBox4.Size = new System.Drawing.Size(554, 185);
+            this.groupBox4.TabIndex = 109;
+            this.groupBox4.TabStop = false;
+            this.groupBox4.Text = "Formatting";
+            // 
+            // cbTableFieldsOnNewLine
+            // 
+            this.cbTableFieldsOnNewLine.AutoSize = true;
+            this.cbTableFieldsOnNewLine.Location = new System.Drawing.Point(13, 35);
+            this.cbTableFieldsOnNewLine.Name = "cbTableFieldsOnNewLine";
+            this.cbTableFieldsOnNewLine.Size = new System.Drawing.Size(245, 24);
+            this.cbTableFieldsOnNewLine.TabIndex = 4;
+            this.cbTableFieldsOnNewLine.Text = "&Place table fields on new lines";
+            this.cbTableFieldsOnNewLine.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.cbTableFieldsOnNewLine.UseVisualStyleBackColor = true;
+            // 
+            // cbCreateMerge
+            // 
+            this.cbCreateMerge.AutoSize = true;
+            this.cbCreateMerge.Location = new System.Drawing.Point(13, 65);
+            this.cbCreateMerge.Name = "cbCreateMerge";
+            this.cbCreateMerge.Size = new System.Drawing.Size(517, 24);
+            this.cbCreateMerge.TabIndex = 5;
+            this.cbCreateMerge.Text = "&Generate \".create-merge table\" commands instead of \".create table\"";
+            this.cbCreateMerge.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.cbCreateMerge.UseVisualStyleBackColor = true;
+            // 
+            // label6
+            // 
+            this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label6.Location = new System.Drawing.Point(9, 115);
+            this.label6.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(534, 67);
+            this.label6.TabIndex = 110;
+            this.label6.Text = resources.GetString("label6.Text");
             // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(590, 607);
+            this.ClientSize = new System.Drawing.Size(590, 774);
+            this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
@@ -217,6 +271,8 @@ namespace SyncKusto
             this.groupBox2.PerformLayout();
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
+            this.groupBox4.ResumeLayout(false);
+            this.groupBox4.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -236,5 +292,9 @@ namespace SyncKusto
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.CheckBox chkTableDropWarning;
+        private System.Windows.Forms.GroupBox groupBox4;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.CheckBox cbCreateMerge;
+        private System.Windows.Forms.CheckBox cbTableFieldsOnNewLine;
     }
 }
