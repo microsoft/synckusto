@@ -110,6 +110,7 @@
     <Compile Include="DropWarningForm.Designer.cs">
       <DependentUpon>DropWarningForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Kusto\FormattedCslCommandGenerator.cs" />
     <Compile Include="SettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
