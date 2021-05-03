@@ -67,17 +67,24 @@ namespace SyncKusto.Kusto
         {
             if (!_tempDatabaseUsed)
             {
-                throw new Exception("CleanDatabase() was called on something other than the temporary database. This method will wipe out the entire database schema and data.");
+                throw new Exception("CleanDatabase() was called on something other than the temporary database.");
             }
 
             var schema = GetDatabaseSchema();
-            
-            _adminClient.ExecuteControlCommand(
-                CslCommandGenerator.GenerateFunctionsDropCommand(
-                    schema.Functions.Select(f => f.Value.Name), true));
-            _adminClient.ExecuteControlCommand(
-                CslCommandGenerator.GenerateTablesDropCommand(
-                    schema.Tables.Select(f => f.Value.Name), true));
+
+            if (schema.Functions.Count > 0)
+            {
+                _adminClient.ExecuteControlCommand(
+                    CslCommandGenerator.GenerateFunctionsDropCommand(
+                        schema.Functions.Select(f => f.Value.Name), true));
+            }
+
+            if (schema.Tables.Count > 0)
+            {
+                _adminClient.ExecuteControlCommand(
+                    CslCommandGenerator.GenerateTablesDropCommand(
+                        schema.Tables.Select(f => f.Value.Name), true));
+            }
         }
 
         /// <summary>

@@ -47,9 +47,9 @@ namespace SyncKusto
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.chkTableDropWarning = new System.Windows.Forms.CheckBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.cbTableFieldsOnNewLine = new System.Windows.Forms.CheckBox();
-            this.cbCreateMerge = new System.Windows.Forms.CheckBox();
             this.label6 = new System.Windows.Forms.Label();
+            this.cbCreateMerge = new System.Windows.Forms.CheckBox();
+            this.cbTableFieldsOnNewLine = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -135,7 +135,7 @@ namespace SyncKusto
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(536, 32);
             this.label5.TabIndex = 101;
-            this.label5.Text = "Everything in this database will be deleted.";
+            this.label5.Text = "Everything in this database will be deleted every time a comparison is done.";
             // 
             // label4
             // 
@@ -214,16 +214,17 @@ namespace SyncKusto
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Formatting";
             // 
-            // cbTableFieldsOnNewLine
+            // label6
             // 
-            this.cbTableFieldsOnNewLine.AutoSize = true;
-            this.cbTableFieldsOnNewLine.Location = new System.Drawing.Point(13, 35);
-            this.cbTableFieldsOnNewLine.Name = "cbTableFieldsOnNewLine";
-            this.cbTableFieldsOnNewLine.Size = new System.Drawing.Size(245, 24);
-            this.cbTableFieldsOnNewLine.TabIndex = 4;
-            this.cbTableFieldsOnNewLine.Text = "&Place table fields on new lines";
-            this.cbTableFieldsOnNewLine.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.cbTableFieldsOnNewLine.UseVisualStyleBackColor = true;
+            this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label6.Location = new System.Drawing.Point(9, 115);
+            this.label6.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(534, 67);
+            this.label6.TabIndex = 110;
+            this.label6.Text = resources.GetString("label6.Text");
             // 
             // cbCreateMerge
             // 
@@ -236,17 +237,16 @@ namespace SyncKusto
             this.cbCreateMerge.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.cbCreateMerge.UseVisualStyleBackColor = true;
             // 
-            // label6
+            // cbTableFieldsOnNewLine
             // 
-            this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label6.Location = new System.Drawing.Point(9, 115);
-            this.label6.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(534, 67);
-            this.label6.TabIndex = 110;
-            this.label6.Text = resources.GetString("label6.Text");
+            this.cbTableFieldsOnNewLine.AutoSize = true;
+            this.cbTableFieldsOnNewLine.Location = new System.Drawing.Point(13, 35);
+            this.cbTableFieldsOnNewLine.Name = "cbTableFieldsOnNewLine";
+            this.cbTableFieldsOnNewLine.Size = new System.Drawing.Size(245, 24);
+            this.cbTableFieldsOnNewLine.TabIndex = 4;
+            this.cbTableFieldsOnNewLine.Text = "&Place table fields on new lines";
+            this.cbTableFieldsOnNewLine.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.cbTableFieldsOnNewLine.UseVisualStyleBackColor = true;
             // 
             // SettingsForm
             // 
