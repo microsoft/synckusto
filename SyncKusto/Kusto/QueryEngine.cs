@@ -151,20 +151,27 @@ namespace SyncKusto.Kusto
         /// </summary>
         /// <param name="tableCommand">A .create table command string</param>
         /// <param name="tableName">The name of the table</param>
-        public Task CreateOrAlterTableAsync(string tableCommand, string tableName)
+        /// <param name="createFirst">When this is true, the caller is saying that the table probably doesn't exist 
+        /// yet so we should create first and then alter only if it fails</param>
+        public Task CreateOrAlterTableAsync(string tableCommand, string tableName, bool createFirst = false)
         {
             return Task.Run(async () =>
             {
+                string createCommand = tableCommand;
+                string alterCommand = tableCommand.Replace(".create", ".alter");
+
+                string firstCommand = createFirst ? createCommand : alterCommand;
+                string secondCommand = createFirst ? alterCommand : createCommand;
+
                 try
                 {
                     try
                     {
-                        string alterCommand = tableCommand.Replace(".create", ".alter");
-                        await _adminClient.ExecuteControlCommandAsync(_databaseName, alterCommand).ConfigureAwait(false);
+                        await _adminClient.ExecuteControlCommandAsync(_databaseName, firstCommand).ConfigureAwait(false);
                     }
                     catch
                     {
-                        await _adminClient.ExecuteControlCommandAsync(_databaseName, tableCommand).ConfigureAwait(false);
+                        await _adminClient.ExecuteControlCommandAsync(_databaseName, secondCommand).ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)
