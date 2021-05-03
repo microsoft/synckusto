@@ -147,7 +147,11 @@ namespace SyncKusto
 
                     if (functionCount != 0 || tableCount != 0)
                     {
-                        MessageBox.Show($"Drop all functions and tables in the database before specifying this as the temporary database.", "Error Validating Empty Database", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Drop all functions and tables in the {txtKustoDatabase.Text} database before specifying this as the temporary database. " +
+                            $"This check is performed to reinforce the point that this databse will be wiped every time a comparison is run.", 
+                            "Error Validating Empty Database", 
+                            MessageBoxButtons.OK, 
+                            MessageBoxIcon.Error);
                         return;
                     }
                 }

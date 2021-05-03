@@ -135,7 +135,7 @@ namespace SyncKusto
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(536, 32);
             this.label5.TabIndex = 101;
-            this.label5.Text = "Everything in this database will be deleted every time a comparison is done.";
+            this.label5.Text = "Everything in this database will be dropped before every comparison!";
             // 
             // label4
             // 
