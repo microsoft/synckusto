@@ -147,31 +147,37 @@ namespace SyncKusto.Kusto
         }
 
         /// <summary>
-        /// Run the create table command. If the table exists, it's schema will be altered. This might result in data loss.
+        ///     Run the create table command. If the table exists, it's schema will be altered. This might result in
+        ///     data loss.
         /// </summary>
         /// <param name="tableCommand">A .create table command string</param>
         /// <param name="tableName">The name of the table</param>
-        /// <param name="createFirst">When this is true, the caller is saying that the table probably doesn't exist 
-        /// yet so we should create first and then alter only if it fails</param>
-        public Task CreateOrAlterTableAsync(string tableCommand, string tableName, bool createFirst = false)
+        /// <param name="createOnly">
+        ///     When this is true, the caller is saying that the table doesn't exist yet so we should skip the alter attempt
+        /// </param>
+        public Task CreateOrAlterTableAsync(string tableCommand, string tableName, bool createOnly = false)
         {
             return Task.Run(async () =>
             {
                 string createCommand = tableCommand;
                 string alterCommand = tableCommand.Replace(".create", ".alter");
 
-                string firstCommand = createFirst ? createCommand : alterCommand;
-                string secondCommand = createFirst ? alterCommand : createCommand;
-
                 try
                 {
-                    try
+                    if (createOnly)
                     {
-                        await _adminClient.ExecuteControlCommandAsync(_databaseName, firstCommand).ConfigureAwait(false);
+                        await _adminClient.ExecuteControlCommandAsync(_databaseName, createCommand).ConfigureAwait(false);
                     }
-                    catch
+                    else
                     {
-                        await _adminClient.ExecuteControlCommandAsync(_databaseName, secondCommand).ConfigureAwait(false);
+                        try
+                        {
+                            await _adminClient.ExecuteControlCommandAsync(_databaseName, alterCommand).ConfigureAwait(false);
+                        }
+                        catch
+                        {
+                            await _adminClient.ExecuteControlCommandAsync(_databaseName, createCommand).ConfigureAwait(false);
+                        }
                     }
                 }
                 catch (Exception ex)
