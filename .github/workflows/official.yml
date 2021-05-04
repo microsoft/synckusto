@@ -1,0 +1,38 @@
+name: official
+# Full build along with artifact publishing
+
+on:
+  push:
+    # Build on any new push to the master branch
+    branches: [ master ]
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    # Create one build every month even if there are no new checkins to work around expiring artifacts from older builds
+    - cron:  '0 0 1 * *'    
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1
+
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.5
+          
+    - name: Restore Packages
+      run: nuget restore SyncKusto.sln
+
+    - name: Build Solution
+      run: msbuild.exe SyncKusto.sln /p:Configuration=Release
+        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: published
+        path: SyncKusto/bin/Release
+      
