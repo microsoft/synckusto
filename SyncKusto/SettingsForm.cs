@@ -62,28 +62,30 @@ namespace SyncKusto
             SettingsWrapper.TableFieldsOnNewLine = cbTableFieldsOnNewLine.Checked;
             SettingsWrapper.CreateMergeEnabled = cbCreateMerge.Checked;
             SettingsWrapper.KustoObjectDropWarning = chkTableDropWarning.Checked;
+            SettingsWrapper.AADAuthority = txtAuthority.Text;
 
-            // Allow for multiple ways of specifying a cluster name
-            if (string.IsNullOrEmpty(txtKustoCluster.Text))
+            // Only check the Kusto settings if they changed
+            if (SettingsWrapper.KustoClusterForTempDatabases != txtKustoCluster.Text || SettingsWrapper.TemporaryKustoDatabase != txtKustoDatabase.Text)
             {
-                MessageBox.Show($"No Kusto cluster was specified.", "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            string clusterName = QueryEngine.NormalizeClusterName(txtKustoCluster.Text);
+                // Allow for multiple ways of specifying a cluster name
+                if (string.IsNullOrEmpty(txtKustoCluster.Text))
+                {
+                    MessageBox.Show($"No Kusto cluster was specified.", "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                string clusterName = QueryEngine.NormalizeClusterName(txtKustoCluster.Text);
 
-            string databaseName = txtKustoDatabase.Text;
-            if (string.IsNullOrEmpty(databaseName))
-            {
-                MessageBox.Show($"No Kusto database was specified.", "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
+                string databaseName = txtKustoDatabase.Text;
+                if (string.IsNullOrEmpty(databaseName))
+                {
+                    MessageBox.Show($"No Kusto database was specified.", "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
 
-            // If the required info is present, update the cluster textbox with the modified cluster url
-            txtKustoCluster.Text = clusterName;
+                // If the required info is present, update the cluster textbox with the modified cluster url
+                txtKustoCluster.Text = clusterName;
 
-            // Verify connection and permissions by creating and removing a function
-            try
-            {
+                // Verify connection and permissions by creating and removing a function
                 var connString = new KustoConnectionStringBuilder(clusterName)
                 {
                     FederatedSecurity = true,
@@ -91,42 +93,79 @@ namespace SyncKusto
                     Authority = txtAuthority.Text
                 };
                 var adminClient = KustoClientFactory.CreateCslAdminProvider(connString);
-                string functionName = "SyncKustoPermissionsTest";
-                adminClient.ExecuteControlCommand(
-                    CslCommandGenerator.GenerateCreateOrAlterFunctionCommand(
-                        functionName, 
-                        "", 
-                        "",
-                        new Dictionary<string, string>(),
-                        "{print now()}"));
-                adminClient.ExecuteControlCommand(CslCommandGenerator.GenerateFunctionDropCommand(functionName));
 
+                try
+                {
+                    string functionName = "SyncKustoPermissionsTest" + Guid.NewGuid();
+                    adminClient.ExecuteControlCommand(
+                        CslCommandGenerator.GenerateCreateOrAlterFunctionCommand(
+                            functionName,
+                            "",
+                            "",
+                            new Dictionary<string, string>(),
+                            "{print now()}"));
+                    adminClient.ExecuteControlCommand(CslCommandGenerator.GenerateFunctionDropCommand(functionName));
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("403-Forbidden"))
+                    {
+                        MessageBox.Show($"The current user does not have permission to create a function on cluster('{clusterName}').database('{databaseName}')", "Error Validating Permissions", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else if (ex.Message.Contains("failed to resolve the service name"))
+                    {
+                        MessageBox.Show($"Cluster {clusterName} could not be found.", "Error Validating Permissions", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else if (ex.Message.Contains("Kusto client failed to perform authentication"))
+                    {
+                        MessageBox.Show($"Could not authenticate with AAD. Please verify that the AAD Authority is specified correctly.", "Error Authenticating", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Unknown error: {ex.Message}", "Error Validating Permissions", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    return;
+                }
+
+                // Verify that the scratch database is empty
+                try
+                {
+                    long functionCount = 0;
+                    long tableCount = 0;
+
+                    using (var functionReader = adminClient.ExecuteControlCommand(".show functions | count"))
+                    {
+                        functionReader.Read();
+                        functionCount = functionReader.GetInt64(0);
+                    }
+
+                    using (var tableReader = adminClient.ExecuteControlCommand(".show tables | count"))
+                    {
+                        tableReader.Read();
+                        tableCount = tableReader.GetInt64(0);
+                    }
+
+                    if (functionCount != 0 || tableCount != 0)
+                    {
+                        MessageBox.Show($"Drop all functions and tables in the {txtKustoDatabase.Text} database before specifying this as the temporary database. " +
+                            $"This check is performed to reinforce the point that this databse will be wiped every time a comparison is run.", 
+                            "Error Validating Empty Database", 
+                            MessageBoxButtons.OK, 
+                            MessageBoxIcon.Error);
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Unknown error: {ex.Message}", "Error Validating Empty Database", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
                 // Store the settings now that we know they work
                 SettingsWrapper.KustoClusterForTempDatabases = clusterName;
                 SettingsWrapper.TemporaryKustoDatabase = databaseName;
-                SettingsWrapper.AADAuthority = txtAuthority.Text;
+            }
 
-                this.Close();
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message.Contains("403-Forbidden"))
-                {
-                    MessageBox.Show($"The current user does not have permission to create a function on cluster('{clusterName}').database('{databaseName}')", "Error Validating Permissions", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                else if (ex.Message.Contains("failed to resolve the service name"))
-                {
-                    MessageBox.Show($"Cluster {clusterName} could not be found.", "Error Validating Permissions", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                else if (ex.Message.Contains("Kusto client failed to perform authentication"))
-                {
-                    MessageBox.Show($"Could not authenticate with AAD. Please verify that the AAD Authority is specified correctly.", "Error Authenticating", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                else
-                {
-                    MessageBox.Show($"Unknown error: {ex.Message}", "Error Validating Permissions", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
+            this.Close();
 
             Cursor.Current = lastCursor;
         }

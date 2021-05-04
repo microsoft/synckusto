@@ -51,7 +51,7 @@ namespace SyncKusto.Kusto.DatabaseSchemaBuilder
                     var tableTasks = new List<Task>();
                     foreach (string table in tableFiles)
                     {
-                        tableTasks.Add(queryEngine.CreateOrAlterTableAsync(File.ReadAllText(table), Path.GetFileName(table)));
+                        tableTasks.Add(queryEngine.CreateOrAlterTableAsync(File.ReadAllText(table), Path.GetFileName(table), true));
                     }
                     failedObjects.AddRange(WaitAllAndGetFailedObjects(tableTasks));
 

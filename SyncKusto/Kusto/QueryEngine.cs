@@ -67,20 +67,23 @@ namespace SyncKusto.Kusto
         {
             if (!_tempDatabaseUsed)
             {
-                throw new Exception("CleanDatabase() was called on something other than the temporary database. This method will wipe out the entire database schema and data.");
+                throw new Exception("CleanDatabase() was called on something other than the temporary database.");
             }
 
             var schema = GetDatabaseSchema();
-            foreach (var function in schema.Functions)
+
+            if (schema.Functions.Count > 0)
             {
-                string command = CslCommandGenerator.GenerateFunctionDropCommand(function.Value.Name, true);
-                _adminClient.ExecuteControlCommand(command);
+                _adminClient.ExecuteControlCommand(
+                    CslCommandGenerator.GenerateFunctionsDropCommand(
+                        schema.Functions.Select(f => f.Value.Name), true));
             }
 
-            foreach (var table in schema.Tables)
+            if (schema.Tables.Count > 0)
             {
-                string command = CslCommandGenerator.GenerateTableDropCommand(table.Value.Name, true);
-                _adminClient.ExecuteControlCommand(command);
+                _adminClient.ExecuteControlCommand(
+                    CslCommandGenerator.GenerateTablesDropCommand(
+                        schema.Tables.Select(f => f.Value.Name), true));
             }
         }
 
@@ -144,24 +147,37 @@ namespace SyncKusto.Kusto
         }
 
         /// <summary>
-        /// Run the create table command. If the table exists, it's schema will be altered. This might result in data loss.
+        ///     Run the create table command. If the table exists, it's schema will be altered. This might result in
+        ///     data loss.
         /// </summary>
         /// <param name="tableCommand">A .create table command string</param>
         /// <param name="tableName">The name of the table</param>
-        public Task CreateOrAlterTableAsync(string tableCommand, string tableName)
+        /// <param name="createOnly">
+        ///     When this is true, the caller is saying that the table doesn't exist yet so we should skip the alter attempt
+        /// </param>
+        public Task CreateOrAlterTableAsync(string tableCommand, string tableName, bool createOnly = false)
         {
             return Task.Run(async () =>
             {
+                string createCommand = tableCommand;
+                string alterCommand = tableCommand.Replace(".create", ".alter");
+
                 try
                 {
-                    try
+                    if (createOnly)
                     {
-                        string alterCommand = tableCommand.Replace(".create", ".alter");
-                        await _adminClient.ExecuteControlCommandAsync(_databaseName, alterCommand).ConfigureAwait(false);
+                        await _adminClient.ExecuteControlCommandAsync(_databaseName, createCommand).ConfigureAwait(false);
                     }
-                    catch
+                    else
                     {
-                        await _adminClient.ExecuteControlCommandAsync(_databaseName, tableCommand).ConfigureAwait(false);
+                        try
+                        {
+                            await _adminClient.ExecuteControlCommandAsync(_databaseName, alterCommand).ConfigureAwait(false);
+                        }
+                        catch
+                        {
+                            await _adminClient.ExecuteControlCommandAsync(_databaseName, createCommand).ConfigureAwait(false);
+                        }
                     }
                 }
                 catch (Exception ex)
