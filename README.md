@@ -11,12 +11,7 @@ Assuming that the user already has a Kusto database with functions and tables, s
 The general usage pattern on our team is to make changes in a Kusto dev database which starts with a schema that mirrors the production database. Once the developer is satisfied with the changes, they use Sync Kusto with the development database as the source and their local file system as the target. The changes are committed to source control and a pull request is sent out for review. After the request is approved and the code merges to master, the developer syncs the master branch and uses Sync Kusto to sync from their local file system to the production Kusto database. This is a more flexible/manual version of the [Azure Data Explorer task for Azure Dev Ops](https://docs.microsoft.com/en-us/azure/data-explorer/devops). We've had great success with this process and use the tool daily to help with our development and for deploying to production assets.
 
 ## Sync Kusto Binaries
-The project can be cloned and built from Visual Studio to generate binaries or it can be download from the GitHub Actions build. To download a binary from the build:
-1. Click [Actions](https://github.com/microsoft/synckusto/actions) at the top of this page
-2. Choose the [official](https://github.com/microsoft/synckusto/actions/workflows/official.yml) workflow.
-3. Select the most recent build
-4. That page has a section called Artifacts and there's a zip called "published". Download that and unzip it.
-
+The release can be downloaded from the [GitHub Releases](https://github.com/microsoft/synckusto/releases) page. Individual builds can also be found in the [GitHub Actions](https://github.com/microsoft/synckusto/actions/workflows/official.yml) page, or the repo can be cloned and built in Visual Studio.
 
 ## Settings
 ### Temporary Databases
