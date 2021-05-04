@@ -1,8 +1,14 @@
 name: official
+# Full build along with artifact publishing
 
 on:
   push:
+    # Build on any new push to the master branch
     branches: [ master ]
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    # Create one build every month even if there are no new checkins to work around expiring artifacts from older builds
+    - cron:  '0 0 1 * *'    
 
 jobs:
   build:

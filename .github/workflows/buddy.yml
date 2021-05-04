@@ -1,9 +1,6 @@
-name: pullrequest
-# Do the same build as the official build but don't publish artifacts
-
-on:
-  pull_request:
-    branches: [ master ]
+name: buddy
+# This build can be kicked off manually from any branch and is the same as what the PR build will do.
+on: workflow_dispatch
 
 jobs:
   build:
