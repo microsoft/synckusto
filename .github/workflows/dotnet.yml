@@ -24,6 +24,11 @@ jobs:
       run: nuget restore SyncKusto.sln
 
     - name: Build Solution
-      run: |
-        msbuild.exe SyncKusto.sln
+      run: msbuild.exe SyncKusto.sln /p:Configuration=Release
+        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: published
+        path: bin/Release
       
