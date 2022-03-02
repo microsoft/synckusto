@@ -231,7 +231,7 @@
       <Version>1.4.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Azure.Kusto.Data">
-      <Version>9.2.0</Version>
+      <Version>9.4.1</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
