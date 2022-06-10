@@ -105,5 +105,26 @@ namespace SyncKusto
                 Settings.Default.Save();
             }
         }
+
+        /// <summary>
+        /// If true, files will be read and written using the legacy ".csl" extension instead of ".kql"
+        /// </summary>
+        public static bool? UseLegacyCslExtension
+        {
+            get => Settings.Default[nameof(UseLegacyCslExtension)] as bool?;
+            set
+            {
+                Settings.Default[nameof(UseLegacyCslExtension)] = value;
+                Settings.Default.Save();
+            }
+        }
+
+        /// <summary>
+        /// Gets the file extension to use throughout the application when reading and writing Kusto files
+        /// </summary>
+        public static string FileExtension
+        { 
+            get => SettingsWrapper.UseLegacyCslExtension.GetValueOrDefault() ? "csl" : "kql";
+        }
     }
 }

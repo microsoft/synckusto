@@ -15,9 +15,9 @@ namespace SyncKusto
         /// <param name="functionSchema">The function to write</param>
         /// <param name="rootFolder">The root folder for all the CSL files</param>
         /// <returns></returns>
-        public static void WriteToFile(this FunctionSchema functionSchema, string rootFolder)
+        public static void WriteToFile(this FunctionSchema functionSchema, string rootFolder, string fileExtension)
         {
-            string filename = functionSchema.Name + ".csl";
+            string filename = Path.ChangeExtension(functionSchema.Name, fileExtension);
 
             // First remove any other files with this name. In the case where you moved an object to a new folder, this will handle cleaning up the old file
             string[] existingFiles = Directory.GetFiles(rootFolder, filename, SearchOption.AllDirectories);
@@ -68,14 +68,14 @@ namespace SyncKusto
         /// </summary>
         /// <param name="functionSchema">The function to remove</param>
         /// <param name="rootFolder">The root folder for all the CSL files</param>
-        public static void DeleteFromFolder(this FunctionSchema functionSchema, string rootFolder)
+        public static void DeleteFromFolder(this FunctionSchema functionSchema, string rootFolder, string fileExtension)
         {
             string funcFolder = Path.Combine(rootFolder, "Functions");
             if (!string.IsNullOrEmpty(functionSchema.Folder))
             {
                 funcFolder = Path.Combine(funcFolder, functionSchema.Folder);
             }
-            string destinationFile = Path.Combine(funcFolder, functionSchema.Name + ".csl");
+            string destinationFile = Path.ChangeExtension(Path.Combine(funcFolder, functionSchema.Name), fileExtension);
             File.Delete(destinationFile);
         }
 
@@ -94,7 +94,7 @@ namespace SyncKusto
         /// </summary>
         /// <param name="tableSchema">The table to write</param>
         /// <param name="rootFolder">The root folder for all the CSL files</param>
-        public static void WriteToFile(this TableSchema tableSchema, string rootFolder)
+        public static void WriteToFile(this TableSchema tableSchema, string rootFolder, string fileExtension)
         {
             string tableFolder = rootFolder;
             if (!string.IsNullOrEmpty(tableSchema.Folder))
@@ -102,7 +102,7 @@ namespace SyncKusto
                 string cleanedFolder = string.Join("", tableSchema.Folder.Split(Path.GetInvalidPathChars()));
                 tableFolder = Path.Combine(rootFolder, "Tables", cleanedFolder);
             }
-            string destinationFile = Path.Combine(tableFolder, tableSchema.Name + ".csl");
+            string destinationFile = Path.ChangeExtension(Path.Combine(tableFolder, tableSchema.Name), fileExtension);
             if (!Directory.Exists(tableFolder))
             {
                 Directory.CreateDirectory(tableFolder);
@@ -126,14 +126,14 @@ namespace SyncKusto
         /// </summary>
         /// <param name="tableSchema">The table to remove</param>
         /// <param name="rootFolder">The root folder for all the CSL files</param>
-        public static void DeleteFromFolder(this TableSchema tableSchema, string rootFolder)
+        public static void DeleteFromFolder(this TableSchema tableSchema, string rootFolder, string fileExtension)
         {
             string tableFolder = rootFolder;
             if (!string.IsNullOrEmpty(tableSchema.Folder))
             {
                 tableFolder = Path.Combine(rootFolder, "Tables", tableSchema.Folder);
             }
-            string destinationFile = Path.Combine(tableFolder, tableSchema.Name + ".csl");
+            string destinationFile = Path.ChangeExtension(Path.Combine(tableFolder, tableSchema.Name), fileExtension);
             File.Delete(destinationFile);
         }
 

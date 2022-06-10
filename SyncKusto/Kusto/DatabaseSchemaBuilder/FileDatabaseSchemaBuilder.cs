@@ -13,29 +13,41 @@ namespace SyncKusto.Kusto.DatabaseSchemaBuilder
 {
     public class FileDatabaseSchemaBuilder : BaseDatabaseSchemaBuilder
     {
-        public FileDatabaseSchemaBuilder(string rootFolder)
-        {
-            RootFolder = rootFolder ?? throw new ArgumentNullException(nameof(rootFolder));
-        }
+        private readonly string rootFolder;
+        private readonly string fileExtension;
 
-        public string RootFolder { get; }
+        public FileDatabaseSchemaBuilder(string rootFolder, string fileExtension)
+        {
+            if (string.IsNullOrWhiteSpace(rootFolder))
+            {
+                throw new ArgumentException($"'{nameof(rootFolder)}' cannot be null or whitespace.", nameof(rootFolder));
+            }
+
+            if (string.IsNullOrWhiteSpace(fileExtension))
+            {
+                throw new ArgumentException($"'{nameof(fileExtension)}' cannot be null or whitespace.", nameof(fileExtension));
+            }
+
+            this.rootFolder = rootFolder;
+            this.fileExtension = fileExtension;
+        }
 
         public override Task<DatabaseSchema> Build()
         {
             // Find all of the table and function CSL files
-            if (!Directory.Exists(RootFolder))
+            if (!Directory.Exists(rootFolder))
             {
-                Directory.CreateDirectory(RootFolder);
+                Directory.CreateDirectory(rootFolder);
             }
 
-            string functionFolder = Path.Combine(RootFolder, "Functions");
+            string functionFolder = Path.Combine(rootFolder, "Functions");
             if (!Directory.Exists(functionFolder))
             {
                 Directory.CreateDirectory(functionFolder);
             }
 
-            string[] functionFiles = Directory.GetFiles(functionFolder, "*.csl", SearchOption.AllDirectories);
-            IEnumerable<string> tableFiles = Directory.GetFiles(RootFolder, "*.csl", SearchOption.AllDirectories).Where(f => !f.Contains("\\Functions\\"));
+            string[] functionFiles = Directory.GetFiles(functionFolder, $"*.{fileExtension}", SearchOption.AllDirectories);
+            IEnumerable<string> tableFiles = Directory.GetFiles(rootFolder, $"*.{fileExtension}", SearchOption.AllDirectories).Where(f => !f.Contains("\\Functions\\"));
 
             var failedObjects = new List<string>();
 

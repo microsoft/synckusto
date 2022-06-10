@@ -7,11 +7,11 @@ namespace SyncKusto.ChangeModel
 {
     public interface IKustoSchema
     {
-        void WriteToFile(string rootFolder);
+        void WriteToFile(string rootFolder, string fileExtension);
 
         void WriteToKusto(QueryEngine kustoQueryEngine);
 
-        void DeleteFromFolder(string rootFolder);
+        void DeleteFromFolder(string rootFolder, string fileExtension);
 
         void DeleteFromKusto(QueryEngine kustoQueryEngine);
 
