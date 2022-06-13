@@ -366,7 +366,7 @@ namespace SyncKusto
             {
                 if (spcTarget.SourceSelection == SourceSelection.FilePath())
                 {
-                    schema.WriteToFile(spcTarget.SourceFilePath);
+                    schema.WriteToFile(spcTarget.SourceFilePath, SettingsWrapper.FileExtension);
                 }
                 else
                 {
@@ -382,7 +382,7 @@ namespace SyncKusto
                 }
                 else
                 {
-                    schema.DeleteFromFolder(spcTarget.SourceFilePath);
+                    schema.DeleteFromFolder(spcTarget.SourceFilePath, SettingsWrapper.FileExtension);
                 }
             }
 

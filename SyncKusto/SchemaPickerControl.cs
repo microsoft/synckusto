@@ -203,7 +203,7 @@ namespace SyncKusto
                 if (SourceSelection == SourceSelection.FilePath())
                 {
                     SettingsWrapper.PreviousFilePath = SourceFilePath;
-                    schemaBuilder = new FileDatabaseSchemaBuilder(SourceFilePath);
+                    schemaBuilder = new FileDatabaseSchemaBuilder(SourceFilePath, SettingsWrapper.FileExtension);
                 }
 
                 switch (schemaBuilder)

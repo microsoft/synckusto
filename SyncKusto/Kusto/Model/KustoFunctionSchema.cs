@@ -17,11 +17,11 @@ namespace SyncKusto.ChangeModel
 
         public string Name => Value.Name;
 
-        public void WriteToFile(string rootFolder) => Value.WriteToFile(rootFolder);
+        public void WriteToFile(string rootFolder, string fileExtension) => Value.WriteToFile(rootFolder, fileExtension);
 
         public void WriteToKusto(QueryEngine kustoQueryEngine) => Value.WriteToKusto(kustoQueryEngine);
 
-        public void DeleteFromFolder(string rootFolder) => Value.DeleteFromFolder(rootFolder);
+        public void DeleteFromFolder(string rootFolder, string fileExtension) => Value.DeleteFromFolder(rootFolder, fileExtension);
 
         public void DeleteFromKusto(QueryEngine kustoQueryEngine) => Value.DeleteFromKusto(kustoQueryEngine);
 
