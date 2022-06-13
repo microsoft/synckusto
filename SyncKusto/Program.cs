@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using SyncKusto.Properties;
 using System;
+using System.Diagnostics;
 using System.Windows.Forms;
 
 namespace SyncKusto
@@ -11,6 +13,11 @@ namespace SyncKusto
         [STAThread]
         static void Main(string[] args)
         {
+            if (Debugger.IsAttached)
+            {
+                Settings.Default.Reset();
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());

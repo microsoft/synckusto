@@ -37,6 +37,7 @@ namespace SyncKusto
             chkTableDropWarning.Checked = SettingsWrapper.KustoObjectDropWarning;
             cbTableFieldsOnNewLine.Checked = SettingsWrapper.TableFieldsOnNewLine ?? false;
             cbCreateMerge.Checked = SettingsWrapper.CreateMergeEnabled ?? false;
+            cbUseLegacyCslExtension.Checked = SettingsWrapper.UseLegacyCslExtension ?? false;
         }
 
         /// <summary>
@@ -63,6 +64,7 @@ namespace SyncKusto
             SettingsWrapper.CreateMergeEnabled = cbCreateMerge.Checked;
             SettingsWrapper.KustoObjectDropWarning = chkTableDropWarning.Checked;
             SettingsWrapper.AADAuthority = txtAuthority.Text;
+            SettingsWrapper.UseLegacyCslExtension = cbUseLegacyCslExtension.Checked;
 
             // Only check the Kusto settings if they changed
             if (SettingsWrapper.KustoClusterForTempDatabases != txtKustoCluster.Text || SettingsWrapper.TemporaryKustoDatabase != txtKustoDatabase.Text)

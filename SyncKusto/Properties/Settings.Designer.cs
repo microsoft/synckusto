@@ -106,5 +106,17 @@ namespace SyncKusto.Properties {
                 this["CreateMergeEnabled"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool UseLegacyCslExtension {
+            get {
+                return ((bool)(this["UseLegacyCslExtension"]));
+            }
+            set {
+                this["UseLegacyCslExtension"] = value;
+            }
+        }
     }
 }
