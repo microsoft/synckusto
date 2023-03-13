@@ -5,7 +5,7 @@ The Sync Kusto tool was built to help create a maintainable development process 
 ![Screenshot](/screenshot.png)
 
 ## Scope
-This tool is intended specificlaly for the developer desktop scenario. It will not help if you need to build an automated syncing process, generate change scripts, sync policies, etc. For all of that, we recommend using [Delta Kusto](https://github.com/microsoft/delta-kusto). 
+This tool is intended specifically for the developer desktop scenario. It will not help if you need to build an automated syncing process, generate change scripts, sync policies, etc. For all of that, we recommend using [Delta Kusto](https://github.com/microsoft/delta-kusto). 
 
 ## Getting Started
 Assuming that the user already has a Kusto database with functions and tables, set the Kusto database as the source and the local file system as the target. Press the compare button and the tool will find that none of the database objects are in the target. Press the update button to download everything from Kusto to the local file system. If it's the first time this tool has been run, the settings dialog will appear. Read through the settings below to get those configured correctly.
