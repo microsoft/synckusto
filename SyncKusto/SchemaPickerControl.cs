@@ -1,11 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using Kusto.Data;
 using Kusto.Data.Common;
 using SyncKusto.Functional;
@@ -14,6 +9,11 @@ using SyncKusto.Kusto.DatabaseSchemaBuilder;
 using SyncKusto.SyncSources;
 using SyncKusto.Validation.ErrorMessages;
 using SyncKusto.Validation.Infrastructure;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace SyncKusto
 {
@@ -65,7 +65,11 @@ namespace SyncKusto
         private AuthenticationMode Authentication =>
             rbFederated.Checked ? AuthenticationMode.AadFederated : AuthenticationMode.AadApplication;
 
-        public string SourceFilePath => txtFilePath.Text;
+        private string longPathPrefx = "\\\\?\\";
+
+        // Convert to long path to avoid issues with long file names
+        // https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#win32-file-namespaces
+        public string SourceFilePath => txtFilePath.Text.StartsWith(longPathPrefx) ? txtFilePath.Text : longPathPrefx + txtFilePath.Text;
 
         public KustoConnectionStringBuilder KustoConnection
         {
@@ -140,7 +144,7 @@ namespace SyncKusto
         }
 
         private void rbApplication_CheckedChanged(object sender, EventArgs e) =>
-            pnlApplicationAuthentication.Visible = ((RadioButton) sender).Checked;
+            pnlApplicationAuthentication.Visible = ((RadioButton)sender).Checked;
 
         private void rbKusto_CheckedChanged(object sender, EventArgs e) =>
             SourceButtonCheckChange(sender, SourceSelection.Kusto());
@@ -162,7 +166,8 @@ namespace SyncKusto
                 ReportProgress(message ?? string.Empty);
             }
 
-            ToggleSourceSelections();}
+            ToggleSourceSelections();
+        }
 
         private void btnChooseDirectory_Click(object sender, EventArgs e)
         {
@@ -211,8 +216,9 @@ namespace SyncKusto
                     case KustoDatabaseSchemaBuilder _:
                     case FileDatabaseSchemaBuilder _:
                         ReportProgress($@"Constructing schema...");
-                        return Task.Run(async () => 
+                        return Task.Run(async () =>
                             await schemaBuilder.Build().ConfigureAwait(false)).Result;
+
                     default:
                         return new DatabaseSchemaOperationError(new InvalidOperationException("An unknown type was supplied."));
                 }
