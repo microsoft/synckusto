@@ -8,7 +8,9 @@ on:
   schedule:
     # * is a special character in YAML so you have to quote this string
     # Create one build every month even if there are no new checkins to work around expiring artifacts from older builds
-    - cron:  '0 0 1 * *'    
+    - cron:  '0 0 1 * *'  
+  workflow_dispatch: 
+    # Allows you to run this workflow manually from the Actions tab
 
 jobs:
   build:
