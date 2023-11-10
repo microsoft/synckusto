@@ -27,7 +27,7 @@ namespace SyncKusto
                 {
                     try
                     {
-                        File.Delete(file);
+                        File.Delete(file.HandleLongFileNames());
                     }
                     catch
                     {
@@ -50,7 +50,7 @@ namespace SyncKusto
                 Directory.CreateDirectory(funcFolder);
             }
 
-            File.WriteAllText(destinationFile, CslCommandGenerator.GenerateCreateOrAlterFunctionCommand(functionSchema, true));
+            File.WriteAllText(destinationFile.HandleLongFileNames(), CslCommandGenerator.GenerateCreateOrAlterFunctionCommand(functionSchema, true));
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace SyncKusto
                 funcFolder = Path.Combine(funcFolder, functionSchema.Folder);
             }
             string destinationFile = Path.ChangeExtension(Path.Combine(funcFolder, functionSchema.Name), fileExtension);
-            File.Delete(destinationFile);
+            File.Delete(destinationFile.HandleLongFileNames());
         }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace SyncKusto
                 Directory.CreateDirectory(tableFolder);
             }
 
-            File.WriteAllText(destinationFile, FormattedCslCommandGenerator.GenerateTableCreateCommand(tableSchema, true));
+            File.WriteAllText(destinationFile.HandleLongFileNames(), FormattedCslCommandGenerator.GenerateTableCreateCommand(tableSchema, true));
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace SyncKusto
                 tableFolder = Path.Combine(rootFolder, "Tables", tableSchema.Folder);
             }
             string destinationFile = Path.ChangeExtension(Path.Combine(tableFolder, tableSchema.Name), fileExtension);
-            File.Delete(destinationFile);
+            File.Delete(destinationFile.HandleLongFileNames());
         }
 
         /// <summary>
@@ -145,6 +145,33 @@ namespace SyncKusto
         public static void DeleteFromKusto(this TableSchema tableSchema, QueryEngine kustoQueryEngine)
         {
             kustoQueryEngine.DropTable(tableSchema.Name);
+        }
+
+        /// <summary>
+        /// Convert to long path to avoid issues with long file names
+        //  https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#win32-file-namespaces
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <returns></returns>
+        public static string HandleLongFileNames(this string filename)
+        {
+            const string LongPathPrefix = "\\\\?\\";
+
+            if (filename.Length > 248)
+            {
+                // The path is getting close to the limit so prepend the longPathPrefix.
+                return LongPathPrefix + filename;
+            }
+            else if (filename.StartsWith(LongPathPrefix))
+            {
+                // The path has the long path prefix but doesn't need it.
+                return filename.Substring(LongPathPrefix.Length);
+            }
+            else
+            {
+                // The path doesn't have the long path prefix and doesn't need it.
+                return filename;
+            }
         }
     }
 }

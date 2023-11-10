@@ -63,14 +63,14 @@ namespace SyncKusto.Kusto.DatabaseSchemaBuilder
                     var tableTasks = new List<Task>();
                     foreach (string table in tableFiles)
                     {
-                        tableTasks.Add(queryEngine.CreateOrAlterTableAsync(File.ReadAllText(table), Path.GetFileName(table), true));
+                        tableTasks.Add(queryEngine.CreateOrAlterTableAsync(File.ReadAllText(table.HandleLongFileNames()), Path.GetFileName(table), true));
                     }
                     failedObjects.AddRange(WaitAllAndGetFailedObjects(tableTasks));
 
                     var functionTasks = new List<Task>();
                     foreach (string function in functionFiles)
                     {
-                        string csl = File.ReadAllText(function);
+                        string csl = File.ReadAllText(function.HandleLongFileNames());
                         functionTasks.Add(queryEngine.CreateOrAlterFunctionAsync(csl, Path.GetFileName(function)));
                     }
                     failedObjects.AddRange(WaitAllAndGetFailedObjects(functionTasks));

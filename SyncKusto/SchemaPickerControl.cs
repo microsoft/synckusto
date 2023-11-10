@@ -65,11 +65,7 @@ namespace SyncKusto
         private AuthenticationMode Authentication =>
             rbFederated.Checked ? AuthenticationMode.AadFederated : AuthenticationMode.AadApplication;
 
-        private string longPathPrefx = "\\\\?\\";
-
-        // Convert to long path to avoid issues with long file names
-        // https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#win32-file-namespaces
-        public string SourceFilePath => txtFilePath.Text.StartsWith(longPathPrefx) ? txtFilePath.Text : longPathPrefx + txtFilePath.Text;
+        public string SourceFilePath => txtFilePath.Text.HandleLongFileNames();
 
         public KustoConnectionStringBuilder KustoConnection
         {
