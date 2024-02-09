@@ -104,7 +104,6 @@ namespace SyncKusto
                     FilePathOperationErrorSpecifications.FolderNotFound()
                 });
 
-
             spcSource.ReportProgress($@"Loading source schema...");
             IDatabaseSchema sourceSchema = TryGetSchema(() => spcSource.TryLoadSchema());
 
