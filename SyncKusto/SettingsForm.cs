@@ -120,7 +120,7 @@ namespace SyncKusto
                     }
                     else if (ex.Message.Contains("Kusto client failed to perform authentication"))
                     {
-                        MessageBox.Show($"Could not authenticate with AAD. Please verify that the AAD Authority is specified correctly.", "Error Authenticating", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Could not authenticate with Microsoft Entra ID. Please verify that the Microsoft Entra ID Authority is specified correctly.", "Error Authenticating", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                     else
                     {
@@ -150,9 +150,9 @@ namespace SyncKusto
                     if (functionCount != 0 || tableCount != 0)
                     {
                         MessageBox.Show($"Drop all functions and tables in the {txtKustoDatabase.Text} database before specifying this as the temporary database. " +
-                            $"This check is performed to reinforce the point that this databse will be wiped every time a comparison is run.", 
-                            "Error Validating Empty Database", 
-                            MessageBoxButtons.OK, 
+                            $"This check is performed to reinforce the point that this databse will be wiped every time a comparison is run.",
+                            "Error Validating Empty Database",
+                            MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
                         return;
                     }

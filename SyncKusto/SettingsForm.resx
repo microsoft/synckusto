@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="label3.Text" xml:space="preserve">
-    <value>Specify the AAD authority to be used for authentication (e.g. contoso.com). Depending on your tenant configuration, this may be optional, unless you're connecting with an application id in which case it is required:</value>
+    <value>Specify the Microsoft Entra ID authority to be used for authentication (e.g. contoso.com). Depending on your tenant configuration, this may be optional, unless you're connecting with an application id in which case it is required:</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
     <value>When the local file system is selected as the source or the target, SyncKusto loads all of the files into a temporary database and then asks Kusto for the database schema. Specify a Kusto cluster and database to use for the comparison. You must be a database admin.</value>
