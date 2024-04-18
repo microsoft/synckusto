@@ -102,7 +102,7 @@ namespace SyncKusto
             this.grpComparison.Controls.Add(this.rtbSourceText);
             this.grpComparison.Controls.Add(this.label1);
             this.grpComparison.Controls.Add(this.tvComparison);
-            this.grpComparison.Location = new System.Drawing.Point(12, 298);
+            this.grpComparison.Location = new System.Drawing.Point(12, 270);
             this.grpComparison.Name = "grpComparison";
             this.grpComparison.Size = new System.Drawing.Size(615, 535);
             this.grpComparison.TabIndex = 3;
@@ -156,7 +156,7 @@ namespace SyncKusto
             // 
             this.spcTargetHolder.Location = new System.Drawing.Point(326, 29);
             this.spcTargetHolder.Name = "spcTargetHolder";
-            this.spcTargetHolder.Size = new System.Drawing.Size(306, 264);
+            this.spcTargetHolder.Size = new System.Drawing.Size(306, 235);
             this.spcTargetHolder.TabIndex = 5;
             this.spcTargetHolder.Title = "Target Schema";
             this.spcTargetHolder.Visible = true;
@@ -173,9 +173,9 @@ namespace SyncKusto
             // 
             // spcSourceHolder
             // 
-            this.spcSourceHolder.Location = new System.Drawing.Point(18, 28);
+            this.spcSourceHolder.Location = new System.Drawing.Point(12, 28);
             this.spcSourceHolder.Name = "spcSourceHolder";
-            this.spcSourceHolder.Size = new System.Drawing.Size(306, 264);
+            this.spcSourceHolder.Size = new System.Drawing.Size(306, 230);
             this.spcSourceHolder.TabIndex = 4;
             this.spcSourceHolder.Title = "Source Schema";
             this.spcSourceHolder.Visible = true;
@@ -194,7 +194,7 @@ namespace SyncKusto
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(639, 845);
+            this.ClientSize = new System.Drawing.Size(639, 815);
             this.Controls.Add(this.label2);
             //this.Controls.Add(this.spcTargetHolder);
             //this.Controls.Add(this.spcSourceHolder);
@@ -205,7 +205,7 @@ namespace SyncKusto
             this.Controls.Add(this.grpComparison);
             this.Controls.Add(this.toolStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MinimumSize = new System.Drawing.Size(655, 822);
+            this.MinimumSize = new System.Drawing.Size(655, 815);
             this.Name = "MainForm";
             this.Text = "SyncKusto";
             this.toolStrip1.ResumeLayout(false);
