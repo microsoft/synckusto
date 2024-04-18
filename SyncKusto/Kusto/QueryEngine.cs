@@ -238,6 +238,11 @@ namespace SyncKusto.Kusto
                 throw new ArgumentException("If either aadClientId or aadClientKey are specified, they must both be specified.");
             }
 
+            if (string.IsNullOrWhiteSpace(SettingsWrapper.AADAuthority))
+            {
+                throw new Exception("Authority value must be specified in the Settings dialog.");
+            }
+
             cluster = NormalizeClusterName(cluster);
 
             // User auth
