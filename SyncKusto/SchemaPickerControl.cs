@@ -25,6 +25,8 @@ namespace SyncKusto
         public SchemaPickerControl()
         {
             InitializeComponent();
+
+            this.cmbAuthentication.SelectedIndex = 0;
         }
 
         /// <summary>
@@ -62,8 +64,23 @@ namespace SyncKusto
             set => grpSourceSchema.Text = value;
         }
 
-        private AuthenticationMode Authentication =>
-            rbFederated.Checked ? AuthenticationMode.AadFederated : AuthenticationMode.AadApplication;
+        private AuthenticationMode Authentication
+        {
+            get
+            {
+                switch (cmbAuthentication.SelectedItem)
+                {
+                    case "Entra User":
+                        return AuthenticationMode.AadFederated;
+
+                    case "Entra App (Key)":
+                        return AuthenticationMode.AadApplication;
+
+                    default:
+                        throw new Exception("Unknown authentication type");
+                }
+            }
+        }
 
         public string SourceFilePath => txtFilePath.Text.HandleLongFileNames();
 
@@ -71,9 +88,17 @@ namespace SyncKusto
         {
             get
             {
-                return rbApplication.Checked
-                    ? QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text, txtAppId.Text, txtAppKey.Text)
-                    : QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text);
+                switch (Authentication)
+                {
+                    case AuthenticationMode.AadFederated:
+                        return QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text);
+
+                    case AuthenticationMode.AadApplication:
+                        return QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text, txtAppId.Text, txtAppKey.Text);
+
+                    default:
+                        throw new Exception("Unknown authentication type");
+                }
             }
         }
 
@@ -138,9 +163,6 @@ namespace SyncKusto
                 SourceSelectionMap[source].Invoke(source == SourceSelection);
             }
         }
-
-        private void rbApplication_CheckedChanged(object sender, EventArgs e) =>
-            pnlApplicationAuthentication.Visible = ((RadioButton)sender).Checked;
 
         private void rbKusto_CheckedChanged(object sender, EventArgs e) =>
             SourceButtonCheckChange(sender, SourceSelection.Kusto());
@@ -233,6 +255,11 @@ namespace SyncKusto
         {
             if (Spec<string>.NotNull(s => s).IsSatisfiedBy(message))
                 txtOperationProgress.Text = message;
+        }
+
+        private void cmbAuthentication_SelectedValueChanged(object sender, EventArgs e)
+        {
+            pnlApplicationAuthentication.Visible = Authentication == AuthenticationMode.AadApplication;
         }
     }
 }
