@@ -134,7 +134,7 @@ namespace SyncKusto
             this.pnlApplicationAuthentication.Controls.Add(this.lblAppKey);
             this.pnlApplicationAuthentication.Controls.Add(this.txtAppId);
             this.pnlApplicationAuthentication.Controls.Add(this.lblAppId);
-            this.pnlApplicationAuthentication.Location = new System.Drawing.Point(166, 71);
+            this.pnlApplicationAuthentication.Location = new System.Drawing.Point(9, 71);
             this.pnlApplicationAuthentication.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.pnlApplicationAuthentication.Name = "pnlApplicationAuthentication";
             this.pnlApplicationAuthentication.Size = new System.Drawing.Size(388, 89);
@@ -289,7 +289,7 @@ namespace SyncKusto
             this.pnlApplicationSniAuthentication.Controls.Add(this.lblCertificate);
             this.pnlApplicationSniAuthentication.Controls.Add(this.txtAppIdSni);
             this.pnlApplicationSniAuthentication.Controls.Add(this.lblAppIdSni);
-            this.pnlApplicationSniAuthentication.Location = new System.Drawing.Point(9, 107);
+            this.pnlApplicationSniAuthentication.Location = new System.Drawing.Point(9, 71);
             this.pnlApplicationSniAuthentication.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.pnlApplicationSniAuthentication.Name = "pnlApplicationSniAuthentication";
             this.pnlApplicationSniAuthentication.Size = new System.Drawing.Size(388, 89);
@@ -298,11 +298,10 @@ namespace SyncKusto
             // 
             // txtCertificate
             // 
-            this.txtCertificate.Location = new System.Drawing.Point(96, 48);
+            this.txtCertificate.Location = new System.Drawing.Point(180, 48);
             this.txtCertificate.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtCertificate.Name = "txtCertificate";
-            this.txtCertificate.PasswordChar = '*';
-            this.txtCertificate.Size = new System.Drawing.Size(251, 26);
+            this.txtCertificate.Size = new System.Drawing.Size(167, 26);
             this.txtCertificate.TabIndex = 7;
             // 
             // lblCertificate
@@ -311,16 +310,16 @@ namespace SyncKusto
             this.lblCertificate.Location = new System.Drawing.Point(3, 51);
             this.lblCertificate.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCertificate.Name = "lblCertificate";
-            this.lblCertificate.Size = new System.Drawing.Size(72, 20);
+            this.lblCertificate.Size = new System.Drawing.Size(169, 20);
             this.lblCertificate.TabIndex = 6;
-            this.lblCertificate.Text = "App Key:";
+            this.lblCertificate.Text = "Certificate Thumbprint:";
             // 
             // txtAppIdSni
             // 
-            this.txtAppIdSni.Location = new System.Drawing.Point(96, 8);
+            this.txtAppIdSni.Location = new System.Drawing.Point(180, 8);
             this.txtAppIdSni.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtAppIdSni.Name = "txtAppIdSni";
-            this.txtAppIdSni.Size = new System.Drawing.Size(288, 26);
+            this.txtAppIdSni.Size = new System.Drawing.Size(204, 26);
             this.txtAppIdSni.TabIndex = 5;
             // 
             // lblAppIdSni
@@ -341,6 +340,7 @@ namespace SyncKusto
             this.btnCertificate.TabIndex = 8;
             this.btnCertificate.Text = "...";
             this.btnCertificate.UseVisualStyleBackColor = true;
+            this.btnCertificate.Click += new System.EventHandler(this.btnCertificate_Click);
             // 
             // SchemaPickerControl
             // 

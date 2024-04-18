@@ -12,6 +12,7 @@ using SyncKusto.Validation.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -180,6 +181,12 @@ namespace SyncKusto
             }
         }
 
+        private void cmbAuthentication_SelectedValueChanged(object sender, EventArgs e)
+        {
+            pnlApplicationAuthentication.Visible = Authentication == AuthenticationMode.AadApplication;
+            pnlApplicationSniAuthentication.Visible = Authentication == AuthenticationMode.AadApplicationSni;
+        }
+
         private void rbKusto_CheckedChanged(object sender, EventArgs e) =>
             SourceButtonCheckChange(sender, SourceSelection.Kusto());
 
@@ -273,10 +280,39 @@ namespace SyncKusto
                 txtOperationProgress.Text = message;
         }
 
-        private void cmbAuthentication_SelectedValueChanged(object sender, EventArgs e)
+        private void btnCertificate_Click(object sender, EventArgs e)
         {
-            pnlApplicationAuthentication.Visible = Authentication == AuthenticationMode.AadApplication;
-            pnlApplicationSniAuthentication.Visible = Authentication == AuthenticationMode.AadApplicationSni;
+            // Show the certificate selection dialog
+            var selectedCertificateCollection = X509Certificate2UI.SelectFromCollection(
+                GetCertificates(),
+                "Select a certificate",
+                "Choose a certificate for authentication",
+                X509SelectionFlag.SingleSelection);
+
+            if (selectedCertificateCollection != null &&
+                selectedCertificateCollection.Count == 1)
+            {
+                txtCertificate.Text = selectedCertificateCollection[0].Thumbprint;
+            }
+        }
+
+        /// <summary>
+        /// Get all the certificates in both the Current User and Local Machine locations.
+        /// </summary>
+        /// <returns>A collection of certificates</returns>
+        private X509Certificate2Collection GetCertificates()
+        {
+            X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+            store.Open(OpenFlags.ReadOnly);
+            X509Certificate2Collection certificates = store.Certificates;
+            store.Close();
+
+            store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+            store.Open(OpenFlags.ReadOnly);
+            certificates.AddRange(store.Certificates);
+            store.Close();
+
+            return certificates;
         }
     }
 }
