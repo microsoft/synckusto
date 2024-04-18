@@ -7,6 +7,7 @@ using SyncKusto.Functional;
 using SyncKusto.Kusto;
 using SyncKusto.Kusto.DatabaseSchemaBuilder;
 using SyncKusto.SyncSources;
+using SyncKusto.Utilities;
 using SyncKusto.Validation.ErrorMessages;
 using SyncKusto.Validation.Infrastructure;
 using System;
@@ -108,10 +109,18 @@ namespace SyncKusto
                         return QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text);
 
                     case AuthenticationMode.AadApplication:
-                        return QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text, txtAppId.Text, txtAppKey.Text);
+                        return QueryEngine.GetKustoConnectionStringBuilder(
+                            txtCluster.Text,
+                            txtDatabase.Text,
+                            aadClientId: txtAppId.Text,
+                            aadClientKey: txtAppKey.Text);
 
                     case AuthenticationMode.AadApplicationSni:
-                        throw new NotImplementedException("TODO");
+                        return QueryEngine.GetKustoConnectionStringBuilder(
+                            txtCluster.Text,
+                            txtDatabase.Text,
+                            aadClientId: txtAppIdSni.Text,
+                            certificateThumbprint: txtCertificate.Text);
 
                     default:
                         throw new Exception("Unknown authentication type");
@@ -158,7 +167,11 @@ namespace SyncKusto
                         .Or(Spec<SchemaPickerControl>
                             .IsTrue(s => s.Authentication == AuthenticationMode.AadApplication)
                             .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppId.Text)
-                                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppKey.Text)))))
+                                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppKey.Text))))
+                        .Or(Spec<SchemaPickerControl>
+                            .IsTrue(s => s.Authentication == AuthenticationMode.AadApplicationSni)
+                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppIdSni.Text)
+                                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtCertificate.Text)))))
                 .IsSatisfiedBy(this);
 
         private void ToggleFilePathSourcePanel(bool predicate) => pnlFilePath.Visible = predicate;
@@ -284,7 +297,7 @@ namespace SyncKusto
         {
             // Show the certificate selection dialog
             var selectedCertificateCollection = X509Certificate2UI.SelectFromCollection(
-                GetCertificates(),
+                CertificateStore.GetAllCertificates(),
                 "Select a certificate",
                 "Choose a certificate for authentication",
                 X509SelectionFlag.SingleSelection);
@@ -294,25 +307,6 @@ namespace SyncKusto
             {
                 txtCertificate.Text = selectedCertificateCollection[0].Thumbprint;
             }
-        }
-
-        /// <summary>
-        /// Get all the certificates in both the Current User and Local Machine locations.
-        /// </summary>
-        /// <returns>A collection of certificates</returns>
-        private X509Certificate2Collection GetCertificates()
-        {
-            X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
-            store.Open(OpenFlags.ReadOnly);
-            X509Certificate2Collection certificates = store.Certificates;
-            store.Close();
-
-            store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-            store.Open(OpenFlags.ReadOnly);
-            certificates.AddRange(store.Certificates);
-            store.Close();
-
-            return certificates;
         }
     }
 }
