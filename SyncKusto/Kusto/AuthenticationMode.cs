@@ -4,11 +4,12 @@
 namespace SyncKusto.Kusto
 {
     /// <summary>
-    /// When connecting to a Kusto cluster, this enum contains the multiple methods of authentication are supported. 
+    /// When connecting to a Kusto cluster, this enum contains the multiple methods of authentication are supported.
     /// </summary>
     public enum AuthenticationMode
     {
         AadFederated,
-        AadApplication
+        AadApplication,
+        AadApplicationSni
     };
 }

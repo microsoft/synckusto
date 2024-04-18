@@ -19,12 +19,22 @@ namespace SyncKusto
 {
     public partial class SchemaPickerControl : UserControl
     {
+        private const string ENTRA_ID_USER = "Microsoft Entra ID User";
+        private const string ENTRA_ID_APP_KEY = "Microsoft Entra ID App (Key)";
+        private const string ENTRA_ID_APP_SNI = "Microsoft Entra ID App (SubjectName/Issuer)";
+
         /// <summary>
         ///     Default constructor to make the Windows Forms designer happy
         /// </summary>
         public SchemaPickerControl()
         {
             InitializeComponent();
+
+            this.cmbAuthentication.Items.AddRange(
+                new object[] {
+                    ENTRA_ID_USER,
+                    ENTRA_ID_APP_KEY,
+                    ENTRA_ID_APP_SNI });
 
             this.cmbAuthentication.SelectedIndex = 0;
         }
@@ -70,11 +80,14 @@ namespace SyncKusto
             {
                 switch (cmbAuthentication.SelectedItem)
                 {
-                    case "Entra User":
+                    case ENTRA_ID_USER:
                         return AuthenticationMode.AadFederated;
 
-                    case "Entra App (Key)":
+                    case ENTRA_ID_APP_KEY:
                         return AuthenticationMode.AadApplication;
+
+                    case ENTRA_ID_APP_SNI:
+                        return AuthenticationMode.AadApplicationSni;
 
                     default:
                         throw new Exception("Unknown authentication type");
@@ -95,6 +108,9 @@ namespace SyncKusto
 
                     case AuthenticationMode.AadApplication:
                         return QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text, txtAppId.Text, txtAppKey.Text);
+
+                    case AuthenticationMode.AadApplicationSni:
+                        throw new NotImplementedException("TODO");
 
                     default:
                         throw new Exception("Unknown authentication type");
@@ -260,6 +276,7 @@ namespace SyncKusto
         private void cmbAuthentication_SelectedValueChanged(object sender, EventArgs e)
         {
             pnlApplicationAuthentication.Visible = Authentication == AuthenticationMode.AadApplication;
+            pnlApplicationSniAuthentication.Visible = Authentication == AuthenticationMode.AadApplicationSni;
         }
     }
 }
