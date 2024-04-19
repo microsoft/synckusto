@@ -111,6 +111,12 @@
       <DependentUpon>DropWarningForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Kusto\FormattedCslCommandGenerator.cs" />
+    <Compile Include="SettingsFormOld.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SettingsFormOld.Designer.cs">
+      <DependentUpon>SettingsFormOld.cs</DependentUpon>
+    </Compile>
     <Compile Include="SettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -190,6 +196,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="SettingsForm.resx">
       <DependentUpon>SettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SettingsFormOld.resx">
+      <DependentUpon>SettingsFormOld.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
