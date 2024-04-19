@@ -498,7 +498,7 @@ namespace SyncKusto
         {
             if (string.IsNullOrWhiteSpace(SettingsWrapper.KustoClusterForTempDatabases))
             {
-                var frm = new SettingsFormOld();
+                var frm = new SettingsForm();
                 frm.ShowDialog();
             }
 
