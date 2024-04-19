@@ -135,9 +135,9 @@ namespace SyncKusto
             // 
             // btnCertificate
             // 
-            this.btnCertificate.Location = new System.Drawing.Point(355, 45);
+            this.btnCertificate.Location = new System.Drawing.Point(349, 48);
             this.btnCertificate.Name = "btnCertificate";
-            this.btnCertificate.Size = new System.Drawing.Size(32, 32);
+            this.btnCertificate.Size = new System.Drawing.Size(39, 31);
             this.btnCertificate.TabIndex = 8;
             this.btnCertificate.Text = "...";
             this.btnCertificate.UseVisualStyleBackColor = true;
@@ -148,7 +148,7 @@ namespace SyncKusto
             this.txtCertificate.Location = new System.Drawing.Point(180, 48);
             this.txtCertificate.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtCertificate.Name = "txtCertificate";
-            this.txtCertificate.Size = new System.Drawing.Size(167, 26);
+            this.txtCertificate.Size = new System.Drawing.Size(160, 26);
             this.txtCertificate.TabIndex = 7;
             // 
             // lblCertificate
