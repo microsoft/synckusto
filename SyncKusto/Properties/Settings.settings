@@ -26,8 +26,5 @@
     <Setting Name="UseLegacyCslExtension" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
-    <Setting Name="CertificationLocation" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Current User</Value>
-    </Setting>
   </Settings>
 </SettingsFile>

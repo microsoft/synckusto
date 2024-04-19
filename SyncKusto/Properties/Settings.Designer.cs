@@ -118,17 +118,5 @@ namespace SyncKusto.Properties {
                 this["UseLegacyCslExtension"] = value;
             }
         }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Current User")]
-        public string CertificationLocation {
-            get {
-                return ((string)(this["CertificationLocation"]));
-            }
-            set {
-                this["CertificationLocation"] = value;
-            }
-        }
     }
 }
