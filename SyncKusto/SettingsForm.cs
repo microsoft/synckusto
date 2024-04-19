@@ -58,7 +58,8 @@ namespace SyncKusto
             SettingsWrapper.UseLegacyCslExtension = cbUseLegacyCslExtension.Checked;
 
             // Only check the Kusto settings if they changed
-            if (SettingsWrapper.KustoClusterForTempDatabases != txtKustoCluster.Text || SettingsWrapper.TemporaryKustoDatabase != txtKustoDatabase.Text)
+            if (SettingsWrapper.KustoClusterForTempDatabases != txtKustoCluster.Text ||
+                SettingsWrapper.TemporaryKustoDatabase != txtKustoDatabase.Text)
             {
                 // Allow for multiple ways of specifying a cluster name
                 if (string.IsNullOrEmpty(txtKustoCluster.Text))
@@ -140,12 +141,20 @@ namespace SyncKusto
 
                     if (functionCount != 0 || tableCount != 0)
                     {
-                        MessageBox.Show($"Drop all functions and tables in the {txtKustoDatabase.Text} database before specifying this as the temporary database. " +
-                            $"This check is performed to reinforce the point that this databse will be wiped every time a comparison is run.",
-                            "Error Validating Empty Database",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Error);
-                        return;
+                        var wipeDialogResult = MessageBox.Show($"WARNING! There are existing functions and tables in the {txtKustoDatabase.Text} database" +
+                            $" on the {txtKustoCluster.Text} cluster. If you proceed, everything will be dropped from that database every time a comparison " +
+                            $"is run. Do you wish to DROP EVERYTHING in the '{txtKustoDatabase.Text}' database?",
+                            "Non-Empty Database",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning);
+                        if (wipeDialogResult != DialogResult.Yes)
+                        {
+                            return;
+                        }
+
+                        // Note that we don't actually need to clean the database here. We've gotten
+                        // permission to do so and it will happen automatically as needed during
+                        // schema comparison operations.
                     }
                 }
                 catch (Exception ex)
