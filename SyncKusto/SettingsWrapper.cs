@@ -147,8 +147,7 @@ namespace SyncKusto
                     return result;
                 }
 
-                // Couldn't parse so we'll go with CurrentUser.
-                return StoreLocation.CurrentUser;
+                throw new Exception($"Could not map {currentValue} to StoreLocation enum type.");
             }
             set
             {
