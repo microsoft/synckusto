@@ -152,5 +152,16 @@ namespace SyncKusto.Properties {
                 this["RecentDatabases"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection RecentAppIds {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["RecentAppIds"]));
+            }
+            set {
+                this["RecentAppIds"] = value;
+            }
+        }
     }
 }
