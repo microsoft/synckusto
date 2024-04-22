@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using SyncKusto.Properties;
+using System.Security.Cryptography.X509Certificates;
 
 namespace SyncKusto
 {
@@ -50,7 +51,7 @@ namespace SyncKusto
         }
 
         /// <summary>
-        /// The AAD Authority to use to authenticate a user. For user auth, this might work when it's empty depending on the tenant configuration, 
+        /// The AAD Authority to use to authenticate a user. For user auth, this might work when it's empty depending on the tenant configuration,
         /// but it's always required for AAD application auth.
         /// </summary>
         public static string AADAuthority
@@ -71,7 +72,7 @@ namespace SyncKusto
             get
             {
                 bool? currentSetting = Settings.Default["KustoObjectDropWarning"] as bool?;
-                return currentSetting??false;
+                return currentSetting ?? false;
             }
             set
             {
@@ -123,8 +124,30 @@ namespace SyncKusto
         /// Gets the file extension to use throughout the application when reading and writing Kusto files
         /// </summary>
         public static string FileExtension
-        { 
+        {
             get => SettingsWrapper.UseLegacyCslExtension.GetValueOrDefault() ? "csl" : "kql";
+        }
+
+        /// <summary>
+        /// The certificate location to search use when displaing certs in the Subject Name Issuer cert picker.
+        /// </summary>
+        public static string CertificateLocation
+        {
+            get
+            {
+                var currentValue = Settings.Default["CertificateLocation"] as string;
+                if (string.IsNullOrWhiteSpace(currentValue))
+                {
+                    return StoreLocation.CurrentUser.ToString();
+                }
+
+                return currentValue;
+            }
+            set
+            {
+                Settings.Default["CertificateLocation"] = value;
+                Settings.Default.Save();
+            }
         }
     }
 }

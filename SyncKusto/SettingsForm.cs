@@ -8,6 +8,7 @@ using SyncKusto.Kusto;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Security.Cryptography.X509Certificates;
 using System.Windows.Forms;
 
 namespace SyncKusto
@@ -23,6 +24,8 @@ namespace SyncKusto
         public SettingsForm()
         {
             InitializeComponent();
+
+            cbCertLocation.Items.AddRange(Enum.GetNames(typeof(StoreLocation)));
         }
 
         /// <summary>
@@ -39,6 +42,7 @@ namespace SyncKusto
             cbTableFieldsOnNewLine.Checked = SettingsWrapper.TableFieldsOnNewLine ?? false;
             cbCreateMerge.Checked = SettingsWrapper.CreateMergeEnabled ?? false;
             cbUseLegacyCslExtension.Checked = SettingsWrapper.UseLegacyCslExtension ?? false;
+            cbCertLocation.SelectedItem = SettingsWrapper.CertificateLocation;
         }
 
         /// <summary>
@@ -56,6 +60,7 @@ namespace SyncKusto
             SettingsWrapper.KustoObjectDropWarning = chkTableDropWarning.Checked;
             SettingsWrapper.AADAuthority = txtAuthority.Text;
             SettingsWrapper.UseLegacyCslExtension = cbUseLegacyCslExtension.Checked;
+            SettingsWrapper.CertificateLocation = cbCertLocation.SelectedItem.ToString();
 
             // Only check the Kusto settings if they changed
             if (SettingsWrapper.KustoClusterForTempDatabases != txtKustoCluster.Text ||

@@ -52,6 +52,8 @@ namespace SyncKusto
             this.cbTableFieldsOnNewLine = new System.Windows.Forms.CheckBox();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnOk = new System.Windows.Forms.Button();
+            this.label6 = new System.Windows.Forms.Label();
+            this.cbCertLocation = new System.Windows.Forms.ComboBox();
             this.tabControl.SuspendLayout();
             this.tpTempDatabase.SuspendLayout();
             this.tcEntraId.SuspendLayout();
@@ -155,6 +157,8 @@ namespace SyncKusto
             // 
             // tcEntraId
             // 
+            this.tcEntraId.Controls.Add(this.cbCertLocation);
+            this.tcEntraId.Controls.Add(this.label6);
             this.tcEntraId.Controls.Add(this.txtAuthority);
             this.tcEntraId.Controls.Add(this.label3);
             this.tcEntraId.Location = new System.Drawing.Point(4, 29);
@@ -162,7 +166,7 @@ namespace SyncKusto
             this.tcEntraId.Padding = new System.Windows.Forms.Padding(3, 10, 3, 10);
             this.tcEntraId.Size = new System.Drawing.Size(526, 248);
             this.tcEntraId.TabIndex = 1;
-            this.tcEntraId.Text = "Entra Id";
+            this.tcEntraId.Text = "Authentication";
             this.tcEntraId.UseVisualStyleBackColor = true;
             // 
             // txtAuthority
@@ -299,6 +303,26 @@ namespace SyncKusto
             this.btnOk.UseVisualStyleBackColor = true;
             this.btnOk.Click += new System.EventHandler(this.btnOk_Click);
             // 
+            // label6
+            // 
+            this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label6.Location = new System.Drawing.Point(4, 143);
+            this.label6.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(498, 25);
+            this.label6.TabIndex = 110;
+            this.label6.Text = "Certificate Location for Subject Name Issuer Auth:";
+            // 
+            // cbCertLocation
+            // 
+            this.cbCertLocation.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbCertLocation.FormattingEnabled = true;
+            this.cbCertLocation.Location = new System.Drawing.Point(8, 171);
+            this.cbCertLocation.Name = "cbCertLocation";
+            this.cbCertLocation.Size = new System.Drawing.Size(501, 28);
+            this.cbCertLocation.TabIndex = 111;
+            // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -347,5 +371,7 @@ namespace SyncKusto
         private System.Windows.Forms.CheckBox cbUseLegacyCslExtension;
         private System.Windows.Forms.Button btnCancel;
         private System.Windows.Forms.Button btnOk;
+        private System.Windows.Forms.ComboBox cbCertLocation;
+        private System.Windows.Forms.Label label6;
     }
 }
