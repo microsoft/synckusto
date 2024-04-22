@@ -318,6 +318,7 @@ namespace SyncKusto
         public void SaveRecentValues()
         {
             SettingsWrapper.AddRecentCluster(cbCluster.Text);
+            SettingsWrapper.AddRecentDatabase(cbDatabase.Text);
         }
     }
 }

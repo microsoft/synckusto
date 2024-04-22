@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Kusto.Data;
 using SyncKusto.Properties;
 using System;
 using System.Collections;
@@ -189,29 +190,67 @@ namespace SyncKusto
             }
         }
 
+        /// <summary>
+        /// Get or set the most recently used clusters
+        /// </summary>
+        public static List<string> RecentDatabases
+        {
+            get
+            {
+                var currentValue = Settings.Default["RecentDatabases"] as StringCollection;
+                if (currentValue == null)
+                {
+                    return new List<string>();
+                }
+
+                return currentValue.Cast<string>().ToList();
+            }
+            set
+            {
+                if (!(value is IList<string>))
+                {
+                    throw new ArgumentException("Value must be of type IList<string>");
+                }
+
+                var sc = new StringCollection();
+                sc.AddRange(value.ToArray());
+                Settings.Default["RecentDatabases"] = sc;
+                Settings.Default.Save();
+            }
+        }
+
         public static void AddRecentCluster(string cluster)
         {
-            if (string.IsNullOrWhiteSpace(cluster))
+            RecentClusters = AddRecentItem(RecentClusters, cluster);
+        }
+
+        public static void AddRecentDatabase(string database)
+        {
+            RecentDatabases = AddRecentItem(RecentDatabases, database);
+        }
+
+        private static List<string> AddRecentItem(List<string> itemList, string item)
+        {
+            if (string.IsNullOrWhiteSpace(item))
             {
-                return;
+                return itemList;
             }
 
-            var clusterList = RecentClusters;
-
-            if (RecentClusters.Contains(cluster))
+            if (itemList.Contains(item))
             {
                 // To bubble this to the top we'll first remove it from the list and then the next
                 // code block will add it back in.
-                clusterList.Remove(cluster);
+                itemList.Remove(item);
             }
 
             // Add it to the bottom of the list
-            clusterList.Insert(0, cluster);
-            while (clusterList.Count > 2)
+            itemList.Insert(0, item);
+            while (itemList.Count > 10)
             {
-                clusterList.RemoveAt(clusterList.Count - 1);
+                itemList.RemoveAt(itemList.Count - 1);
             }
-            RecentClusters = clusterList;
+
+            return itemList;
         }
     }
 }
