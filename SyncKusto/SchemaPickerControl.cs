@@ -7,11 +7,13 @@ using SyncKusto.Functional;
 using SyncKusto.Kusto;
 using SyncKusto.Kusto.DatabaseSchemaBuilder;
 using SyncKusto.SyncSources;
+using SyncKusto.Utilities;
 using SyncKusto.Validation.ErrorMessages;
 using SyncKusto.Validation.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -19,12 +21,24 @@ namespace SyncKusto
 {
     public partial class SchemaPickerControl : UserControl
     {
+        private const string ENTRA_ID_USER = "Microsoft Entra ID User";
+        private const string ENTRA_ID_APP_KEY = "Microsoft Entra ID App (Key)";
+        private const string ENTRA_ID_APP_SNI = "Microsoft Entra ID App (SubjectName/Issuer)";
+
         /// <summary>
         ///     Default constructor to make the Windows Forms designer happy
         /// </summary>
         public SchemaPickerControl()
         {
             InitializeComponent();
+
+            this.cmbAuthentication.Items.AddRange(
+                new object[] {
+                    ENTRA_ID_USER,
+                    ENTRA_ID_APP_KEY,
+                    ENTRA_ID_APP_SNI });
+
+            this.cmbAuthentication.SelectedIndex = 0;
         }
 
         /// <summary>
@@ -62,8 +76,26 @@ namespace SyncKusto
             set => grpSourceSchema.Text = value;
         }
 
-        private AuthenticationMode Authentication =>
-            rbFederated.Checked ? AuthenticationMode.AadFederated : AuthenticationMode.AadApplication;
+        private AuthenticationMode Authentication
+        {
+            get
+            {
+                switch (cmbAuthentication.SelectedItem)
+                {
+                    case ENTRA_ID_USER:
+                        return AuthenticationMode.AadFederated;
+
+                    case ENTRA_ID_APP_KEY:
+                        return AuthenticationMode.AadApplication;
+
+                    case ENTRA_ID_APP_SNI:
+                        return AuthenticationMode.AadApplicationSni;
+
+                    default:
+                        throw new Exception("Unknown authentication type");
+                }
+            }
+        }
 
         public string SourceFilePath => txtFilePath.Text.HandleLongFileNames();
 
@@ -71,9 +103,28 @@ namespace SyncKusto
         {
             get
             {
-                return rbApplication.Checked
-                    ? QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text, txtAppId.Text, txtAppKey.Text)
-                    : QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text);
+                switch (Authentication)
+                {
+                    case AuthenticationMode.AadFederated:
+                        return QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text);
+
+                    case AuthenticationMode.AadApplication:
+                        return QueryEngine.GetKustoConnectionStringBuilder(
+                            txtCluster.Text,
+                            txtDatabase.Text,
+                            aadClientId: txtAppId.Text,
+                            aadClientKey: txtAppKey.Text);
+
+                    case AuthenticationMode.AadApplicationSni:
+                        return QueryEngine.GetKustoConnectionStringBuilder(
+                            txtCluster.Text,
+                            txtDatabase.Text,
+                            aadClientId: txtAppIdSni.Text,
+                            certificateThumbprint: txtCertificate.Text);
+
+                    default:
+                        throw new Exception("Unknown authentication type");
+                }
             }
         }
 
@@ -116,7 +167,11 @@ namespace SyncKusto
                         .Or(Spec<SchemaPickerControl>
                             .IsTrue(s => s.Authentication == AuthenticationMode.AadApplication)
                             .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppId.Text)
-                                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppKey.Text)))))
+                                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppKey.Text))))
+                        .Or(Spec<SchemaPickerControl>
+                            .IsTrue(s => s.Authentication == AuthenticationMode.AadApplicationSni)
+                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppIdSni.Text)
+                                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtCertificate.Text)))))
                 .IsSatisfiedBy(this);
 
         private void ToggleFilePathSourcePanel(bool predicate) => pnlFilePath.Visible = predicate;
@@ -139,8 +194,11 @@ namespace SyncKusto
             }
         }
 
-        private void rbApplication_CheckedChanged(object sender, EventArgs e) =>
-            pnlApplicationAuthentication.Visible = ((RadioButton)sender).Checked;
+        private void cmbAuthentication_SelectedValueChanged(object sender, EventArgs e)
+        {
+            pnlApplicationAuthentication.Visible = Authentication == AuthenticationMode.AadApplication;
+            pnlApplicationSniAuthentication.Visible = Authentication == AuthenticationMode.AadApplicationSni;
+        }
 
         private void rbKusto_CheckedChanged(object sender, EventArgs e) =>
             SourceButtonCheckChange(sender, SourceSelection.Kusto());
@@ -233,6 +291,22 @@ namespace SyncKusto
         {
             if (Spec<string>.NotNull(s => s).IsSatisfiedBy(message))
                 txtOperationProgress.Text = message;
+        }
+
+        private void btnCertificate_Click(object sender, EventArgs e)
+        {
+            // Show the certificate selection dialog
+            var selectedCertificateCollection = X509Certificate2UI.SelectFromCollection(
+                CertificateStore.GetAllCertificates(),
+                "Select a certificate",
+                "Choose a certificate for authentication",
+                X509SelectionFlag.SingleSelection);
+
+            if (selectedCertificateCollection != null &&
+                selectedCertificateCollection.Count == 1)
+            {
+                txtCertificate.Text = selectedCertificateCollection[0].Thumbprint;
+            }
         }
     }
 }

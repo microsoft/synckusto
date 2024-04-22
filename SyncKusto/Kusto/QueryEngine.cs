@@ -10,6 +10,7 @@ using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
 using Newtonsoft.Json;
+using SyncKusto.Utilities;
 
 namespace SyncKusto.Kusto
 {
@@ -222,33 +223,70 @@ namespace SyncKusto.Kusto
         /// <param name="database">The name of the database to connect to</param>
         /// <param name="aadClientId">Optionally connect with AAD client app</param>
         /// <param name="aadClientKey">Optional key for AAD client app</param>
+        /// <param name="certificateThumbprint">Optional thumbprint of a certificate to use for Subject Name Issuer authentication</param>
         /// <returns>A connection string for accessing Kusto</returns>
-        public static KustoConnectionStringBuilder GetKustoConnectionStringBuilder(string cluster, string database, string aadClientId = null, string aadClientKey = null)
+        public static KustoConnectionStringBuilder GetKustoConnectionStringBuilder(
+            string cluster,
+            string database,
+            string aadClientId = null,
+            string aadClientKey = null,
+            string certificateThumbprint = null)
         {
-            if (string.IsNullOrEmpty(aadClientId) != string.IsNullOrEmpty(aadClientKey))
+            if (string.IsNullOrEmpty(aadClientId) != string.IsNullOrEmpty(aadClientKey) &&
+                string.IsNullOrEmpty(aadClientId) != string.IsNullOrEmpty(certificateThumbprint))
             {
                 throw new ArgumentException("If either aadClientId or aadClientKey are specified, they must both be specified.");
             }
 
-            cluster = NormalizeClusterName(cluster);
-
-            var kcsb = new KustoConnectionStringBuilder(cluster)
+            if (string.IsNullOrWhiteSpace(SettingsWrapper.AADAuthority))
             {
-                FederatedSecurity = true,
-                InitialCatalog = database,
-                Authority = SettingsWrapper.AADAuthority
-            };
-            if (!string.IsNullOrWhiteSpace(aadClientId) && !string.IsNullOrWhiteSpace(aadClientKey))
-            {
-                kcsb.ApplicationKey = aadClientKey;
-                kcsb.ApplicationClientId = aadClientId;
+                throw new Exception("Authority value must be specified in the Settings dialog.");
             }
 
-            return kcsb;
+            cluster = NormalizeClusterName(cluster);
+
+            // User auth
+            if (string.IsNullOrWhiteSpace(aadClientId))
+            {
+                return new KustoConnectionStringBuilder(cluster)
+                {
+                    FederatedSecurity = true,
+                    InitialCatalog = database,
+                    Authority = SettingsWrapper.AADAuthority
+                };
+            }
+
+            // App Key auth
+            if (!string.IsNullOrWhiteSpace(aadClientId) && !string.IsNullOrWhiteSpace(aadClientKey))
+            {
+                return new KustoConnectionStringBuilder(cluster)
+                {
+                    FederatedSecurity = true,
+                    InitialCatalog = database,
+                    Authority = SettingsWrapper.AADAuthority,
+                    ApplicationKey = aadClientKey,
+                    ApplicationClientId = aadClientId
+                };
+            }
+
+            // App SNI auth
+            if (!string.IsNullOrWhiteSpace(aadClientId) && !string.IsNullOrWhiteSpace(certificateThumbprint))
+            {
+                return new KustoConnectionStringBuilder(cluster)
+                {
+                    InitialCatalog = database,
+                }.WithAadApplicationCertificateAuthentication(
+                    aadClientId,
+                    CertificateStore.GetCertificate(certificateThumbprint),
+                    SettingsWrapper.AADAuthority,
+                    true);
+            }
+
+            throw new Exception("Could not determine how to create a connection string from provided parameters.");
         }
 
         /// <summary>
-        /// Allow users to specify cluster.eastus2, cluster.eastus2.kusto.windows.net, or https://cluster.eastus2.kusto.windows.net 
+        /// Allow users to specify cluster.eastus2, cluster.eastus2.kusto.windows.net, or https://cluster.eastus2.kusto.windows.net
         /// </summary>
         /// <param name="cluster">Input cluster name</param>
         /// <returns>Normalized cluster name e.g. https://cluster.eastus2.kusto.windows.net</returns>

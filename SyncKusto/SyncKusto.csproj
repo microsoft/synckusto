@@ -99,6 +99,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Utilities\CertificateStore.cs" />
     <Compile Include="ChangeModel\DictionaryDifferenceMapper.cs" />
     <Compile Include="ChangeModel\Difference.cs" />
     <Compile Include="ChangeModel\Schema\FunctionSchemaDifference.cs" />

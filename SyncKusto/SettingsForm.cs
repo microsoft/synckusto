@@ -112,7 +112,7 @@ namespace SyncKusto
                     }
                     else if (ex.Message.Contains("Kusto client failed to perform authentication"))
                     {
-                        MessageBox.Show($"Could not authenticate with AAD. Please verify that the AAD Authority is specified correctly.", "Error Authenticating", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Could not authenticate with Microsoft Entra ID. Please verify that the Microsoft Entra ID Authority is specified correctly.", "Error Authenticating", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                     else
                     {

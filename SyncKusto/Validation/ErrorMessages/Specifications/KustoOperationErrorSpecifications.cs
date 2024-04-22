@@ -23,7 +23,7 @@ namespace SyncKusto.Validation.ErrorMessages.Specifications
         public static IOperationErrorMessageSpecification CannotAuthenticate() =>
             new OperationErrorMessageSpecification(Spec<Exception>
                     .IsTrue(ex => ex is KustoClientAuthenticationException),
-                "Could not authenticate with AAD. Check the AAD authority in the Settings.");
+                "Could not authenticate with AAD. Check the Entra ID authority in the Settings.");
 
         public static IOperationErrorMessageSpecification NoPermissions() =>
             new OperationErrorMessageSpecification(Spec<Exception>
