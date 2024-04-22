@@ -219,16 +219,35 @@ namespace SyncKusto
             }
         }
 
+        /// <summary>
+        /// Include a cluster in the recent history list. If it's already in the list, it will be
+        /// moved to the top of the list.
+        /// </summary>
+        /// <param name="cluster">The cluster to include</param>
         public static void AddRecentCluster(string cluster)
         {
             RecentClusters = AddRecentItem(RecentClusters, cluster);
         }
 
+        /// <summary>
+        /// Include a database in the recent history list. If it's already in the list, it will be
+        /// moved to the top of the list.
+        /// </summary>
+        /// <param name="database">The database to include</param>
         public static void AddRecentDatabase(string database)
         {
             RecentDatabases = AddRecentItem(RecentDatabases, database);
         }
 
+        /// <summary>
+        /// Make sure that an item is included in a list. If it's a new item, it gets added at the
+        /// top of the list. If it's an existing item, that item gets moved to the top of the list.
+        /// If the list is longer than 10 items, the least recently used items are truncated to get
+        /// back to 10.
+        /// </summary>
+        /// <param name="itemList">The list of items to update.</param>
+        /// <param name="item">The item to include in the list.</param>
+        /// <returns>The updated list of items.</returns>
         private static List<string> AddRecentItem(List<string> itemList, string item)
         {
             if (string.IsNullOrWhiteSpace(item))
