@@ -121,7 +121,7 @@ namespace SyncKusto.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("CurrentUser")]
         public string CertificateLocation {
             get {
                 return ((string)(this["CertificateLocation"]));

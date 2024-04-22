@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using SyncKusto.Properties;
+using System;
 using System.Security.Cryptography.X509Certificates;
 
 namespace SyncKusto
@@ -131,21 +132,27 @@ namespace SyncKusto
         /// <summary>
         /// The certificate location to search use when displaing certs in the Subject Name Issuer cert picker.
         /// </summary>
-        public static string CertificateLocation
+        public static StoreLocation CertificateLocation
         {
             get
             {
                 var currentValue = Settings.Default["CertificateLocation"] as string;
                 if (string.IsNullOrWhiteSpace(currentValue))
                 {
-                    return StoreLocation.CurrentUser.ToString();
+                    return StoreLocation.CurrentUser;
                 }
 
-                return currentValue;
+                if (Enum.TryParse(currentValue, out StoreLocation result))
+                {
+                    return result;
+                }
+
+                // Couldn't parse so we'll go with CurrentUser.
+                return StoreLocation.CurrentUser;
             }
             set
             {
-                Settings.Default["CertificateLocation"] = value;
+                Settings.Default["CertificateLocation"] = value.ToString();
                 Settings.Default.Save();
             }
         }

@@ -30,16 +30,11 @@
         /// Get all the certificates in both the Current User and Local Machine locations.
         /// </summary>
         /// <returns>A collection of certificates</returns>
-        public static X509Certificate2Collection GetAllCertificates()
+        public static X509Certificate2Collection GetAllCertificates(StoreLocation storeLocation)
         {
-            X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+            var store = new X509Store(StoreName.My, storeLocation);
             store.Open(OpenFlags.ReadOnly);
-            X509Certificate2Collection certificates = store.Certificates;
-            store.Close();
-
-            store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-            store.Open(OpenFlags.ReadOnly);
-            certificates.AddRange(store.Certificates);
+            var certificates = store.Certificates;
             store.Close();
 
             return certificates;

@@ -25,7 +25,7 @@ namespace SyncKusto
         {
             InitializeComponent();
 
-            cbCertLocation.Items.AddRange(Enum.GetNames(typeof(StoreLocation)));
+            cbCertLocation.DataSource = Enum.GetValues(typeof(StoreLocation));
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace SyncKusto
             SettingsWrapper.KustoObjectDropWarning = chkTableDropWarning.Checked;
             SettingsWrapper.AADAuthority = txtAuthority.Text;
             SettingsWrapper.UseLegacyCslExtension = cbUseLegacyCslExtension.Checked;
-            SettingsWrapper.CertificateLocation = cbCertLocation.SelectedItem.ToString();
+            SettingsWrapper.CertificateLocation = (StoreLocation)cbCertLocation.SelectedItem;
 
             // Only check the Kusto settings if they changed
             if (SettingsWrapper.KustoClusterForTempDatabases != txtKustoCluster.Text ||

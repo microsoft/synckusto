@@ -297,7 +297,7 @@ namespace SyncKusto
         {
             // Show the certificate selection dialog
             var selectedCertificateCollection = X509Certificate2UI.SelectFromCollection(
-                CertificateStore.GetAllCertificates(),
+                CertificateStore.GetAllCertificates(SettingsWrapper.CertificateLocation),
                 "Select a certificate",
                 "Choose a certificate for authentication",
                 X509SelectionFlag.SingleSelection);
