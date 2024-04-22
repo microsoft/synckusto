@@ -3,6 +3,10 @@
 
 using SyncKusto.Properties;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
 namespace SyncKusto
@@ -130,7 +134,7 @@ namespace SyncKusto
         }
 
         /// <summary>
-        /// The certificate location to search use when displaing certs in the Subject Name Issuer cert picker.
+        /// Get or set the certificate location to search use when displaing certs in the Subject Name Issuer cert picker.
         /// </summary>
         public static StoreLocation CertificateLocation
         {
@@ -154,6 +158,60 @@ namespace SyncKusto
                 Settings.Default["CertificateLocation"] = value.ToString();
                 Settings.Default.Save();
             }
+        }
+
+        /// <summary>
+        /// Get or set the most recently used clusters
+        /// </summary>
+        public static List<string> RecentClusters
+        {
+            get
+            {
+                var currentValue = Settings.Default["RecentClusters"] as StringCollection;
+                if (currentValue == null)
+                {
+                    return new List<string>();
+                }
+
+                return currentValue.Cast<string>().ToList();
+            }
+            set
+            {
+                if (!(value is IList<string>))
+                {
+                    throw new ArgumentException("Value must be of type IList<string>");
+                }
+
+                var sc = new StringCollection();
+                sc.AddRange(value.ToArray());
+                Settings.Default["RecentClusters"] = sc;
+                Settings.Default.Save();
+            }
+        }
+
+        public static void AddRecentCluster(string cluster)
+        {
+            if (string.IsNullOrWhiteSpace(cluster))
+            {
+                return;
+            }
+
+            var clusterList = RecentClusters;
+
+            if (RecentClusters.Contains(cluster))
+            {
+                // To bubble this to the top we'll first remove it from the list and then the next
+                // code block will add it back in.
+                clusterList.Remove(cluster);
+            }
+
+            // Add it to the bottom of the list
+            clusterList.Insert(0, cluster);
+            while (clusterList.Count > 2)
+            {
+                clusterList.RemoveAt(clusterList.Count - 1);
+            }
+            RecentClusters = clusterList;
         }
     }
 }

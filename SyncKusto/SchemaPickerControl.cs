@@ -39,6 +39,8 @@ namespace SyncKusto
                     ENTRA_ID_APP_SNI });
 
             this.cmbAuthentication.SelectedIndex = 0;
+
+            this.cbCluster.Items.AddRange(SettingsWrapper.RecentClusters.ToArray());
         }
 
         /// <summary>
@@ -307,6 +309,15 @@ namespace SyncKusto
             {
                 txtCertificate.Text = selectedCertificateCollection[0].Thumbprint;
             }
+        }
+
+        /// <summary>
+        /// For some of the inputs, we save the most recent values that were used. This method
+        /// updates the storage behind all those settings to include the most recently used values.
+        /// </summary>
+        public void SaveRecentValues()
+        {
+            SettingsWrapper.AddRecentCluster(cbCluster.Text);
         }
     }
 }

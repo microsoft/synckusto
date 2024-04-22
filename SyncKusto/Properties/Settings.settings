@@ -29,5 +29,11 @@
     <Setting Name="CertificateLocation" Type="System.String" Scope="User">
       <Value Profile="(Default)">CurrentUser</Value>
     </Setting>
+    <Setting Name="RecentClusters" Type="System.Collections.Specialized.StringCollection" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="RecentDatabases" Type="System.Collections.Specialized.StringCollection" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

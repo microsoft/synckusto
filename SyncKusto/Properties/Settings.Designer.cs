@@ -130,5 +130,27 @@ namespace SyncKusto.Properties {
                 this["CertificateLocation"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection RecentClusters {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["RecentClusters"]));
+            }
+            set {
+                this["RecentClusters"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection RecentDatabases {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["RecentDatabases"]));
+            }
+            set {
+                this["RecentDatabases"] = value;
+            }
+        }
     }
 }
