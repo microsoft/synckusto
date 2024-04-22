@@ -49,9 +49,7 @@ namespace SyncKusto
             this.lblAppKey = new System.Windows.Forms.Label();
             this.txtAppId = new System.Windows.Forms.TextBox();
             this.lblAppId = new System.Windows.Forms.Label();
-            this.txtDatabase = new System.Windows.Forms.TextBox();
             this.lblDatabase = new System.Windows.Forms.Label();
-            this.txtCluster = new System.Windows.Forms.TextBox();
             this.lblCluster = new System.Windows.Forms.Label();
             this.pnlFilePath = new System.Windows.Forms.Panel();
             this.lblExample = new System.Windows.Forms.Label();
@@ -59,6 +57,8 @@ namespace SyncKusto
             this.btnChooseDirectory = new System.Windows.Forms.Button();
             this.rbKusto = new System.Windows.Forms.RadioButton();
             this.rbFilePath = new System.Windows.Forms.RadioButton();
+            this.cbCluster = new System.Windows.Forms.ComboBox();
+            this.cbDatabase = new System.Windows.Forms.ComboBox();
             this.grpSourceSchema.SuspendLayout();
             this.pnlKusto.SuspendLayout();
             this.grpAuthentication.SuspendLayout();
@@ -93,10 +93,10 @@ namespace SyncKusto
             // 
             // pnlKusto
             // 
+            this.pnlKusto.Controls.Add(this.cbDatabase);
+            this.pnlKusto.Controls.Add(this.cbCluster);
             this.pnlKusto.Controls.Add(this.grpAuthentication);
-            this.pnlKusto.Controls.Add(this.txtDatabase);
             this.pnlKusto.Controls.Add(this.lblDatabase);
-            this.pnlKusto.Controls.Add(this.txtCluster);
             this.pnlKusto.Controls.Add(this.lblCluster);
             this.pnlKusto.Location = new System.Drawing.Point(9, 66);
             this.pnlKusto.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
@@ -238,14 +238,6 @@ namespace SyncKusto
             this.lblAppId.TabIndex = 4;
             this.lblAppId.Text = "App Id:";
             // 
-            // txtDatabase
-            // 
-            this.txtDatabase.Location = new System.Drawing.Point(99, 44);
-            this.txtDatabase.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.txtDatabase.Name = "txtDatabase";
-            this.txtDatabase.Size = new System.Drawing.Size(314, 26);
-            this.txtDatabase.TabIndex = 3;
-            // 
             // lblDatabase
             // 
             this.lblDatabase.AutoSize = true;
@@ -255,14 +247,6 @@ namespace SyncKusto
             this.lblDatabase.Size = new System.Drawing.Size(83, 20);
             this.lblDatabase.TabIndex = 2;
             this.lblDatabase.Text = "Database:";
-            // 
-            // txtCluster
-            // 
-            this.txtCluster.Location = new System.Drawing.Point(99, 4);
-            this.txtCluster.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.txtCluster.Name = "txtCluster";
-            this.txtCluster.Size = new System.Drawing.Size(314, 26);
-            this.txtCluster.TabIndex = 1;
             // 
             // lblCluster
             // 
@@ -342,6 +326,22 @@ namespace SyncKusto
             this.rbFilePath.UseVisualStyleBackColor = true;
             this.rbFilePath.CheckedChanged += new System.EventHandler(this.rbFilePath_CheckedChanged);
             // 
+            // cbCluster
+            // 
+            this.cbCluster.FormattingEnabled = true;
+            this.cbCluster.Location = new System.Drawing.Point(99, 6);
+            this.cbCluster.Name = "cbCluster";
+            this.cbCluster.Size = new System.Drawing.Size(314, 28);
+            this.cbCluster.TabIndex = 5;
+            // 
+            // cbDatabase
+            // 
+            this.cbDatabase.FormattingEnabled = true;
+            this.cbDatabase.Location = new System.Drawing.Point(99, 43);
+            this.cbDatabase.Name = "cbDatabase";
+            this.cbDatabase.Size = new System.Drawing.Size(314, 28);
+            this.cbDatabase.TabIndex = 6;
+            // 
             // SchemaPickerControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -374,9 +374,7 @@ namespace SyncKusto
         private System.Windows.Forms.RadioButton rbKusto;
         private System.Windows.Forms.RadioButton rbFilePath;
         private System.Windows.Forms.Panel pnlKusto;
-        private System.Windows.Forms.TextBox txtDatabase;
         private System.Windows.Forms.Label lblDatabase;
-        private System.Windows.Forms.TextBox txtCluster;
         private System.Windows.Forms.Label lblCluster;
         private System.Windows.Forms.GroupBox grpAuthentication;
         private System.Windows.Forms.Panel pnlApplicationAuthentication;
@@ -393,5 +391,7 @@ namespace SyncKusto
         private System.Windows.Forms.Label lblCertificate;
         private System.Windows.Forms.TextBox txtAppIdSni;
         private System.Windows.Forms.Label lblAppIdSni;
+        private System.Windows.Forms.ComboBox cbCluster;
+        private System.Windows.Forms.ComboBox cbDatabase;
     }
 }

@@ -106,19 +106,19 @@ namespace SyncKusto
                 switch (Authentication)
                 {
                     case AuthenticationMode.AadFederated:
-                        return QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text);
+                        return QueryEngine.GetKustoConnectionStringBuilder(cbCluster.Text, cbDatabase.Text);
 
                     case AuthenticationMode.AadApplication:
                         return QueryEngine.GetKustoConnectionStringBuilder(
-                            txtCluster.Text,
-                            txtDatabase.Text,
+                            cbCluster.Text,
+                            cbDatabase.Text,
                             aadClientId: txtAppId.Text,
                             aadClientKey: txtAppKey.Text);
 
                     case AuthenticationMode.AadApplicationSni:
                         return QueryEngine.GetKustoConnectionStringBuilder(
-                            txtCluster.Text,
-                            txtDatabase.Text,
+                            cbCluster.Text,
+                            cbDatabase.Text,
                             aadClientId: txtAppIdSni.Text,
                             certificateThumbprint: txtCertificate.Text);
 
@@ -160,8 +160,8 @@ namespace SyncKusto
         private bool KustoSourceSpecification() =>
             Spec<SchemaPickerControl>
                 .IsTrue(s => s.SourceSelection == SourceSelection.Kusto())
-                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtCluster.Text))
-                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtDatabase.Text))
+                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbCluster.Text))
+                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbDatabase.Text))
                 .And(
                     Spec<SchemaPickerControl>.IsTrue(s => s.Authentication == AuthenticationMode.AadFederated)
                         .Or(Spec<SchemaPickerControl>
