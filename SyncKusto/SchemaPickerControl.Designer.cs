@@ -41,13 +41,11 @@ namespace SyncKusto
             this.btnCertificate = new System.Windows.Forms.Button();
             this.txtCertificate = new System.Windows.Forms.TextBox();
             this.lblCertificate = new System.Windows.Forms.Label();
-            this.txtAppIdSni = new System.Windows.Forms.TextBox();
             this.lblAppIdSni = new System.Windows.Forms.Label();
             this.cmbAuthentication = new System.Windows.Forms.ComboBox();
             this.pnlApplicationAuthentication = new System.Windows.Forms.Panel();
             this.txtAppKey = new System.Windows.Forms.TextBox();
             this.lblAppKey = new System.Windows.Forms.Label();
-            this.txtAppId = new System.Windows.Forms.TextBox();
             this.lblAppId = new System.Windows.Forms.Label();
             this.lblDatabase = new System.Windows.Forms.Label();
             this.lblCluster = new System.Windows.Forms.Label();
@@ -59,6 +57,8 @@ namespace SyncKusto
             this.rbFilePath = new System.Windows.Forms.RadioButton();
             this.cbCluster = new System.Windows.Forms.ComboBox();
             this.cbDatabase = new System.Windows.Forms.ComboBox();
+            this.cbAppIdSni = new System.Windows.Forms.ComboBox();
+            this.cbAppId = new System.Windows.Forms.ComboBox();
             this.grpSourceSchema.SuspendLayout();
             this.pnlKusto.SuspendLayout();
             this.grpAuthentication.SuspendLayout();
@@ -106,8 +106,8 @@ namespace SyncKusto
             // 
             // grpAuthentication
             // 
-            this.grpAuthentication.Controls.Add(this.pnlApplicationSniAuthentication);
             this.grpAuthentication.Controls.Add(this.cmbAuthentication);
+            this.grpAuthentication.Controls.Add(this.pnlApplicationSniAuthentication);
             this.grpAuthentication.Controls.Add(this.pnlApplicationAuthentication);
             this.grpAuthentication.Location = new System.Drawing.Point(10, 86);
             this.grpAuthentication.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
@@ -121,10 +121,10 @@ namespace SyncKusto
             // 
             // pnlApplicationSniAuthentication
             // 
+            this.pnlApplicationSniAuthentication.Controls.Add(this.cbAppIdSni);
             this.pnlApplicationSniAuthentication.Controls.Add(this.btnCertificate);
             this.pnlApplicationSniAuthentication.Controls.Add(this.txtCertificate);
             this.pnlApplicationSniAuthentication.Controls.Add(this.lblCertificate);
-            this.pnlApplicationSniAuthentication.Controls.Add(this.txtAppIdSni);
             this.pnlApplicationSniAuthentication.Controls.Add(this.lblAppIdSni);
             this.pnlApplicationSniAuthentication.Location = new System.Drawing.Point(9, 71);
             this.pnlApplicationSniAuthentication.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
@@ -161,14 +161,6 @@ namespace SyncKusto
             this.lblCertificate.TabIndex = 6;
             this.lblCertificate.Text = "Certificate Thumbprint:";
             // 
-            // txtAppIdSni
-            // 
-            this.txtAppIdSni.Location = new System.Drawing.Point(180, 8);
-            this.txtAppIdSni.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.txtAppIdSni.Name = "txtAppIdSni";
-            this.txtAppIdSni.Size = new System.Drawing.Size(204, 26);
-            this.txtAppIdSni.TabIndex = 5;
-            // 
             // lblAppIdSni
             // 
             this.lblAppIdSni.AutoSize = true;
@@ -190,9 +182,9 @@ namespace SyncKusto
             // 
             // pnlApplicationAuthentication
             // 
+            this.pnlApplicationAuthentication.Controls.Add(this.cbAppId);
             this.pnlApplicationAuthentication.Controls.Add(this.txtAppKey);
             this.pnlApplicationAuthentication.Controls.Add(this.lblAppKey);
-            this.pnlApplicationAuthentication.Controls.Add(this.txtAppId);
             this.pnlApplicationAuthentication.Controls.Add(this.lblAppId);
             this.pnlApplicationAuthentication.Location = new System.Drawing.Point(9, 71);
             this.pnlApplicationAuthentication.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
@@ -219,14 +211,6 @@ namespace SyncKusto
             this.lblAppKey.Size = new System.Drawing.Size(72, 20);
             this.lblAppKey.TabIndex = 6;
             this.lblAppKey.Text = "App Key:";
-            // 
-            // txtAppId
-            // 
-            this.txtAppId.Location = new System.Drawing.Point(96, 8);
-            this.txtAppId.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.txtAppId.Name = "txtAppId";
-            this.txtAppId.Size = new System.Drawing.Size(288, 26);
-            this.txtAppId.TabIndex = 5;
             // 
             // lblAppId
             // 
@@ -342,6 +326,22 @@ namespace SyncKusto
             this.cbDatabase.Size = new System.Drawing.Size(314, 28);
             this.cbDatabase.TabIndex = 6;
             // 
+            // cbAppIdSni
+            // 
+            this.cbAppIdSni.FormattingEnabled = true;
+            this.cbAppIdSni.Location = new System.Drawing.Point(70, 8);
+            this.cbAppIdSni.Name = "cbAppIdSni";
+            this.cbAppIdSni.Size = new System.Drawing.Size(314, 28);
+            this.cbAppIdSni.TabIndex = 9;
+            // 
+            // cbAppId
+            // 
+            this.cbAppId.FormattingEnabled = true;
+            this.cbAppId.Location = new System.Drawing.Point(70, 8);
+            this.cbAppId.Name = "cbAppId";
+            this.cbAppId.Size = new System.Drawing.Size(314, 28);
+            this.cbAppId.TabIndex = 10;
+            // 
             // SchemaPickerControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -380,7 +380,6 @@ namespace SyncKusto
         private System.Windows.Forms.Panel pnlApplicationAuthentication;
         private System.Windows.Forms.TextBox txtAppKey;
         private System.Windows.Forms.Label lblAppKey;
-        private System.Windows.Forms.TextBox txtAppId;
         private System.Windows.Forms.Label lblAppId;
         private System.Windows.Forms.Label lblExample;
         private System.Windows.Forms.Label txtOperationProgress;
@@ -389,9 +388,10 @@ namespace SyncKusto
         private System.Windows.Forms.Button btnCertificate;
         private System.Windows.Forms.TextBox txtCertificate;
         private System.Windows.Forms.Label lblCertificate;
-        private System.Windows.Forms.TextBox txtAppIdSni;
         private System.Windows.Forms.Label lblAppIdSni;
         private System.Windows.Forms.ComboBox cbCluster;
         private System.Windows.Forms.ComboBox cbDatabase;
+        private System.Windows.Forms.ComboBox cbAppIdSni;
+        private System.Windows.Forms.ComboBox cbAppId;
     }
 }

@@ -115,14 +115,14 @@ namespace SyncKusto
                         return QueryEngine.GetKustoConnectionStringBuilder(
                             cbCluster.Text,
                             cbDatabase.Text,
-                            aadClientId: txtAppId.Text,
+                            aadClientId: cbAppId.Text,
                             aadClientKey: txtAppKey.Text);
 
                     case AuthenticationMode.AadApplicationSni:
                         return QueryEngine.GetKustoConnectionStringBuilder(
                             cbCluster.Text,
                             cbDatabase.Text,
-                            aadClientId: txtAppIdSni.Text,
+                            aadClientId: cbAppIdSni.Text,
                             certificateThumbprint: txtCertificate.Text);
 
                     default:
@@ -169,11 +169,11 @@ namespace SyncKusto
                     Spec<SchemaPickerControl>.IsTrue(s => s.Authentication == AuthenticationMode.AadFederated)
                         .Or(Spec<SchemaPickerControl>
                             .IsTrue(s => s.Authentication == AuthenticationMode.AadApplication)
-                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppId.Text)
+                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbAppId.Text)
                                 .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppKey.Text))))
                         .Or(Spec<SchemaPickerControl>
                             .IsTrue(s => s.Authentication == AuthenticationMode.AadApplicationSni)
-                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppIdSni.Text)
+                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbAppIdSni.Text)
                                 .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtCertificate.Text)))))
                 .IsSatisfiedBy(this);
 
@@ -320,6 +320,8 @@ namespace SyncKusto
         {
             SettingsWrapper.AddRecentCluster(this.cbCluster.Text);
             SettingsWrapper.AddRecentDatabase(this.cbDatabase.Text);
+            SettingsWrapper.AddRecentAppId(this.cbAppId.Text);
+            SettingsWrapper.AddRecentAppId(this.cbAppIdSni.Text);
         }
 
         /// <summary>
@@ -331,6 +333,10 @@ namespace SyncKusto
             this.cbCluster.Items.AddRange(SettingsWrapper.RecentClusters.ToArray());
             this.cbDatabase.Items.Clear();
             this.cbDatabase.Items.AddRange(SettingsWrapper.RecentDatabases.ToArray());
+            this.cbAppId.Items.Clear();
+            this.cbAppId.Items.AddRange(SettingsWrapper.RecentAppIds.ToArray());
+            this.cbAppIdSni.Items.Clear();
+            this.cbAppIdSni.Items.AddRange(SettingsWrapper.RecentAppIds.ToArray());
         }
     }
 }

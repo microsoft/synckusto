@@ -191,7 +191,7 @@ namespace SyncKusto
         }
 
         /// <summary>
-        /// Get or set the most recently used clusters
+        /// Get or set the most recently used databases
         /// </summary>
         public static List<string> RecentDatabases
         {
@@ -220,6 +220,35 @@ namespace SyncKusto
         }
 
         /// <summary>
+        /// Get or set the most recently used application ids
+        /// </summary>
+        public static List<string> RecentAppIds
+        {
+            get
+            {
+                var currentValue = Settings.Default["RecentAppIds"] as StringCollection;
+                if (currentValue == null)
+                {
+                    return new List<string>();
+                }
+
+                return currentValue.Cast<string>().ToList();
+            }
+            set
+            {
+                if (!(value is IList<string>))
+                {
+                    throw new ArgumentException("Value must be of type IList<string>");
+                }
+
+                var sc = new StringCollection();
+                sc.AddRange(value.ToArray());
+                Settings.Default["RecentAppIds"] = sc;
+                Settings.Default.Save();
+            }
+        }
+
+        /// <summary>
         /// Include a cluster in the recent history list. If it's already in the list, it will be
         /// moved to the top of the list.
         /// </summary>
@@ -237,6 +266,16 @@ namespace SyncKusto
         public static void AddRecentDatabase(string database)
         {
             RecentDatabases = AddRecentItem(RecentDatabases, database);
+        }
+
+        /// <summary>
+        /// Include an application id in the recent history list. If it's already in the list, it
+        /// will be moved to the top of the list.
+        /// </summary>
+        /// <param name="applicationId">The application id to include</param>
+        public static void AddRecentAppId(string applicationId)
+        {
+            RecentAppIds = AddRecentItem(RecentAppIds, applicationId);
         }
 
         /// <summary>
