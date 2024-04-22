@@ -41,6 +41,7 @@ namespace SyncKusto
             this.cmbAuthentication.SelectedIndex = 0;
 
             this.cbCluster.Items.AddRange(SettingsWrapper.RecentClusters.ToArray());
+            this.cbDatabase.Items.AddRange(SettingsWrapper.RecentDatabases.ToArray());
         }
 
         /// <summary>
@@ -317,8 +318,19 @@ namespace SyncKusto
         /// </summary>
         public void SaveRecentValues()
         {
-            SettingsWrapper.AddRecentCluster(cbCluster.Text);
-            SettingsWrapper.AddRecentDatabase(cbDatabase.Text);
+            SettingsWrapper.AddRecentCluster(this.cbCluster.Text);
+            SettingsWrapper.AddRecentDatabase(this.cbDatabase.Text);
+        }
+
+        /// <summary>
+        /// For the inputs where we store recents, reload them all with the latest values.
+        /// </summary>
+        public void ReloadRecentValues()
+        {
+            this.cbCluster.Items.Clear();
+            this.cbCluster.Items.AddRange(SettingsWrapper.RecentClusters.ToArray());
+            this.cbDatabase.Items.Clear();
+            this.cbDatabase.Items.AddRange(SettingsWrapper.RecentDatabases.ToArray());
         }
     }
 }
