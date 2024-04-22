@@ -119,9 +119,11 @@ namespace SyncKusto
                 case InvalidDatabaseSchema invalidSource:
                     MessageBox.Show($@"The Source schema is invalid: {errorMessageResolver().ResolveFor(invalidSource.Error).Get()}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
+
                 case ValidDatabaseSchema _ when targetSchema is InvalidDatabaseSchema invalidTarget:
                     MessageBox.Show($@"The Target schema is invalid: {errorMessageResolver().ResolveFor(invalidTarget.Error).Get()}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
+
                 case ValidDatabaseSchema source when targetSchema is ValidDatabaseSchema target:
                     spcTarget.ReportProgress($@"Schema loaded.");
                     _sourceSchema = source.Schema;
@@ -180,10 +182,12 @@ namespace SyncKusto
                         when drop.Difference is OnlyInTarget:
                         functionDropNode.Nodes.Add(ToTreeNode(drop));
                         break;
+
                     case FunctionSchemaDifference add
                         when add.Difference is OnlyInSource:
                         functionAddNode.Nodes.Add(ToTreeNode(add));
                         break;
+
                     case FunctionSchemaDifference change
                         when change.Difference is Modified:
                         functionEditNode.Nodes.Add(ToTreeNode(change));
@@ -204,10 +208,12 @@ namespace SyncKusto
                         when drop.Difference is OnlyInTarget:
                         tableDropNode.Nodes.Add(ToTreeNode(drop));
                         break;
+
                     case TableSchemaDifference add
                         when add.Difference is OnlyInSource:
                         tableAddNode.Nodes.Add(ToTreeNode(add));
                         break;
+
                     case TableSchemaDifference change
                         when change.Difference is Modified:
                         tableEditNode.Nodes.Add(ToTreeNode(change));
@@ -282,12 +288,15 @@ namespace SyncKusto
                         rtbSourceText.SelectionBackColor = System.Drawing.Color.Yellow;
                         rtbSourceText.SelectedText = line.Text.PadRight(longestLine);
                         break;
+
                     case DiffPlex.DiffBuilder.Model.ChangeType.Deleted:
                         rtbSourceText.SelectionBackColor = System.Drawing.Color.Red;
                         rtbSourceText.SelectedText = line.Text.PadRight(longestLine);
                         break;
+
                     case DiffPlex.DiffBuilder.Model.ChangeType.Imaginary:
                         break;
+
                     default:
                         rtbSourceText.SelectionBackColor = System.Drawing.Color.White;
                         rtbSourceText.SelectedText = line.Text.PadRight(longestLine);
@@ -360,7 +369,6 @@ namespace SyncKusto
         /// <param name="kustoQueryEngine">Pass a connection to Kusto if the target is Kusto</param>
         private void PersistChanges(IEnumerable<TreeNode> selectedNodes, QueryEngine kustoQueryEngine = null)
         {
-
             void WriteToTarget(IKustoSchema schema)
             {
                 if (spcTarget.SourceSelection == SourceSelection.FilePath())
@@ -394,10 +402,12 @@ namespace SyncKusto
                         difference.Difference is OnlyInSource:
                         WriteToTarget(update);
                         break;
+
                     case IKustoSchema delete when
                         difference.Difference is OnlyInTarget:
                         DeleteFromTarget(delete);
                         break;
+
                     default:
                         throw new InvalidOperationException("Unhandled type supplied.");
                 }
