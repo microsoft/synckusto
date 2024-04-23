@@ -294,6 +294,8 @@ namespace SyncKusto
                 return itemList;
             }
 
+            item = item.Trim();
+
             if (itemList.Contains(item))
             {
                 // To bubble this to the top we'll first remove it from the list and then the next
