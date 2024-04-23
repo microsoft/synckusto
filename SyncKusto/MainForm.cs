@@ -147,6 +147,16 @@ namespace SyncKusto
 
             spcSource.ReportProgress(string.Empty);
             spcTarget.ReportProgress(string.Empty);
+
+            // Save the cluster and databases used in recent history to populate the combo boxes for
+            // next time and then reload them both. (Note that combining save an reload into a
+            // single operation would mean that the source recent history list wouldn't contain
+            // whatever was just used in the target schema so we keep them as separate steps.)
+            spcSource.SaveRecentValues();
+            spcTarget.SaveRecentValues();
+            spcSource.ReloadRecentValues();
+            spcTarget.ReloadRecentValues();
+
             // Enable the update button now that a comparison has been generated.
             btnUpdate.Enabled = true;
         }

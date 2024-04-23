@@ -118,5 +118,50 @@ namespace SyncKusto.Properties {
                 this["UseLegacyCslExtension"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("CurrentUser")]
+        public string CertificateLocation {
+            get {
+                return ((string)(this["CertificateLocation"]));
+            }
+            set {
+                this["CertificateLocation"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection RecentClusters {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["RecentClusters"]));
+            }
+            set {
+                this["RecentClusters"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection RecentDatabases {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["RecentDatabases"]));
+            }
+            set {
+                this["RecentDatabases"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection RecentAppIds {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["RecentAppIds"]));
+            }
+            set {
+                this["RecentAppIds"] = value;
+            }
+        }
     }
 }

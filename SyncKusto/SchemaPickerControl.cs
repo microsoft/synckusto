@@ -39,6 +39,9 @@ namespace SyncKusto
                     ENTRA_ID_APP_SNI });
 
             this.cmbAuthentication.SelectedIndex = 0;
+
+            this.cbCluster.Items.AddRange(SettingsWrapper.RecentClusters.ToArray());
+            this.cbDatabase.Items.AddRange(SettingsWrapper.RecentDatabases.ToArray());
         }
 
         /// <summary>
@@ -106,20 +109,20 @@ namespace SyncKusto
                 switch (Authentication)
                 {
                     case AuthenticationMode.AadFederated:
-                        return QueryEngine.GetKustoConnectionStringBuilder(txtCluster.Text, txtDatabase.Text);
+                        return QueryEngine.GetKustoConnectionStringBuilder(cbCluster.Text, cbDatabase.Text);
 
                     case AuthenticationMode.AadApplication:
                         return QueryEngine.GetKustoConnectionStringBuilder(
-                            txtCluster.Text,
-                            txtDatabase.Text,
-                            aadClientId: txtAppId.Text,
+                            cbCluster.Text,
+                            cbDatabase.Text,
+                            aadClientId: cbAppId.Text,
                             aadClientKey: txtAppKey.Text);
 
                     case AuthenticationMode.AadApplicationSni:
                         return QueryEngine.GetKustoConnectionStringBuilder(
-                            txtCluster.Text,
-                            txtDatabase.Text,
-                            aadClientId: txtAppIdSni.Text,
+                            cbCluster.Text,
+                            cbDatabase.Text,
+                            aadClientId: cbAppIdSni.Text,
                             certificateThumbprint: txtCertificate.Text);
 
                     default:
@@ -160,17 +163,17 @@ namespace SyncKusto
         private bool KustoSourceSpecification() =>
             Spec<SchemaPickerControl>
                 .IsTrue(s => s.SourceSelection == SourceSelection.Kusto())
-                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtCluster.Text))
-                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtDatabase.Text))
+                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbCluster.Text))
+                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbDatabase.Text))
                 .And(
                     Spec<SchemaPickerControl>.IsTrue(s => s.Authentication == AuthenticationMode.AadFederated)
                         .Or(Spec<SchemaPickerControl>
                             .IsTrue(s => s.Authentication == AuthenticationMode.AadApplication)
-                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppId.Text)
+                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbAppId.Text)
                                 .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppKey.Text))))
                         .Or(Spec<SchemaPickerControl>
                             .IsTrue(s => s.Authentication == AuthenticationMode.AadApplicationSni)
-                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppIdSni.Text)
+                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbAppIdSni.Text)
                                 .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtCertificate.Text)))))
                 .IsSatisfiedBy(this);
 
@@ -297,7 +300,7 @@ namespace SyncKusto
         {
             // Show the certificate selection dialog
             var selectedCertificateCollection = X509Certificate2UI.SelectFromCollection(
-                CertificateStore.GetAllCertificates(),
+                CertificateStore.GetAllCertificates(SettingsWrapper.CertificateLocation),
                 "Select a certificate",
                 "Choose a certificate for authentication",
                 X509SelectionFlag.SingleSelection);
@@ -307,6 +310,33 @@ namespace SyncKusto
             {
                 txtCertificate.Text = selectedCertificateCollection[0].Thumbprint;
             }
+        }
+
+        /// <summary>
+        /// For some of the inputs, we save the most recent values that were used. This method
+        /// updates the storage behind all those settings to include the most recently used values.
+        /// </summary>
+        public void SaveRecentValues()
+        {
+            SettingsWrapper.AddRecentCluster(this.cbCluster.Text);
+            SettingsWrapper.AddRecentDatabase(this.cbDatabase.Text);
+            SettingsWrapper.AddRecentAppId(this.cbAppId.Text);
+            SettingsWrapper.AddRecentAppId(this.cbAppIdSni.Text);
+        }
+
+        /// <summary>
+        /// For the inputs where we store recents, reload them all with the latest values.
+        /// </summary>
+        public void ReloadRecentValues()
+        {
+            this.cbCluster.Items.Clear();
+            this.cbCluster.Items.AddRange(SettingsWrapper.RecentClusters.ToArray());
+            this.cbDatabase.Items.Clear();
+            this.cbDatabase.Items.AddRange(SettingsWrapper.RecentDatabases.ToArray());
+            this.cbAppId.Items.Clear();
+            this.cbAppId.Items.AddRange(SettingsWrapper.RecentAppIds.ToArray());
+            this.cbAppIdSni.Items.Clear();
+            this.cbAppIdSni.Items.AddRange(SettingsWrapper.RecentAppIds.ToArray());
         }
     }
 }
