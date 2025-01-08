@@ -281,7 +281,7 @@ namespace SyncKusto
             }
 
             var diffBuilder = new InlineDiffBuilder(new Differ());
-            DiffPlex.DiffBuilder.Model.DiffPaneModel diff = diffBuilder.BuildDiffModel(targetText, sourceText);
+            DiffPlex.DiffBuilder.Model.DiffPaneModel diff = diffBuilder.BuildDiffModel(targetText, sourceText, SettingsWrapper.IgnoreLineEndings ?? false);
             rtbSourceText.Clear();
 
             int longestLine = 98;

@@ -43,6 +43,7 @@ namespace SyncKusto
             cbCreateMerge.Checked = SettingsWrapper.CreateMergeEnabled ?? false;
             cbUseLegacyCslExtension.Checked = SettingsWrapper.UseLegacyCslExtension ?? false;
             cbCertLocation.SelectedItem = SettingsWrapper.CertificateLocation;
+            cbIgnoreLineEndings.Checked = SettingsWrapper.IgnoreLineEndings ?? false;
         }
 
         /// <summary>
@@ -60,6 +61,7 @@ namespace SyncKusto
             SettingsWrapper.KustoObjectDropWarning = chkTableDropWarning.Checked;
             SettingsWrapper.AADAuthority = txtAuthority.Text;
             SettingsWrapper.UseLegacyCslExtension = cbUseLegacyCslExtension.Checked;
+            SettingsWrapper.IgnoreLineEndings = cbIgnoreLineEndings.Checked;
             SettingsWrapper.CertificateLocation = (StoreLocation)cbCertLocation.SelectedItem;
 
             // Only check the Kusto settings if they changed
