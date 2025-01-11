@@ -229,7 +229,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="DiffPlex">
-      <Version>1.4.1</Version>
+      <Version>1.7.2</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Azure.Kusto.Data">
       <Version>12.2.7</Version>

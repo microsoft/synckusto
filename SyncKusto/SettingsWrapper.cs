@@ -126,6 +126,16 @@ namespace SyncKusto
             }
         }
 
+        public static bool? IgnoreLineEndings
+        {
+	        get => Settings.Default[nameof(IgnoreLineEndings)] as bool?;
+	        set
+	        {
+		        Settings.Default[nameof(IgnoreLineEndings)] = value;
+		        Settings.Default.Save();
+	        }
+        }
+
         /// <summary>
         /// Gets the file extension to use throughout the application when reading and writing Kusto files
         /// </summary>

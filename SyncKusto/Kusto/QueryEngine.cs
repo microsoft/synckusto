@@ -3,6 +3,7 @@
 
 using System;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
 using Newtonsoft.Json;
+using SyncKusto.Properties;
 using SyncKusto.Utilities;
 
 namespace SyncKusto.Kusto
@@ -105,7 +107,12 @@ namespace SyncKusto.Kusto
             }
             foreach (var function in result.Functions.Values)
             {
-                if (function.Folder == null)
+	            if (SettingsWrapper.IgnoreLineEndings ?? false)
+	            {
+		            function.Body = function.Body.Replace("\r\n", "\n").Replace("\r", "\n");
+	            }
+
+	            if (function.Folder == null)
                 {
                     function.Folder = "";
                 }
