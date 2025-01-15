@@ -49,7 +49,6 @@ namespace SyncKusto
             this.chkTableDropWarning = new System.Windows.Forms.CheckBox();
             this.tcFormatting = new System.Windows.Forms.TabPage();
             this.cbUseLegacyCslExtension = new System.Windows.Forms.CheckBox();
-            this.label7 = new System.Windows.Forms.Label();
             this.cbCreateMerge = new System.Windows.Forms.CheckBox();
             this.cbTableFieldsOnNewLine = new System.Windows.Forms.CheckBox();
             this.btnCancel = new System.Windows.Forms.Button();
@@ -63,8 +62,8 @@ namespace SyncKusto
             // 
             // tabControl
             // 
-            this.tabControl.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+            this.tabControl.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tabControl.Controls.Add(this.tpTempDatabase);
             this.tabControl.Controls.Add(this.tcEntraId);
@@ -94,7 +93,7 @@ namespace SyncKusto
             // 
             // label5
             // 
-            this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label5.ForeColor = System.Drawing.Color.Red;
             this.label5.Location = new System.Drawing.Point(7, 100);
@@ -116,7 +115,7 @@ namespace SyncKusto
             // 
             // txtKustoDatabase
             // 
-            this.txtKustoDatabase.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.txtKustoDatabase.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.txtKustoDatabase.Location = new System.Drawing.Point(102, 177);
             this.txtKustoDatabase.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
@@ -136,7 +135,7 @@ namespace SyncKusto
             // 
             // txtKustoCluster
             // 
-            this.txtKustoCluster.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.txtKustoCluster.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.txtKustoCluster.Location = new System.Drawing.Point(102, 137);
             this.txtKustoCluster.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
@@ -146,7 +145,7 @@ namespace SyncKusto
             // 
             // label1
             // 
-            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label1.Location = new System.Drawing.Point(7, 10);
             this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
@@ -180,7 +179,7 @@ namespace SyncKusto
             // 
             // label6
             // 
-            this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label6.Location = new System.Drawing.Point(4, 163);
             this.label6.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
@@ -191,7 +190,7 @@ namespace SyncKusto
             // 
             // txtAuthority
             // 
-            this.txtAuthority.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.txtAuthority.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.txtAuthority.Location = new System.Drawing.Point(8, 100);
             this.txtAuthority.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
@@ -201,7 +200,7 @@ namespace SyncKusto
             // 
             // label3
             // 
-            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label3.Location = new System.Drawing.Point(4, 10);
             this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
@@ -235,7 +234,6 @@ namespace SyncKusto
             // tcFormatting
             // 
             this.tcFormatting.Controls.Add(this.cbUseLegacyCslExtension);
-            this.tcFormatting.Controls.Add(this.label7);
             this.tcFormatting.Controls.Add(this.cbCreateMerge);
             this.tcFormatting.Controls.Add(this.cbTableFieldsOnNewLine);
             this.tcFormatting.Location = new System.Drawing.Point(4, 29);
@@ -248,10 +246,10 @@ namespace SyncKusto
             // 
             // cbUseLegacyCslExtension
             // 
-            this.cbUseLegacyCslExtension.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.cbUseLegacyCslExtension.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.cbUseLegacyCslExtension.AutoSize = true;
-            this.cbUseLegacyCslExtension.Location = new System.Drawing.Point(10, 144);
+            this.cbUseLegacyCslExtension.Location = new System.Drawing.Point(6, 70);
             this.cbUseLegacyCslExtension.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.cbUseLegacyCslExtension.Name = "cbUseLegacyCslExtension";
             this.cbUseLegacyCslExtension.Size = new System.Drawing.Size(244, 24);
@@ -260,23 +258,12 @@ namespace SyncKusto
             this.cbUseLegacyCslExtension.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.cbUseLegacyCslExtension.UseVisualStyleBackColor = true;
             // 
-            // label7
-            // 
-            this.label7.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label7.Location = new System.Drawing.Point(6, 10);
-            this.label7.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(496, 68);
-            this.label7.TabIndex = 113;
-            this.label7.Text = resources.GetString("label7.Text");
-            // 
             // cbCreateMerge
             // 
-            this.cbCreateMerge.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.cbCreateMerge.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.cbCreateMerge.AutoSize = true;
-            this.cbCreateMerge.Location = new System.Drawing.Point(10, 116);
+            this.cbCreateMerge.Location = new System.Drawing.Point(6, 42);
             this.cbCreateMerge.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.cbCreateMerge.Name = "cbCreateMerge";
             this.cbCreateMerge.Size = new System.Drawing.Size(517, 24);
@@ -287,10 +274,10 @@ namespace SyncKusto
             // 
             // cbTableFieldsOnNewLine
             // 
-            this.cbTableFieldsOnNewLine.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.cbTableFieldsOnNewLine.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.cbTableFieldsOnNewLine.AutoSize = true;
-            this.cbTableFieldsOnNewLine.Location = new System.Drawing.Point(10, 86);
+            this.cbTableFieldsOnNewLine.Location = new System.Drawing.Point(6, 12);
             this.cbTableFieldsOnNewLine.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.cbTableFieldsOnNewLine.Name = "cbTableFieldsOnNewLine";
             this.cbTableFieldsOnNewLine.Size = new System.Drawing.Size(245, 24);
@@ -365,7 +352,6 @@ namespace SyncKusto
         private System.Windows.Forms.TextBox txtAuthority;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.CheckBox chkTableDropWarning;
-        private System.Windows.Forms.Label label7;
         private System.Windows.Forms.CheckBox cbCreateMerge;
         private System.Windows.Forms.CheckBox cbTableFieldsOnNewLine;
         private System.Windows.Forms.CheckBox cbUseLegacyCslExtension;
