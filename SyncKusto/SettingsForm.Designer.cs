@@ -53,11 +53,16 @@ namespace SyncKusto
             this.cbTableFieldsOnNewLine = new System.Windows.Forms.CheckBox();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnOk = new System.Windows.Forms.Button();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.rbLineEndingsLeave = new System.Windows.Forms.RadioButton();
+            this.rbLineEndingsWindows = new System.Windows.Forms.RadioButton();
+            this.rbLineEndingsUnix = new System.Windows.Forms.RadioButton();
             this.tabControl.SuspendLayout();
             this.tpTempDatabase.SuspendLayout();
             this.tcEntraId.SuspendLayout();
             this.tcWarnings.SuspendLayout();
             this.tcFormatting.SuspendLayout();
+            this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl
@@ -233,6 +238,7 @@ namespace SyncKusto
             // 
             // tcFormatting
             // 
+            this.tcFormatting.Controls.Add(this.groupBox1);
             this.tcFormatting.Controls.Add(this.cbUseLegacyCslExtension);
             this.tcFormatting.Controls.Add(this.cbCreateMerge);
             this.tcFormatting.Controls.Add(this.cbTableFieldsOnNewLine);
@@ -310,6 +316,51 @@ namespace SyncKusto
             this.btnOk.UseVisualStyleBackColor = true;
             this.btnOk.Click += new System.EventHandler(this.btnOk_Click);
             // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.rbLineEndingsUnix);
+            this.groupBox1.Controls.Add(this.rbLineEndingsWindows);
+            this.groupBox1.Controls.Add(this.rbLineEndingsLeave);
+            this.groupBox1.Location = new System.Drawing.Point(6, 109);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(514, 118);
+            this.groupBox1.TabIndex = 115;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Line Endings";
+            // 
+            // rbLineEndingsLeave
+            // 
+            this.rbLineEndingsLeave.AutoSize = true;
+            this.rbLineEndingsLeave.Location = new System.Drawing.Point(6, 25);
+            this.rbLineEndingsLeave.Name = "rbLineEndingsLeave";
+            this.rbLineEndingsLeave.Size = new System.Drawing.Size(114, 24);
+            this.rbLineEndingsLeave.TabIndex = 0;
+            this.rbLineEndingsLeave.TabStop = true;
+            this.rbLineEndingsLeave.Text = "Leave as-is";
+            this.rbLineEndingsLeave.UseVisualStyleBackColor = true;
+            // 
+            // rbLineEndingsWindows
+            // 
+            this.rbLineEndingsWindows.AutoSize = true;
+            this.rbLineEndingsWindows.Location = new System.Drawing.Point(6, 55);
+            this.rbLineEndingsWindows.Name = "rbLineEndingsWindows";
+            this.rbLineEndingsWindows.Size = new System.Drawing.Size(173, 24);
+            this.rbLineEndingsWindows.TabIndex = 1;
+            this.rbLineEndingsWindows.TabStop = true;
+            this.rbLineEndingsWindows.Text = "Windows Style (\\r\\n)";
+            this.rbLineEndingsWindows.UseVisualStyleBackColor = true;
+            // 
+            // rbLineEndingsUnix
+            // 
+            this.rbLineEndingsUnix.AutoSize = true;
+            this.rbLineEndingsUnix.Location = new System.Drawing.Point(6, 85);
+            this.rbLineEndingsUnix.Name = "rbLineEndingsUnix";
+            this.rbLineEndingsUnix.Size = new System.Drawing.Size(131, 24);
+            this.rbLineEndingsUnix.TabIndex = 2;
+            this.rbLineEndingsUnix.TabStop = true;
+            this.rbLineEndingsUnix.Text = "Unix Style (\\n)";
+            this.rbLineEndingsUnix.UseVisualStyleBackColor = true;
+            // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -332,6 +383,8 @@ namespace SyncKusto
             this.tcWarnings.PerformLayout();
             this.tcFormatting.ResumeLayout(false);
             this.tcFormatting.PerformLayout();
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -359,5 +412,9 @@ namespace SyncKusto
         private System.Windows.Forms.Button btnOk;
         private System.Windows.Forms.ComboBox cbCertLocation;
         private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.RadioButton rbLineEndingsWindows;
+        private System.Windows.Forms.RadioButton rbLineEndingsLeave;
+        private System.Windows.Forms.RadioButton rbLineEndingsUnix;
     }
 }
