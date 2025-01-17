@@ -57,12 +57,15 @@ namespace SyncKusto
             this.rbLineEndingsLeave = new System.Windows.Forms.RadioButton();
             this.rbLineEndingsWindows = new System.Windows.Forms.RadioButton();
             this.rbLineEndingsUnix = new System.Windows.Forms.RadioButton();
+            this.tcCompare = new System.Windows.Forms.TabPage();
+            this.cbIgnoreLineEndings = new System.Windows.Forms.CheckBox();
             this.tabControl.SuspendLayout();
             this.tpTempDatabase.SuspendLayout();
             this.tcEntraId.SuspendLayout();
             this.tcWarnings.SuspendLayout();
             this.tcFormatting.SuspendLayout();
             this.groupBox1.SuspendLayout();
+            this.tcCompare.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl
@@ -74,10 +77,11 @@ namespace SyncKusto
             this.tabControl.Controls.Add(this.tcEntraId);
             this.tabControl.Controls.Add(this.tcWarnings);
             this.tabControl.Controls.Add(this.tcFormatting);
+            this.tabControl.Controls.Add(this.tcCompare);
             this.tabControl.Location = new System.Drawing.Point(12, 12);
             this.tabControl.Name = "tabControl";
             this.tabControl.SelectedIndex = 0;
-            this.tabControl.Size = new System.Drawing.Size(534, 281);
+            this.tabControl.Size = new System.Drawing.Size(590, 281);
             this.tabControl.TabIndex = 0;
             // 
             // tpTempDatabase
@@ -91,7 +95,7 @@ namespace SyncKusto
             this.tpTempDatabase.Location = new System.Drawing.Point(4, 29);
             this.tpTempDatabase.Name = "tpTempDatabase";
             this.tpTempDatabase.Padding = new System.Windows.Forms.Padding(3, 10, 3, 10);
-            this.tpTempDatabase.Size = new System.Drawing.Size(526, 248);
+            this.tpTempDatabase.Size = new System.Drawing.Size(582, 248);
             this.tpTempDatabase.TabIndex = 0;
             this.tpTempDatabase.Text = "Temporary Database";
             this.tpTempDatabase.UseVisualStyleBackColor = true;
@@ -104,7 +108,7 @@ namespace SyncKusto
             this.label5.Location = new System.Drawing.Point(7, 100);
             this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(512, 32);
+            this.label5.Size = new System.Drawing.Size(568, 32);
             this.label5.TabIndex = 108;
             this.label5.Text = "Everything in this database will be dropped before every comparison!";
             // 
@@ -125,7 +129,7 @@ namespace SyncKusto
             this.txtKustoDatabase.Location = new System.Drawing.Point(102, 177);
             this.txtKustoDatabase.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtKustoDatabase.Name = "txtKustoDatabase";
-            this.txtKustoDatabase.Size = new System.Drawing.Size(417, 26);
+            this.txtKustoDatabase.Size = new System.Drawing.Size(473, 26);
             this.txtKustoDatabase.TabIndex = 106;
             // 
             // label2
@@ -145,7 +149,7 @@ namespace SyncKusto
             this.txtKustoCluster.Location = new System.Drawing.Point(102, 137);
             this.txtKustoCluster.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtKustoCluster.Name = "txtKustoCluster";
-            this.txtKustoCluster.Size = new System.Drawing.Size(417, 26);
+            this.txtKustoCluster.Size = new System.Drawing.Size(473, 26);
             this.txtKustoCluster.TabIndex = 105;
             // 
             // label1
@@ -155,7 +159,7 @@ namespace SyncKusto
             this.label1.Location = new System.Drawing.Point(7, 10);
             this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(512, 90);
+            this.label1.Size = new System.Drawing.Size(568, 90);
             this.label1.TabIndex = 107;
             this.label1.Text = resources.GetString("label1.Text");
             // 
@@ -168,7 +172,7 @@ namespace SyncKusto
             this.tcEntraId.Location = new System.Drawing.Point(4, 29);
             this.tcEntraId.Name = "tcEntraId";
             this.tcEntraId.Padding = new System.Windows.Forms.Padding(3, 10, 3, 10);
-            this.tcEntraId.Size = new System.Drawing.Size(526, 248);
+            this.tcEntraId.Size = new System.Drawing.Size(582, 248);
             this.tcEntraId.TabIndex = 1;
             this.tcEntraId.Text = "Authentication";
             this.tcEntraId.UseVisualStyleBackColor = true;
@@ -189,7 +193,7 @@ namespace SyncKusto
             this.label6.Location = new System.Drawing.Point(4, 163);
             this.label6.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(498, 25);
+            this.label6.Size = new System.Drawing.Size(554, 25);
             this.label6.TabIndex = 110;
             this.label6.Text = "Certificate Location for Subject Name Issuer Auth:";
             // 
@@ -200,7 +204,7 @@ namespace SyncKusto
             this.txtAuthority.Location = new System.Drawing.Point(8, 100);
             this.txtAuthority.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtAuthority.Name = "txtAuthority";
-            this.txtAuthority.Size = new System.Drawing.Size(501, 26);
+            this.txtAuthority.Size = new System.Drawing.Size(557, 26);
             this.txtAuthority.TabIndex = 108;
             // 
             // label3
@@ -210,7 +214,7 @@ namespace SyncKusto
             this.label3.Location = new System.Drawing.Point(4, 10);
             this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(498, 85);
+            this.label3.Size = new System.Drawing.Size(554, 85);
             this.label3.TabIndex = 109;
             this.label3.Text = resources.GetString("label3.Text");
             // 
@@ -220,7 +224,7 @@ namespace SyncKusto
             this.tcWarnings.Location = new System.Drawing.Point(4, 29);
             this.tcWarnings.Name = "tcWarnings";
             this.tcWarnings.Padding = new System.Windows.Forms.Padding(3, 10, 3, 10);
-            this.tcWarnings.Size = new System.Drawing.Size(526, 248);
+            this.tcWarnings.Size = new System.Drawing.Size(582, 248);
             this.tcWarnings.TabIndex = 2;
             this.tcWarnings.Text = "Warnings";
             this.tcWarnings.UseVisualStyleBackColor = true;
@@ -245,7 +249,7 @@ namespace SyncKusto
             this.tcFormatting.Location = new System.Drawing.Point(4, 29);
             this.tcFormatting.Name = "tcFormatting";
             this.tcFormatting.Padding = new System.Windows.Forms.Padding(3, 10, 3, 10);
-            this.tcFormatting.Size = new System.Drawing.Size(526, 248);
+            this.tcFormatting.Size = new System.Drawing.Size(582, 248);
             this.tcFormatting.TabIndex = 3;
             this.tcFormatting.Text = "Formatting";
             this.tcFormatting.UseVisualStyleBackColor = true;
@@ -295,7 +299,7 @@ namespace SyncKusto
             // btnCancel
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnCancel.Location = new System.Drawing.Point(428, 301);
+            this.btnCancel.Location = new System.Drawing.Point(484, 301);
             this.btnCancel.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(112, 35);
@@ -307,7 +311,7 @@ namespace SyncKusto
             // btnOk
             // 
             this.btnOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnOk.Location = new System.Drawing.Point(307, 301);
+            this.btnOk.Location = new System.Drawing.Point(363, 301);
             this.btnOk.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnOk.Name = "btnOk";
             this.btnOk.Size = new System.Drawing.Size(112, 35);
@@ -326,7 +330,7 @@ namespace SyncKusto
             this.groupBox1.Size = new System.Drawing.Size(514, 118);
             this.groupBox1.TabIndex = 115;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Line Endings";
+            this.groupBox1.Text = "Normalize Line Endings";
             // 
             // rbLineEndingsLeave
             // 
@@ -361,11 +365,31 @@ namespace SyncKusto
             this.rbLineEndingsUnix.Text = "Unix Style (\\n)";
             this.rbLineEndingsUnix.UseVisualStyleBackColor = true;
             // 
+            // tcCompare
+            // 
+            this.tcCompare.Controls.Add(this.cbIgnoreLineEndings);
+            this.tcCompare.Location = new System.Drawing.Point(4, 29);
+            this.tcCompare.Name = "tcCompare";
+            this.tcCompare.Size = new System.Drawing.Size(582, 248);
+            this.tcCompare.TabIndex = 4;
+            this.tcCompare.Text = "Compare";
+            this.tcCompare.UseVisualStyleBackColor = true;
+            // 
+            // cbIgnoreLineEndings
+            // 
+            this.cbIgnoreLineEndings.AutoSize = true;
+            this.cbIgnoreLineEndings.Location = new System.Drawing.Point(6, 12);
+            this.cbIgnoreLineEndings.Name = "cbIgnoreLineEndings";
+            this.cbIgnoreLineEndings.Size = new System.Drawing.Size(177, 24);
+            this.cbIgnoreLineEndings.TabIndex = 0;
+            this.cbIgnoreLineEndings.Text = "&Ignore Line Endings";
+            this.cbIgnoreLineEndings.UseVisualStyleBackColor = true;
+            // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(553, 349);
+            this.ClientSize = new System.Drawing.Size(609, 349);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnOk);
             this.Controls.Add(this.tabControl);
@@ -385,6 +409,8 @@ namespace SyncKusto
             this.tcFormatting.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
+            this.tcCompare.ResumeLayout(false);
+            this.tcCompare.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -416,5 +442,7 @@ namespace SyncKusto
         private System.Windows.Forms.RadioButton rbLineEndingsWindows;
         private System.Windows.Forms.RadioButton rbLineEndingsLeave;
         private System.Windows.Forms.RadioButton rbLineEndingsUnix;
+        private System.Windows.Forms.TabPage tcCompare;
+        private System.Windows.Forms.CheckBox cbIgnoreLineEndings;
     }
 }
