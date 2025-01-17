@@ -57,15 +57,12 @@ namespace SyncKusto
             this.rbLineEndingsLeave = new System.Windows.Forms.RadioButton();
             this.rbLineEndingsWindows = new System.Windows.Forms.RadioButton();
             this.rbLineEndingsUnix = new System.Windows.Forms.RadioButton();
-            this.tcCompare = new System.Windows.Forms.TabPage();
-            this.cbIgnoreLineEndings = new System.Windows.Forms.CheckBox();
             this.tabControl.SuspendLayout();
             this.tpTempDatabase.SuspendLayout();
             this.tcEntraId.SuspendLayout();
             this.tcWarnings.SuspendLayout();
             this.tcFormatting.SuspendLayout();
             this.groupBox1.SuspendLayout();
-            this.tcCompare.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl
@@ -77,7 +74,6 @@ namespace SyncKusto
             this.tabControl.Controls.Add(this.tcEntraId);
             this.tabControl.Controls.Add(this.tcWarnings);
             this.tabControl.Controls.Add(this.tcFormatting);
-            this.tabControl.Controls.Add(this.tcCompare);
             this.tabControl.Location = new System.Drawing.Point(12, 12);
             this.tabControl.Name = "tabControl";
             this.tabControl.SelectedIndex = 0;
@@ -365,26 +361,6 @@ namespace SyncKusto
             this.rbLineEndingsUnix.Text = "Unix Style (\\n)";
             this.rbLineEndingsUnix.UseVisualStyleBackColor = true;
             // 
-            // tcCompare
-            // 
-            this.tcCompare.Controls.Add(this.cbIgnoreLineEndings);
-            this.tcCompare.Location = new System.Drawing.Point(4, 29);
-            this.tcCompare.Name = "tcCompare";
-            this.tcCompare.Size = new System.Drawing.Size(582, 248);
-            this.tcCompare.TabIndex = 4;
-            this.tcCompare.Text = "Compare";
-            this.tcCompare.UseVisualStyleBackColor = true;
-            // 
-            // cbIgnoreLineEndings
-            // 
-            this.cbIgnoreLineEndings.AutoSize = true;
-            this.cbIgnoreLineEndings.Location = new System.Drawing.Point(6, 12);
-            this.cbIgnoreLineEndings.Name = "cbIgnoreLineEndings";
-            this.cbIgnoreLineEndings.Size = new System.Drawing.Size(177, 24);
-            this.cbIgnoreLineEndings.TabIndex = 0;
-            this.cbIgnoreLineEndings.Text = "&Ignore Line Endings";
-            this.cbIgnoreLineEndings.UseVisualStyleBackColor = true;
-            // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -409,8 +385,6 @@ namespace SyncKusto
             this.tcFormatting.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
-            this.tcCompare.ResumeLayout(false);
-            this.tcCompare.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -442,7 +416,5 @@ namespace SyncKusto
         private System.Windows.Forms.RadioButton rbLineEndingsWindows;
         private System.Windows.Forms.RadioButton rbLineEndingsLeave;
         private System.Windows.Forms.RadioButton rbLineEndingsUnix;
-        private System.Windows.Forms.TabPage tcCompare;
-        private System.Windows.Forms.CheckBox cbIgnoreLineEndings;
     }
 }

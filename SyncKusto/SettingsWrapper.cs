@@ -126,19 +126,6 @@ namespace SyncKusto
         }
 
         /// <summary>
-        /// If true, line endings will be ignored when doing comparisons.
-        /// </summary>
-        public static bool? IgnoreLineEndings
-        {
-            get => Settings.Default[nameof(IgnoreLineEndings)] as bool?;
-            set
-            {
-                Settings.Default[nameof(IgnoreLineEndings)] = value;
-                Settings.Default.Save();
-            }
-        }
-
-        /// <summary>
         /// Specifies how to handle line endings in the files. They can be left as they are or converted 
         /// to Windows or Unix style when they are written.
         /// </summary>

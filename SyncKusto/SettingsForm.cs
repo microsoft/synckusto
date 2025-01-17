@@ -59,7 +59,6 @@ namespace SyncKusto
             cbCreateMerge.Checked = SettingsWrapper.CreateMergeEnabled ?? false;
             cbUseLegacyCslExtension.Checked = SettingsWrapper.UseLegacyCslExtension ?? false;
             cbCertLocation.SelectedItem = SettingsWrapper.CertificateLocation;
-            cbIgnoreLineEndings.Checked = SettingsWrapper.IgnoreLineEndings ?? false;
 
             foreach (var radioButton in lineEndingRadioButtons)
             {
@@ -82,7 +81,6 @@ namespace SyncKusto
             SettingsWrapper.KustoObjectDropWarning = chkTableDropWarning.Checked;
             SettingsWrapper.AADAuthority = txtAuthority.Text;
             SettingsWrapper.UseLegacyCslExtension = cbUseLegacyCslExtension.Checked;
-            SettingsWrapper.IgnoreLineEndings = cbIgnoreLineEndings.Checked;
             SettingsWrapper.LineEndingMode = (LineEndingMode)lineEndingRadioButtons.Where(b => b.Checked).Single().Tag;
             SettingsWrapper.CertificateLocation = (StoreLocation)cbCertLocation.SelectedItem;
             
