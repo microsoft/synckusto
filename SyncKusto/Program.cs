@@ -13,11 +13,6 @@ namespace SyncKusto
         [STAThread]
         static void Main(string[] args)
         {
-            if (Debugger.IsAttached)
-            {
-                Settings.Default.Reset();
-            }
-
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
