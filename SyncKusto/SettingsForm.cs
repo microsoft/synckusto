@@ -83,7 +83,7 @@ namespace SyncKusto
             SettingsWrapper.UseLegacyCslExtension = cbUseLegacyCslExtension.Checked;
             SettingsWrapper.LineEndingMode = (LineEndingMode)lineEndingRadioButtons.Where(b => b.Checked).Single().Tag;
             SettingsWrapper.CertificateLocation = (StoreLocation)cbCertLocation.SelectedItem;
-            
+
             // Only check the Kusto settings if they changed
             if (SettingsWrapper.KustoClusterForTempDatabases != txtKustoCluster.Text ||
                 SettingsWrapper.TemporaryKustoDatabase != txtKustoDatabase.Text)
