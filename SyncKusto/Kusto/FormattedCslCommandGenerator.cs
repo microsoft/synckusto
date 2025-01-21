@@ -23,12 +23,17 @@ namespace SyncKusto.Kusto
 
             if (SettingsWrapper.TableFieldsOnNewLine == true)
             {
+                // We have to do some kind of line break. The three options in settings are "leave as is", "windows",
+                // or "unix" but the default is "leave as is." "Leave as is" doesn't make sense in this scenario so
+                // we'll bucket it with "Windows" style.
+                string lineEnding = SettingsWrapper.LineEndingMode == ChangeModel.LineEndingMode.UnixStyle ? "\n" : "\r\n";
+
                 // Add a line break between each field
-                result = result.Replace(", ['", ",\r\n    ['");
+                result = result.Replace(", ['", $",{lineEnding}    ['");
 
                 // Add a line break before the first field
                 int parameterStartIndex = result.LastIndexOf("([");
-                result = result.Insert(parameterStartIndex + 1, "\r\n    ");
+                result = result.Insert(parameterStartIndex + 1, $"{lineEnding}    ");
             }
 
             return result;

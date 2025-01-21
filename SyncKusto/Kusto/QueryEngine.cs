@@ -107,10 +107,15 @@ namespace SyncKusto.Kusto
             }
             foreach (var function in result.Functions.Values)
             {
-	            if (SettingsWrapper.IgnoreLineEndings ?? false)
-	            {
-		            function.Body = function.Body.Replace("\r\n", "\n").Replace("\r", "\n");
-	            }
+                switch (SettingsWrapper.LineEndingMode)
+                {
+                    case ChangeModel.LineEndingMode.WindowsStyle:                        
+                        function.Body = Regex.Replace(function.Body, @"\r\n|\r|\n", "\r\n");
+                        break;
+                    case ChangeModel.LineEndingMode.UnixStyle:
+                        function.Body = Regex.Replace(function.Body, @"\r\n|\r|\n", "\n");
+                        break;
+                }
 
 	            if (function.Folder == null)
                 {

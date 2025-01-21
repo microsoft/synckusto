@@ -1,10 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Kusto.Data;
+using SyncKusto.ChangeModel;
 using SyncKusto.Properties;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -126,12 +125,24 @@ namespace SyncKusto
             }
         }
 
-        public static bool? IgnoreLineEndings
+        /// <summary>
+        /// Specifies how to handle line endings in the files. They can be left as they are or converted 
+        /// to Windows or Unix style when they are written.
+        /// </summary>
+        public static LineEndingMode LineEndingMode
         {
-	        get => Settings.Default[nameof(IgnoreLineEndings)] as bool?;
+	        get
+            {
+                var currentValue = Settings.Default[nameof(LineEndingMode)] as int?;
+                if (currentValue.HasValue && Enum.IsDefined(typeof(LineEndingMode), currentValue.Value))
+                {
+                    return (LineEndingMode)currentValue.Value;
+                }
+                return LineEndingMode.LeaveAsIs;
+            }
 	        set
 	        {
-		        Settings.Default[nameof(IgnoreLineEndings)] = value;
+		        Settings.Default[nameof(LineEndingMode)] = (int)value;
 		        Settings.Default.Save();
 	        }
         }

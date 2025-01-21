@@ -4,10 +4,12 @@
 using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
+using SyncKusto.ChangeModel;
 using SyncKusto.Kusto;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Windows.Forms;
 
@@ -18,6 +20,8 @@ namespace SyncKusto
     /// </summary>
     public partial class SettingsForm : Form
     {
+        private RadioButton[] lineEndingRadioButtons;
+
         /// <summary>
         /// Default constructor
         /// </summary>
@@ -26,6 +30,18 @@ namespace SyncKusto
             InitializeComponent();
 
             cbCertLocation.DataSource = Enum.GetValues(typeof(StoreLocation));
+
+            // Set the radiobutton tag fields to each of the corresponding LineEndingMode enum values
+            rbLineEndingsLeave.Tag = LineEndingMode.LeaveAsIs;
+            rbLineEndingsWindows.Tag = LineEndingMode.WindowsStyle;
+            rbLineEndingsUnix.Tag = LineEndingMode.UnixStyle;
+
+            lineEndingRadioButtons = new[]
+            {
+                rbLineEndingsLeave,
+                rbLineEndingsWindows,
+                rbLineEndingsUnix
+            };
         }
 
         /// <summary>
@@ -43,7 +59,11 @@ namespace SyncKusto
             cbCreateMerge.Checked = SettingsWrapper.CreateMergeEnabled ?? false;
             cbUseLegacyCslExtension.Checked = SettingsWrapper.UseLegacyCslExtension ?? false;
             cbCertLocation.SelectedItem = SettingsWrapper.CertificateLocation;
-            cbIgnoreLineEndings.Checked = SettingsWrapper.IgnoreLineEndings ?? false;
+
+            foreach (var radioButton in lineEndingRadioButtons)
+            {
+                radioButton.Checked = (LineEndingMode)radioButton.Tag == SettingsWrapper.LineEndingMode;
+            }
         }
 
         /// <summary>
@@ -61,7 +81,7 @@ namespace SyncKusto
             SettingsWrapper.KustoObjectDropWarning = chkTableDropWarning.Checked;
             SettingsWrapper.AADAuthority = txtAuthority.Text;
             SettingsWrapper.UseLegacyCslExtension = cbUseLegacyCslExtension.Checked;
-            SettingsWrapper.IgnoreLineEndings = cbIgnoreLineEndings.Checked;
+            SettingsWrapper.LineEndingMode = (LineEndingMode)lineEndingRadioButtons.Where(b => b.Checked).Single().Tag;
             SettingsWrapper.CertificateLocation = (StoreLocation)cbCertLocation.SelectedItem;
 
             // Only check the Kusto settings if they changed

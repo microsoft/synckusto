@@ -118,6 +118,7 @@
     <Compile Include="SettingsForm.Designer.cs">
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ChangeModel\LineEndingMode.cs" />
     <Compile Include="Validation\ErrorMessages\DefaultOperationErrorMessageResolver.cs" />
     <Compile Include="Validation\ErrorMessages\Specifications\DefaultOperationErrorSpecification.cs" />
     <Compile Include="Extensions\DictionaryExtensions.cs" />

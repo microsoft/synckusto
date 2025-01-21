@@ -123,9 +123,6 @@
   <data name="label3.Text" xml:space="preserve">
     <value>Specify the Entra ID authority to be used for authentication (e.g. contoso.com). Depending on your tenant configuration, this may be optional, unless you're connecting with an application id in which case it is required:</value>
   </data>
-  <data name="label7.Text" xml:space="preserve">
-    <value>These settings are only applied when a file is written. They do not affect the comparison operation. To apply this to all existing files, delete all the files locally, execute the comparison again and then update the local files.</value>
-  </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
