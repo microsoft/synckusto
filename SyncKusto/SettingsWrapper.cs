@@ -2,30 +2,115 @@
 // Licensed under the MIT License.
 
 using SyncKusto.ChangeModel;
-using SyncKusto.Properties;
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace SyncKusto
 {
     /// <summary>
-    /// Settings are saved in a config file. This class wraps all of them to provide type-checking.
+    /// Settings are saved in a JSON file in the user's AppData folder. This wrapper provides type-checking.
     /// </summary>
-    public static class SettingsWrapper
+    public static partial class SettingsWrapper
     {
+        private static readonly object _lockObject = new object();
+        private static readonly string _settingsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SyncKusto");
+        private static readonly string _settingsFilePath = Path.Combine(_settingsDirectory, "userSettings.json");
+        private static UserSettings _settings;
+        private static bool _isLoaded;
+
+        /// <summary>
+        /// Load settings from disk if not already loaded.
+        /// </summary>
+        private static void EnsureLoaded()
+        {
+            if (_isLoaded)
+            {
+                return;
+            }
+
+            lock (_lockObject)
+            {
+                if (_isLoaded)
+                {
+                    return;
+                }
+
+                try
+                {
+                    if (File.Exists(_settingsFilePath))
+                    {
+                        string json = File.ReadAllText(_settingsFilePath);
+                        var data = JsonSerializer.Deserialize<UserSettings>(json);
+                        _settings = data ?? new UserSettings();
+                    }
+                    else
+                    {
+                        _settings = new UserSettings();
+                    }
+                }
+                catch
+                {
+                    // If the file is corrupt or inaccessible, fall back to defaults.
+                    _settings = new UserSettings();
+                }
+
+                _isLoaded = true;
+            }
+        }
+
+        /// <summary>
+        /// Persist settings changes to disk.
+        /// </summary>
+        private static void Save()
+        {
+            lock (_lockObject)
+            {
+                if (!_isLoaded)
+                {
+                    return; // Nothing loaded, nothing to save.
+                }
+
+                try
+                {
+                    if (!Directory.Exists(_settingsDirectory))
+                    {
+                        Directory.CreateDirectory(_settingsDirectory);
+                    }
+                    var options = new JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+                    string json = JsonSerializer.Serialize(_settings, options);
+                    File.WriteAllText(_settingsFilePath, json);
+                }
+                catch
+                {
+                    // Intentionally ignore persistence errors to avoid crashing UI.
+                }
+            }
+        }
+
         /// <summary>
         /// The location of Kusto files that was used previously
         /// </summary>
         public static string PreviousFilePath
         {
-            get => Settings.Default["PreviousFilePath"] as string;
+            get
+            {
+                EnsureLoaded();
+                return _settings.PreviousFilePath;
+            }
             set
             {
-                Settings.Default["PreviousFilePath"] = value;
-                Settings.Default.Save();
+                EnsureLoaded();
+                _settings.PreviousFilePath = value;
+                Save();
             }
         }
 
@@ -34,11 +119,16 @@ namespace SyncKusto
         /// </summary>
         public static string KustoClusterForTempDatabases
         {
-            get => Settings.Default["KustoClusterForTempDatabases"] as string;
+            get
+            {
+                EnsureLoaded();
+                return _settings.KustoClusterForTempDatabases;
+            }
             set
             {
-                Settings.Default["KustoClusterForTempDatabases"] = value;
-                Settings.Default.Save();
+                EnsureLoaded();
+                _settings.KustoClusterForTempDatabases = value;
+                Save();
             }
         }
 
@@ -47,11 +137,16 @@ namespace SyncKusto
         /// </summary>
         public static string TemporaryKustoDatabase
         {
-            get => Settings.Default["TemporaryKustoDatabase"] as string;
+            get
+            {
+                EnsureLoaded();
+                return _settings.TemporaryKustoDatabase;
+            }
             set
             {
-                Settings.Default["TemporaryKustoDatabase"] = value;
-                Settings.Default.Save();
+                EnsureLoaded();
+                _settings.TemporaryKustoDatabase = value;
+                Save();
             }
         }
 
@@ -61,11 +156,16 @@ namespace SyncKusto
         /// </summary>
         public static string AADAuthority
         {
-            get => Settings.Default["AADAuthority"] as string;
+            get
+            {
+                EnsureLoaded();
+                return _settings.AADAuthority;
+            }
             set
             {
-                Settings.Default["AADAuthority"] = value;
-                Settings.Default.Save();
+                EnsureLoaded();
+                _settings.AADAuthority = value;
+                Save();
             }
         }
 
@@ -76,13 +176,14 @@ namespace SyncKusto
         {
             get
             {
-                bool? currentSetting = Settings.Default["KustoObjectDropWarning"] as bool?;
-                return currentSetting ?? false;
+                EnsureLoaded();
+                return _settings.KustoObjectDropWarning;
             }
             set
             {
-                Settings.Default["KustoObjectDropWarning"] = value;
-                Settings.Default.Save();
+                EnsureLoaded();
+                _settings.KustoObjectDropWarning = value;
+                Save();
             }
         }
 
@@ -91,11 +192,16 @@ namespace SyncKusto
         /// </summary>
         public static bool? TableFieldsOnNewLine
         {
-            get => Settings.Default["TableFieldsOnNewLine"] as bool?;
+            get
+            {
+                EnsureLoaded();
+                return _settings.TableFieldsOnNewLine;
+            }
             set
             {
-                Settings.Default["TableFieldsOnNewLine"] = value;
-                Settings.Default.Save();
+                EnsureLoaded();
+                _settings.TableFieldsOnNewLine = value;
+                Save();
             }
         }
 
@@ -104,11 +210,16 @@ namespace SyncKusto
         /// </summary>
         public static bool? CreateMergeEnabled
         {
-            get => Settings.Default["CreateMergeEnabled"] as bool?;
+            get
+            {
+                EnsureLoaded();
+                return _settings.CreateMergeEnabled;
+            }
             set
             {
-                Settings.Default["CreateMergeEnabled"] = value;
-                Settings.Default.Save();
+                EnsureLoaded();
+                _settings.CreateMergeEnabled = value;
+                Save();
             }
         }
 
@@ -117,11 +228,16 @@ namespace SyncKusto
         /// </summary>
         public static bool? UseLegacyCslExtension
         {
-            get => Settings.Default[nameof(UseLegacyCslExtension)] as bool?;
+            get
+            {
+                EnsureLoaded();
+                return _settings.UseLegacyCslExtension;
+            }
             set
             {
-                Settings.Default[nameof(UseLegacyCslExtension)] = value;
-                Settings.Default.Save();
+                EnsureLoaded();
+                _settings.UseLegacyCslExtension = value;
+                Save();
             }
         }
 
@@ -131,20 +247,21 @@ namespace SyncKusto
         /// </summary>
         public static LineEndingMode LineEndingMode
         {
-	        get
+            get
             {
-                var currentValue = Settings.Default[nameof(LineEndingMode)] as int?;
-                if (currentValue.HasValue && Enum.IsDefined(typeof(LineEndingMode), currentValue.Value))
+                EnsureLoaded();
+                if (Enum.IsDefined(typeof(LineEndingMode), _settings.LineEndingMode))
                 {
-                    return (LineEndingMode)currentValue.Value;
+                    return (LineEndingMode)_settings.LineEndingMode;
                 }
-                return LineEndingMode.LeaveAsIs;
+                return ChangeModel.LineEndingMode.LeaveAsIs;
             }
-	        set
-	        {
-		        Settings.Default[nameof(LineEndingMode)] = (int)value;
-		        Settings.Default.Save();
-	        }
+            set
+            {
+                EnsureLoaded();
+                _settings.LineEndingMode = (int)value;
+                Save();
+            }
         }
 
         /// <summary>
@@ -152,7 +269,10 @@ namespace SyncKusto
         /// </summary>
         public static string FileExtension
         {
-            get => SettingsWrapper.UseLegacyCslExtension.GetValueOrDefault() ? "csl" : "kql";
+            get
+            {
+                return SettingsWrapper.UseLegacyCslExtension.GetValueOrDefault() ? "csl" : "kql";
+            }
         }
 
         /// <summary>
@@ -162,23 +282,22 @@ namespace SyncKusto
         {
             get
             {
-                var currentValue = Settings.Default["CertificateLocation"] as string;
-                if (string.IsNullOrWhiteSpace(currentValue))
+                EnsureLoaded();
+                if (string.IsNullOrWhiteSpace(_settings.CertificateLocation))
                 {
                     return StoreLocation.CurrentUser;
                 }
-
-                if (Enum.TryParse(currentValue, out StoreLocation result))
+                if (Enum.TryParse(_settings.CertificateLocation, out StoreLocation result))
                 {
                     return result;
                 }
-
-                throw new Exception($"Could not map {currentValue} to StoreLocation enum type.");
+                throw new Exception($"Could not map {_settings.CertificateLocation} to StoreLocation enum type.");
             }
             set
             {
-                Settings.Default["CertificateLocation"] = value.ToString();
-                Settings.Default.Save();
+                EnsureLoaded();
+                _settings.CertificateLocation = value.ToString();
+                Save();
             }
         }
 
@@ -189,25 +308,25 @@ namespace SyncKusto
         {
             get
             {
-                var currentValue = Settings.Default["RecentClusters"] as StringCollection;
-                if (currentValue == null)
-                {
-                    return new List<string>();
-                }
-
-                return currentValue.Cast<string>().ToList();
+                EnsureLoaded();
+                return _settings.RecentClusters ?? new List<string>();
             }
             set
             {
-                if (!(value is IList<string>))
+                EnsureLoaded();
+                if (value == null)
+                {
+                    _settings.RecentClusters = new List<string>();
+                }
+                else if (!(value is IList<string>))
                 {
                     throw new ArgumentException("Value must be of type IList<string>");
                 }
-
-                var sc = new StringCollection();
-                sc.AddRange(value.ToArray());
-                Settings.Default["RecentClusters"] = sc;
-                Settings.Default.Save();
+                else
+                {
+                    _settings.RecentClusters = value.ToList();
+                }
+                Save();
             }
         }
 
@@ -218,25 +337,25 @@ namespace SyncKusto
         {
             get
             {
-                var currentValue = Settings.Default["RecentDatabases"] as StringCollection;
-                if (currentValue == null)
-                {
-                    return new List<string>();
-                }
-
-                return currentValue.Cast<string>().ToList();
+                EnsureLoaded();
+                return _settings.RecentDatabases ?? new List<string>();
             }
             set
             {
-                if (!(value is IList<string>))
+                EnsureLoaded();
+                if (value == null)
+                {
+                    _settings.RecentDatabases = new List<string>();
+                }
+                else if (!(value is IList<string>))
                 {
                     throw new ArgumentException("Value must be of type IList<string>");
                 }
-
-                var sc = new StringCollection();
-                sc.AddRange(value.ToArray());
-                Settings.Default["RecentDatabases"] = sc;
-                Settings.Default.Save();
+                else
+                {
+                    _settings.RecentDatabases = value.ToList();
+                }
+                Save();
             }
         }
 
@@ -247,25 +366,25 @@ namespace SyncKusto
         {
             get
             {
-                var currentValue = Settings.Default["RecentAppIds"] as StringCollection;
-                if (currentValue == null)
-                {
-                    return new List<string>();
-                }
-
-                return currentValue.Cast<string>().ToList();
+                EnsureLoaded();
+                return _settings.RecentAppIds ?? new List<string>();
             }
             set
             {
-                if (!(value is IList<string>))
+                EnsureLoaded();
+                if (value == null)
+                {
+                    _settings.RecentAppIds = new List<string>();
+                }
+                else if (!(value is IList<string>))
                 {
                     throw new ArgumentException("Value must be of type IList<string>");
                 }
-
-                var sc = new StringCollection();
-                sc.AddRange(value.ToArray());
-                Settings.Default["RecentAppIds"] = sc;
-                Settings.Default.Save();
+                else
+                {
+                    _settings.RecentAppIds = value.ToList();
+                }
+                Save();
             }
         }
 
