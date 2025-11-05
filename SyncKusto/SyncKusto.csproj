@@ -37,11 +37,6 @@
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="Properties\Settings.Designer.cs">
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-    </Compile>
     <Compile Update="SchemaPickerControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -51,11 +46,5 @@
     <Content Include="icons\SchemaCompare.ico" />
     <Content Include="icons\SyncArrow_16x.png" />
     <Content Include="icons\UploadFile_16x.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Update="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
   </ItemGroup>
 </Project>
