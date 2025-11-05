@@ -276,7 +276,7 @@ namespace SyncKusto
         }
 
         /// <summary>
-        /// Get or set the certificate location to search use when displaing certs in the Subject Name Issuer cert picker.
+        /// Get or set the certificate location to search use when displaying certs in the Subject Name Issuer cert picker.
         /// </summary>
         public static StoreLocation CertificateLocation
         {
