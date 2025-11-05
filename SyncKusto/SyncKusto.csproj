@@ -1,226 +1,45 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B8402E4F-09F8-4684-8D70-4DEF827E264B}</ProjectGuid>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SyncKusto</RootNamespace>
-    <AssemblyName>SyncKusto</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <TargetFrameworkProfile />
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <LangVersion>7.3</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'x64|AnyCPU'">
     <OutputPath>bin\x64\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x64\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'x64|x64'">
     <OutputPath>bin\x64\x64\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.Composition" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.IO.Compression" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Deployment" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="DiffPlex" Version="1.7.2" />
+    <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="12.2.7" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="9.0.10" />
+    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Utilities\CertificateStore.cs" />
-    <Compile Include="ChangeModel\DictionaryDifferenceMapper.cs" />
-    <Compile Include="ChangeModel\Difference.cs" />
-    <Compile Include="ChangeModel\Schema\FunctionSchemaDifference.cs" />
-    <Compile Include="ChangeModel\KustoSchemaDifferenceMapper.cs" />
-    <Compile Include="ChangeModel\KustoSchemaExtensions.cs" />
-    <Compile Include="DropWarningForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="DropWarningForm.Designer.cs">
-      <DependentUpon>DropWarningForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Kusto\FormattedCslCommandGenerator.cs" />
-    <Compile Include="SettingsForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SettingsForm.Designer.cs">
-      <DependentUpon>SettingsForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="ChangeModel\LineEndingMode.cs" />
-    <Compile Include="Validation\ErrorMessages\DefaultOperationErrorMessageResolver.cs" />
-    <Compile Include="Validation\ErrorMessages\Specifications\DefaultOperationErrorSpecification.cs" />
-    <Compile Include="Extensions\DictionaryExtensions.cs" />
-    <Compile Include="ChangeModel\Schema\IDatabaseSchema.cs" />
-    <Compile Include="ChangeModel\Schema\InvalidDatabaseSchema.cs" />
-    <Compile Include="Validation\ErrorMessages\Specifications\FilePathOperationErrorSpecifications.cs" />
-    <Compile Include="Functional\Either.cs" />
-    <Compile Include="Functional\EitherAdapters.cs" />
-    <Compile Include="Functional\EnumerableExtensions.cs" />
-    <Compile Include="Functional\None.cs" />
-    <Compile Include="Functional\Option.cs" />
-    <Compile Include="Functional\OptionAdapters.cs" />
-    <Compile Include="Functional\Reiterable.cs" />
-    <Compile Include="Functional\ReiterableExtensions.cs" />
-    <Compile Include="Functional\Some.cs" />
-    <Compile Include="Validation\ErrorMessages\IOperationError.cs" />
-    <Compile Include="Validation\ErrorMessages\IOperationErrorMessageSpecification.cs" />
-    <Compile Include="Validation\ErrorMessages\Specifications\KustoOperationErrorSpecifications.cs" />
-    <Compile Include="Kusto\DatabaseSchemaBuilder\BaseDatabaseSchemaBuilder.cs" />
-    <Compile Include="Kusto\DatabaseSchemaBuilder\EmptyDatabaseSchemaBuilder.cs" />
-    <Compile Include="Kusto\DatabaseSchemaBuilder\FileDatabaseSchemaBuilder.cs" />
-    <Compile Include="Kusto\DatabaseSchemaBuilder\IDatabaseSchemaBuilder.cs" />
-    <Compile Include="Validation\ErrorMessages\NonSpecificOperationError.cs" />
-    <Compile Include="Validation\ErrorMessages\OperationErrorMessageSpecification.cs" />
-    <Compile Include="Kusto\Model\IKustoSchema.cs" />
-    <Compile Include="Kusto\DatabaseSchemaBuilder\KustoDatabaseSchemaBuilder.cs" />
-    <Compile Include="Models\INonEmptyStringState.cs" />
-    <Compile Include="Kusto\Model\KustoFunctionSchema.cs" />
-    <Compile Include="Kusto\Model\KustoTableSchema.cs" />
-    <Compile Include="ChangeModel\Schema\SchemaDifference.cs" />
-    <Compile Include="ChangeModel\Schema\TableSchemaDifference.cs" />
-    <Compile Include="Validation\ErrorMessages\DatabaseSchemaOperationError.cs" />
-    <Compile Include="Models\NonEmptyString.cs" />
-    <Compile Include="Models\UninitializedString.cs" />
-    <Compile Include="SyncSources\DestinationSelections.cs" />
-    <Compile Include="ExtensionMethods.cs" />
-    <Compile Include="SyncSources\ISourceSelectionFactory.cs" />
-    <Compile Include="Kusto\AuthenticationMode.cs" />
-    <Compile Include="Kusto\CreateOrAlterException.cs" />
-    <Compile Include="Kusto\Model\IKustoObject.cs" />
-    <Compile Include="Kusto\QueryEngine.cs" />
-    <Compile Include="MainForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MainForm.Designer.cs">
-      <DependentUpon>MainForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SyncSources\SourceSelections.cs" />
-    <Compile Include="Validation\Infrastructure\Composite.cs" />
-    <Compile Include="Validation\Infrastructure\NotNullOrEmptyString.cs" />
-    <Compile Include="Validation\Infrastructure\NotNull.cs" />
-    <Compile Include="Validation\Infrastructure\Predicate.cs" />
-    <Compile Include="Validation\Infrastructure\Property.cs" />
-    <Compile Include="Validation\Infrastructure\Specification.cs" />
-    <Compile Include="Validation\Infrastructure\Transform.cs" />
-    <Compile Include="Validation\Infrastructure\Spec.cs" />
-    <Compile Include="ChangeModel\Schema\ValidDatabaseSchema.cs" />
-    <Compile Include="SchemaPickerControl.cs">
+    <Compile Update="SchemaPickerControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="SchemaPickerControl.Designer.cs">
-      <DependentUpon>SchemaPickerControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="SettingsWrapper.cs" />
-    <Compile Include="SyncSources\SourceMode.cs" />
-    <Compile Include="SyncSources\SourceSelection.cs" />
-    <EmbeddedResource Include="DropWarningForm.resx">
-      <DependentUpon>DropWarningForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SettingsForm.resx">
-      <DependentUpon>SettingsForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="MainForm.resx">
-      <DependentUpon>MainForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <EmbeddedResource Include="SchemaPickerControl.resx">
-      <DependentUpon>SchemaPickerControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="icons\LibrarySetting_16x.png" />
@@ -228,27 +47,4 @@
     <Content Include="icons\SyncArrow_16x.png" />
     <Content Include="icons\UploadFile_16x.png" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="DiffPlex">
-      <Version>1.7.2</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Azure.Kusto.Data">
-      <Version>12.2.7</Version>
-    </PackageReference>
-    <PackageReference Include="Newtonsoft.Json">
-      <Version>13.0.3</Version>
-    </PackageReference>
-    <PackageReference Include="System.ValueTuple">
-      <Version>4.5.0</Version>
-    </PackageReference>
-  </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
