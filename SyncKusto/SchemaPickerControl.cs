@@ -3,13 +3,13 @@
 
 using Kusto.Data;
 using Kusto.Data.Common;
+using SyncKusto.Exceptions;
 using SyncKusto.Functional;
 using SyncKusto.Kusto;
 using SyncKusto.Kusto.DatabaseSchemaBuilder;
 using SyncKusto.SyncSources;
 using SyncKusto.Utilities;
 using SyncKusto.Validation.ErrorMessages;
-using SyncKusto.Validation.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -133,15 +133,13 @@ namespace SyncKusto
 
         private Stack<(string message, SourceSelection source)> ProgressMessageState { get; }
 
-        private Func<string, bool> IsConfigured => (input) => Spec<string>.NonEmptyString(s => s).IsSatisfiedBy(input);
+        private Func<string, bool> IsConfigured => (input) => !string.IsNullOrWhiteSpace(input);
 
-        public Action ResetMainFormValueHolders { private get; set; }
+        public Action? ResetMainFormValueHolders { private get; set; }
 
         private static Func<ComboBox, bool> WhenSelectedItemAndEmptyValues
             =>
-                (box) => Spec<ComboBox>.IsTrue(c => c.Items.Count == 0)
-                    .And(Spec<ComboBox>.NonEmptyString(c => c.Text))
-                    .IsSatisfiedBy(box);
+                (box) => box.Items.Count == 0 && !string.IsNullOrWhiteSpace(box.Text);
 
         private void SetDefaultControlView()
         {
@@ -155,27 +153,27 @@ namespace SyncKusto
         private void AllowedFilePathSource(bool predicate) => rbFilePath.Enabled = predicate;
 
         private bool FilePathSourceSpecification() =>
-            Spec<SchemaPickerControl>
-                .IsTrue(s => s.SourceSelection == SourceSelection.FilePath())
-                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.SourceFilePath))
-                .IsSatisfiedBy(this);
+            SourceSelection == SourceSelection.FilePath() && 
+            !string.IsNullOrWhiteSpace(SourceFilePath);
 
-        private bool KustoSourceSpecification() =>
-            Spec<SchemaPickerControl>
-                .IsTrue(s => s.SourceSelection == SourceSelection.Kusto())
-                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbCluster.Text))
-                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbDatabase.Text))
-                .And(
-                    Spec<SchemaPickerControl>.IsTrue(s => s.Authentication == AuthenticationMode.AadFederated)
-                        .Or(Spec<SchemaPickerControl>
-                            .IsTrue(s => s.Authentication == AuthenticationMode.AadApplication)
-                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbAppId.Text)
-                                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppKey.Text))))
-                        .Or(Spec<SchemaPickerControl>
-                            .IsTrue(s => s.Authentication == AuthenticationMode.AadApplicationSni)
-                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbAppIdSni.Text)
-                                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtCertificate.Text)))))
-                .IsSatisfiedBy(this);
+        private bool KustoSourceSpecification()
+        {
+            if (SourceSelection != SourceSelection.Kusto())
+                return false;
+                
+            if (string.IsNullOrWhiteSpace(cbCluster.Text) || string.IsNullOrWhiteSpace(cbDatabase.Text))
+                return false;
+                
+            return Authentication switch
+            {
+                AuthenticationMode.AadFederated => true,
+                AuthenticationMode.AadApplication => 
+                    !string.IsNullOrWhiteSpace(cbAppId.Text) && !string.IsNullOrWhiteSpace(txtAppKey.Text),
+                AuthenticationMode.AadApplicationSni => 
+                    !string.IsNullOrWhiteSpace(cbAppIdSni.Text) && !string.IsNullOrWhiteSpace(txtCertificate.Text),
+                _ => false
+            };
+        }
 
         private void ToggleFilePathSourcePanel(bool predicate) => pnlFilePath.Visible = predicate;
 
@@ -213,7 +211,7 @@ namespace SyncKusto
         {
             if (((RadioButton)sender).Checked)
             {
-                if (Spec<string>.NonEmptyString(s => s).IsSatisfiedBy(txtOperationProgress.Text))
+                if (!string.IsNullOrWhiteSpace(txtOperationProgress.Text))
                 {
                     ProgressMessageState.Push((txtOperationProgress.Text, SourceSelection));
                 }
@@ -248,9 +246,44 @@ namespace SyncKusto
         public bool IsValid() => SourceValidationMap[SourceSelection].Invoke();
 
         /// <summary>
+        /// Load the schema specified in the control
+        /// </summary>
+        /// <returns>The loaded database schema</returns>
+        /// <exception cref="SchemaLoadException">Thrown when schema cannot be loaded</exception>
+        public DatabaseSchema LoadSchema()
+        {
+            try
+            {
+                IDatabaseSchemaBuilder schemaBuilder;
+
+                if (SourceSelection == SourceSelection.Kusto())
+                {
+                    schemaBuilder = new KustoDatabaseSchemaBuilder(new QueryEngine(KustoConnection));
+                }
+                else if (SourceSelection == SourceSelection.FilePath())
+                {
+                    SettingsWrapper.PreviousFilePath = SourceFilePath;
+                    schemaBuilder = new FileDatabaseSchemaBuilder(SourceFilePath, SettingsWrapper.FileExtension);
+                }
+                else
+                {
+                    throw new InvalidOperationException("An unknown source type was supplied.");
+                }
+
+                ReportProgress($@"Constructing schema...");
+                return Task.Run(async () => await schemaBuilder.Build().ConfigureAwait(false)).Result;
+            }
+            catch (Exception ex) when (ex is not SchemaLoadException)
+            {
+                throw new SchemaLoadException("Failed to load database schema", ex);
+            }
+        }
+
+        /// <summary>
         /// Attempt to load the schema specified in the control
         /// </summary>
         /// <returns>Either an error or the schema that was loaded</returns>
+        [Obsolete("Use LoadSchema() instead which throws exceptions")]
         public Either<IOperationError, DatabaseSchema> TryLoadSchema()
         {
             IDatabaseSchemaBuilder schemaBuilder = EmptyDatabaseSchemaBuilder.Value;
@@ -290,9 +323,9 @@ namespace SyncKusto
         /// Update the UI with the status message
         /// </summary>
         /// <param name="message">The message to display</param>
-        public void ReportProgress(string message)
+        public void ReportProgress(string? message)
         {
-            if (Spec<string>.NotNull(s => s).IsSatisfiedBy(message))
+            if (message != null)
                 txtOperationProgress.Text = message;
         }
 

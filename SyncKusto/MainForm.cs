@@ -5,11 +5,9 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using Kusto.Data.Common;
 using SyncKusto.ChangeModel;
+using SyncKusto.ErrorHandling;
 using SyncKusto.Extensions;
-using SyncKusto.Functional;
 using SyncKusto.Kusto;
-using SyncKusto.Validation.ErrorMessages;
-using SyncKusto.Validation.ErrorMessages.Specifications;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,11 +18,12 @@ namespace SyncKusto
 {
     public partial class MainForm : Form
     {
-        private DatabaseSchema _sourceSchema;
-        private DatabaseSchema _targetSchema;
+        private DatabaseSchema? _sourceSchema;
+        private DatabaseSchema? _targetSchema;
 
         private readonly string _functionTreeNodeText = "Functions";
         private readonly string _tablesTreeNodeText = "Tables";
+        private readonly IErrorMessageResolver _errorMessageResolver;
 
         /// <summary>
         /// Default constructor. Get the UI set up properly.
@@ -34,6 +33,7 @@ namespace SyncKusto
             InitializeComponent();
             spcSource.ResetMainFormValueHolders = ResetValueHoldersOnChange;
             spcTarget.ResetMainFormValueHolders = ResetValueHoldersOnChange;
+            _errorMessageResolver = ErrorMessageResolverFactory.CreateDefault();
         }
 
         /// <summary>
@@ -79,56 +79,24 @@ namespace SyncKusto
             Cursor lastCursor = Cursor.Current;
             Cursor.Current = Cursors.WaitCursor;
 
-            IDatabaseSchema TryGetSchema(Func<Either<IOperationError, DatabaseSchema>> schema)
+            try
             {
-                try
-                {
-                    return schema()
-                        .Map(valid => (IDatabaseSchema)new ValidDatabaseSchema(() => valid))
-                        .Reduce(
-                            schemaError => new InvalidDatabaseSchema(schemaError));
-                }
-                catch (Exception exception)
-                {
-                    return new InvalidDatabaseSchema(new NonSpecificOperationError(exception));
-                }
+                spcSource.ReportProgress($@"Loading source schema...");
+                _sourceSchema = spcSource.LoadSchema();
+                spcSource.ReportProgress($@"Schema loaded.");
+                
+                spcTarget.ReportProgress($@"Loading target schema...");
+                _targetSchema = spcTarget.LoadSchema();
+                spcTarget.ReportProgress($@"Schema loaded.");
             }
-
-            Func<DefaultOperationErrorMessageResolver> errorMessageResolver = DefaultOperationErrorMessageResolver
-                .Using(() => new List<IOperationErrorMessageSpecification>()
-                {
-                    KustoOperationErrorSpecifications.ClusterNotFound(),
-                    KustoOperationErrorSpecifications.DatabaseNotFound(),
-                    KustoOperationErrorSpecifications.NoPermissions(),
-                    KustoOperationErrorSpecifications.CannotAuthenticate(),
-                    FilePathOperationErrorSpecifications.FolderNotFound()
-                });
-
-            spcSource.ReportProgress($@"Loading source schema...");
-            IDatabaseSchema sourceSchema = TryGetSchema(() => spcSource.TryLoadSchema());
-
-            spcSource.ReportProgress($@"Schema loaded.");
-            spcTarget.ReportProgress($@"Loading target schema...");
-            IDatabaseSchema targetSchema = sourceSchema is InvalidDatabaseSchema _
-                ? new InvalidDatabaseSchema(new NonSpecificOperationError(
-                    new InvalidOperationException("Target schema not loaded due to Source schema error.")))
-                : TryGetSchema(() => spcTarget.TryLoadSchema());
-
-            switch (sourceSchema)
+            catch (Exception ex)
             {
-                case InvalidDatabaseSchema invalidSource:
-                    MessageBox.Show($@"The Source schema is invalid: {errorMessageResolver().ResolveFor(invalidSource.Error).Get()}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-
-                case ValidDatabaseSchema _ when targetSchema is InvalidDatabaseSchema invalidTarget:
-                    MessageBox.Show($@"The Target schema is invalid: {errorMessageResolver().ResolveFor(invalidTarget.Error).Get()}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-
-                case ValidDatabaseSchema source when targetSchema is ValidDatabaseSchema target:
-                    spcTarget.ReportProgress($@"Schema loaded.");
-                    _sourceSchema = source.Schema;
-                    _targetSchema = target.Schema;
-                    break;
+                Cursor.Current = lastCursor;
+                var errorMessage = _errorMessageResolver.ResolveErrorMessage(ex);
+                MessageBox.Show($@"Failed to load schema: {errorMessage}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                spcSource.ReportProgress(string.Empty);
+                spcTarget.ReportProgress(string.Empty);
+                return;
             }
 
             Cursor.Current = lastCursor;
