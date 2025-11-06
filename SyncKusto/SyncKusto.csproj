@@ -54,4 +54,7 @@
     <Folder Include="Validation\ErrorMessages\Specifications\" />
     <Folder Include="Validation\Infrastructure\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SyncKusto.Core\SyncKusto.Core.csproj" />
+  </ItemGroup>
 </Project>

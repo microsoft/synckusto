@@ -1,6 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using SyncKusto.Core.Abstractions;
+using SyncKusto.Core.Models;
+
 namespace SyncKusto.ChangeModel
 {
     public class TableSchemaDifference : SchemaDifference

@@ -4,7 +4,7 @@
 using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
-using SyncKusto.ChangeModel;
+using SyncKusto.Core.Models;
 using SyncKusto.Kusto;
 using System;
 using System.Collections.Generic;

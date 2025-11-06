@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using SyncKusto.ChangeModel;
+using SyncKusto.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -254,7 +254,7 @@ namespace SyncKusto
                 {
                     return (LineEndingMode)_settings.LineEndingMode;
                 }
-                return ChangeModel.LineEndingMode.LeaveAsIs;
+                return LineEndingMode.LeaveAsIs;
             }
             set
             {

@@ -11,6 +11,7 @@ using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
 using Newtonsoft.Json;
+using SyncKusto.Core.Models;
 using SyncKusto.Properties;
 using SyncKusto.Utilities;
 
@@ -123,10 +124,10 @@ namespace SyncKusto.Kusto
             {
                 switch (SettingsWrapper.LineEndingMode)
                 {
-                    case ChangeModel.LineEndingMode.WindowsStyle:                        
+                    case LineEndingMode.WindowsStyle:                        
                         function.Body = Regex.Replace(function.Body, @"\r\n|\r|\n", "\r\n");
                         break;
-                    case ChangeModel.LineEndingMode.UnixStyle:
+                    case LineEndingMode.UnixStyle:
                         function.Body = Regex.Replace(function.Body, @"\r\n|\r|\n", "\n");
                         break;
                 }

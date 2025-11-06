@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using SyncKusto.Core.Abstractions;
 using SyncKusto.Exceptions;
 
 namespace SyncKusto.ErrorHandling

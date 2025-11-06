@@ -3,7 +3,8 @@
 
 using Kusto.Data;
 using Kusto.Data.Common;
-using SyncKusto.Exceptions;
+using SyncKusto.Core.Exceptions;
+using SyncKusto.Core.Models;
 using SyncKusto.Kusto;
 using SyncKusto.Kusto.DatabaseSchemaBuilder;
 using SyncKusto.SyncSources;

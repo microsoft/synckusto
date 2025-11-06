@@ -5,6 +5,8 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using Kusto.Data.Common;
 using SyncKusto.ChangeModel;
+using CoreAbstractions = SyncKusto.Core.Abstractions;
+using SyncKusto.Core.Models;
 using SyncKusto.ErrorHandling;
 using SyncKusto.Extensions;
 using SyncKusto.Kusto;
@@ -23,7 +25,7 @@ namespace SyncKusto
 
         private readonly string _functionTreeNodeText = "Functions";
         private readonly string _tablesTreeNodeText = "Tables";
-        private readonly IErrorMessageResolver _errorMessageResolver;
+        private readonly CoreAbstractions.IErrorMessageResolver _errorMessageResolver;
 
         /// <summary>
         /// Default constructor. Get the UI set up properly.
@@ -102,11 +104,11 @@ namespace SyncKusto
             Cursor.Current = lastCursor;
 
             spcSource.ReportProgress($@"Comparing differences...");
-            IEnumerable<SchemaDifference> tableDifferences = new KustoSchemaDifferenceMapper(() =>
+            IEnumerable<CoreAbstractions.SchemaDifference> tableDifferences = new KustoSchemaDifferenceMapper(() =>
                     _sourceSchema.Tables.AsKustoSchema().DifferenceFrom(_targetSchema.Tables.AsKustoSchema()))
                 .GetDifferences();
 
-            IEnumerable<SchemaDifference> functionDifferences = new KustoSchemaDifferenceMapper(() =>
+            IEnumerable<CoreAbstractions.SchemaDifference> functionDifferences = new KustoSchemaDifferenceMapper(() =>
                     _sourceSchema.Functions.AsKustoSchema().DifferenceFrom(_targetSchema.Functions.AsKustoSchema()))
                 .GetDifferences();
 
@@ -134,14 +136,14 @@ namespace SyncKusto
         /// </summary>
         /// <param name="differences">A list of differences to display</param>
         /// <param name="tv">The tree view control to populate with the differences</param>
-        private void PopulateTree(IEnumerable<SchemaDifference> differences, TreeView tv)
+        private void PopulateTree(IEnumerable<CoreAbstractions.SchemaDifference> differences, TreeView tv)
         {
             TreeNode functionRootNode = tv.Nodes.Add(_functionTreeNodeText);
             TreeNode functionAddNode = functionRootNode.Nodes.Add("Not In Target");
             TreeNode functionDropNode = functionRootNode.Nodes.Add("Only In Target");
             TreeNode functionEditNode = functionRootNode.Nodes.Add("Different");
 
-            TreeNode ToTreeNode(SchemaDifference difference)
+            TreeNode ToTreeNode(CoreAbstractions.SchemaDifference difference)
             {
                 return new TreeNode()
                 {
@@ -380,7 +382,7 @@ namespace SyncKusto
                 }
             }
 
-            foreach (SchemaDifference difference in selectedNodes.Select(node => (SchemaDifference)node.Tag))
+            foreach (CoreAbstractions.SchemaDifference difference in selectedNodes.Select(node => (CoreAbstractions.SchemaDifference)node.Tag))
             {
                 switch (difference.Schema)
                 {

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using SyncKusto.Core.Models;
 using System;
 using System.Collections.Generic;
 
