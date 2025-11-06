@@ -12,6 +12,7 @@ namespace SyncKusto.Extensions
         public static (IDictionary<TKey, TValue> modified, IDictionary<TKey, TValue> onlyInSource,
             IDictionary<TKey, TValue> onlyInTarget) DifferenceFrom<TKey, TValue>(
                 this IDictionary<TKey, TValue> source, IDictionary<TKey, TValue> target)
+            where TKey : notnull
         {
             var modified = new Dictionary<TKey, TValue>();
             var onlyInTarget = new Dictionary<TKey, TValue>();

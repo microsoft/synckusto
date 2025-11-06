@@ -24,14 +24,14 @@ namespace SyncKusto.ChangeModel
 
         public string Name => Value.Name;
 
-        public bool Equals(KustoTableSchema other)
+        public bool Equals(KustoTableSchema? other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
             return Equals(Value, other.Value);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;

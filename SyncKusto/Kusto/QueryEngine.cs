@@ -96,15 +96,29 @@ namespace SyncKusto.Kusto
         /// <returns></returns>
         public DatabaseSchema GetDatabaseSchema()
         {
-            DatabaseSchema result = null;
+            DatabaseSchema? result = null;
             string csl = $@".show database ['{_databaseName}'] schema as json";
             using (IDataReader reader = _adminClient.ExecuteControlCommand(_databaseName, csl))
             {
                 reader.Read();
-                string json = reader[0].ToString();
-                ClusterSchema clusterSchema = JsonConvert.DeserializeObject<ClusterSchema>(json);
+                string? json = reader[0].ToString();
+                if (json == null)
+                {
+                    throw new InvalidOperationException("Failed to retrieve schema JSON from Kusto");
+                }
+                ClusterSchema? clusterSchema = JsonConvert.DeserializeObject<ClusterSchema>(json);
+                if (clusterSchema?.Databases == null || !clusterSchema.Databases.Any())
+                {
+                    throw new InvalidOperationException("Failed to deserialize cluster schema or no databases found");
+                }
                 result = clusterSchema.Databases.First().Value;
             }
+            
+            if (result == null)
+            {
+                throw new InvalidOperationException("Failed to load database schema");
+            }
+
             foreach (var function in result.Functions.Values)
             {
                 switch (SettingsWrapper.LineEndingMode)
@@ -117,14 +131,8 @@ namespace SyncKusto.Kusto
                         break;
                 }
 
-	            if (function.Folder == null)
-                {
-                    function.Folder = "";
-                }
-                if (function.DocString == null)
-                {
-                    function.DocString = "";
-                }
+	            function.Folder ??= "";
+                function.DocString ??= "";
             }
             return result;
         }
@@ -240,9 +248,9 @@ namespace SyncKusto.Kusto
         public static KustoConnectionStringBuilder GetKustoConnectionStringBuilder(
             string cluster,
             string database,
-            string aadClientId = null,
-            string aadClientKey = null,
-            string certificateThumbprint = null)
+            string? aadClientId = null,
+            string? aadClientKey = null,
+            string? certificateThumbprint = null)
         {
             if (string.IsNullOrEmpty(aadClientId) != string.IsNullOrEmpty(aadClientKey) &&
                 string.IsNullOrEmpty(aadClientId) != string.IsNullOrEmpty(certificateThumbprint))

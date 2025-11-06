@@ -12,18 +12,18 @@ public static partial class SettingsWrapper
         /// </summary>
         private class UserSettings
         {
-            public string PreviousFilePath { get; set; }
-            public string KustoClusterForTempDatabases { get; set; }
-            public string AADAuthority { get; set; }
-            public string TemporaryKustoDatabase { get; set; }
+            public string? PreviousFilePath { get; set; }
+            public string? KustoClusterForTempDatabases { get; set; }
+            public string? AADAuthority { get; set; }
+            public string? TemporaryKustoDatabase { get; set; }
             public bool KustoObjectDropWarning { get; set; } = true;
             public bool? TableFieldsOnNewLine { get; set; } = false;
             public bool? CreateMergeEnabled { get; set; } = false;
             public bool? UseLegacyCslExtension { get; set; } = true;
             public string CertificateLocation { get; set; } = "CurrentUser";
-            public List<string> RecentClusters { get; set; } = new List<string>();
-            public List<string> RecentDatabases { get; set; } = new List<string>();
-            public List<string> RecentAppIds { get; set; } = new List<string>();
+            public List<string>? RecentClusters { get; set; }
+            public List<string>? RecentDatabases { get; set; }
+            public List<string>? RecentAppIds { get; set; }
             public int LineEndingMode { get; set; } = 0; // LeaveAsIs
         }
     }

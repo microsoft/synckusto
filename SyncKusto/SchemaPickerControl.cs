@@ -40,6 +40,10 @@ namespace SyncKusto
 
             this.cbCluster.Items.AddRange(SettingsWrapper.RecentClusters.ToArray());
             this.cbDatabase.Items.AddRange(SettingsWrapper.RecentDatabases.ToArray());
+            
+            // Initialize required properties to prevent nullable warnings
+            SourceSelection = SourceSelection.FilePath();
+            ProgressMessageState = new Stack<(string, SourceSelection)>();
         }
 
         /// <summary>
@@ -59,15 +63,14 @@ namespace SyncKusto
             SourceAllowedMap =
                 sourceSelectionFactory.Allowed(AllowedFilePathSource, AllowedKustoSource);
 
-            ProgressMessageState = new Stack<(string, SourceSelection)>();
             SetDefaultControlView();
         }
 
-        private IReadOnlyDictionary<SourceSelection, (bool enabled, Action<bool> whenAllowed)> SourceAllowedMap { get; }
+        private IReadOnlyDictionary<SourceSelection, (bool enabled, Action<bool> whenAllowed)>? SourceAllowedMap { get; }
 
-        private IReadOnlyDictionary<SourceSelection, Action<bool>> SourceSelectionMap { get; }
+        private IReadOnlyDictionary<SourceSelection, Action<bool>>? SourceSelectionMap { get; }
 
-        private IReadOnlyDictionary<SourceSelection, Func<bool>> SourceValidationMap { get; }
+        private IReadOnlyDictionary<SourceSelection, Func<bool>>? SourceValidationMap { get; }
 
         public SourceSelection SourceSelection { get; private set; }
 
@@ -129,7 +132,7 @@ namespace SyncKusto
             }
         }
 
-        private Stack<(string message, SourceSelection source)> ProgressMessageState { get; }
+        private Stack<(string message, SourceSelection source) > ProgressMessageState { get; }
 
         private Func<string, bool> IsConfigured => (input) => !string.IsNullOrWhiteSpace(input);
 
@@ -179,6 +182,8 @@ namespace SyncKusto
 
         private void EnableSourceSelections()
         {
+            if (SourceAllowedMap == null) return;
+            
             foreach ((bool enabled, Action<bool> whenAllowed) value in SourceAllowedMap.Values)
             {
                 value.whenAllowed.Invoke(value.enabled);
@@ -187,6 +192,8 @@ namespace SyncKusto
 
         private void ToggleSourceSelections()
         {
+            if (SourceSelectionMap == null) return;
+            
             foreach (SourceSelection source in SourceSelectionMap.Keys)
             {
                 SourceSelectionMap[source].Invoke(source == SourceSelection);
@@ -241,7 +248,11 @@ namespace SyncKusto
         ///     Check if the user has correctly specified a schema source
         /// </summary>
         /// <returns>True if it is correctly set, false otherwise.</returns>
-        public bool IsValid() => SourceValidationMap[SourceSelection].Invoke();
+        public bool IsValid()
+        {
+            if (SourceValidationMap == null) return false;
+            return SourceValidationMap[SourceSelection].Invoke();
+        }
 
         /// <summary>
         /// Load the schema specified in the control

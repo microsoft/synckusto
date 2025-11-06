@@ -47,7 +47,7 @@
         /// <param name="storeName">The name of the store to search for the certificate.</param>
         /// <param name="thumbprint">The thumbprint of the certificate to retrieve.</param>
         /// <returns>The requested certificate or null if it is not found.</returns>
-        private static X509Certificate2 GetCertificate(StoreLocation storeLocation, StoreName storeName, string thumbprint)
+        private static X509Certificate2? GetCertificate(StoreLocation storeLocation, StoreName storeName, string thumbprint)
         {
             var certStore = new X509Store(storeName, storeLocation);
             certStore.Open(OpenFlags.ReadOnly);

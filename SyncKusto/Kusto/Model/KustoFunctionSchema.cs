@@ -25,14 +25,14 @@ namespace SyncKusto.ChangeModel
 
         public void DeleteFromKusto(QueryEngine kustoQueryEngine) => Value.DeleteFromKusto(kustoQueryEngine);
 
-        public bool Equals(KustoFunctionSchema other)
+        public bool Equals(KustoFunctionSchema? other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
             return Equals(Value, other.Value);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;

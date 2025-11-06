@@ -76,7 +76,7 @@ namespace SyncKusto
             }
 
             // Load both of the schemas
-            Cursor lastCursor = Cursor.Current;
+            Cursor? lastCursor = Cursor.Current;
             Cursor.Current = Cursors.WaitCursor;
 
             try
@@ -224,6 +224,11 @@ namespace SyncKusto
         /// <param name="e"></param>
         private void tvComparison_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
         {
+            if (_sourceSchema == null || _targetSchema == null)
+            {
+                return;
+            }
+
             string objectName = e.Node.Text;
             string sourceText = "";
             string targetText = "";
@@ -292,7 +297,7 @@ namespace SyncKusto
         /// <param name="e"></param>
         private void btnUpdate_Click(object sender, EventArgs e)
         {
-            Cursor lastCursor = Cursor.Current;
+            Cursor? lastCursor = Cursor.Current;
             Cursor.Current = Cursors.WaitCursor;
 
             rtbSourceText.Text = "";
@@ -345,7 +350,7 @@ namespace SyncKusto
         /// </summary>
         /// <param name="selectedNodes">The changes to persist</param>
         /// <param name="kustoQueryEngine">Pass a connection to Kusto if the target is Kusto</param>
-        private void PersistChanges(IEnumerable<TreeNode> selectedNodes, QueryEngine kustoQueryEngine = null)
+        private void PersistChanges(IEnumerable<TreeNode> selectedNodes, QueryEngine? kustoQueryEngine = null)
         {
             void WriteToTarget(IKustoSchema schema)
             {
@@ -355,6 +360,8 @@ namespace SyncKusto
                 }
                 else
                 {
+                    if (kustoQueryEngine == null)
+                        throw new InvalidOperationException("Kusto query engine is required for Kusto target");
                     schema.WriteToKusto(kustoQueryEngine);
                 }
             }
@@ -363,6 +370,8 @@ namespace SyncKusto
             {
                 if (spcTarget.SourceSelection == SourceSelection.Kusto())
                 {
+                    if (kustoQueryEngine == null)
+                        throw new InvalidOperationException("Kusto query engine is required for Kusto target");
                     schema.DeleteFromKusto(kustoQueryEngine);
                 }
                 else
@@ -402,7 +411,7 @@ namespace SyncKusto
             // If the user caused the check action then update the subtree
             if (e.Action != TreeViewAction.Unknown)
             {
-                CheckAllChildNodes(e.Node, e.Node.Checked);
+                CheckAllChildNodes(e.Node, e.Node?.Checked ?? false);
             }
         }
 
@@ -411,8 +420,13 @@ namespace SyncKusto
         /// </summary>
         /// <param name="node">All children of this node will have their checked state modified</param>
         /// <param name="checkedState">The new state for the check box</param>
-        private void CheckAllChildNodes(TreeNode node, bool checkedState)
+        private void CheckAllChildNodes(TreeNode? node, bool checkedState)
         {
+            if (node == null)
+            {
+                return;
+            }
+
             foreach (TreeNode n in node.Nodes)
             {
                 n.Checked = checkedState;

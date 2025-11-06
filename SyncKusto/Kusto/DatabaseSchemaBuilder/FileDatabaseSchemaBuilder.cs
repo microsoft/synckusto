@@ -52,7 +52,7 @@ namespace SyncKusto.Kusto.DatabaseSchemaBuilder
             var failedObjects = new List<string>();
 
             // This is a bit of magic. When called from the UI thread, it would deadlock on Dispose. Running in its own thread works well.
-            DatabaseSchema resultSchema = null;
+            DatabaseSchema? resultSchema = null;
             var t = Task.Run(() =>
             {
                 // Load Kusto Query Engine, this makes it a lot easier to deal with slightly malformed CSL files.
@@ -87,6 +87,11 @@ namespace SyncKusto.Kusto.DatabaseSchemaBuilder
                 }
             });
             t.Wait();
+
+            if (resultSchema == null)
+            {
+                throw new InvalidOperationException("Failed to build database schema from files");
+            }
 
             return Task.FromResult(resultSchema);
         }

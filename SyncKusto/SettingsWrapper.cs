@@ -20,7 +20,7 @@ namespace SyncKusto
         private static readonly object _lockObject = new object();
         private static readonly string _settingsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SyncKusto");
         private static readonly string _settingsFilePath = Path.Combine(_settingsDirectory, "userSettings.json");
-        private static UserSettings _settings;
+        private static UserSettings _settings = new UserSettings();
         private static bool _isLoaded;
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace SyncKusto
             get
             {
                 EnsureLoaded();
-                return _settings.PreviousFilePath;
+                return _settings.PreviousFilePath ?? string.Empty;
             }
             set
             {
@@ -122,7 +122,7 @@ namespace SyncKusto
             get
             {
                 EnsureLoaded();
-                return _settings.KustoClusterForTempDatabases;
+                return _settings.KustoClusterForTempDatabases ?? string.Empty;
             }
             set
             {
@@ -140,7 +140,7 @@ namespace SyncKusto
             get
             {
                 EnsureLoaded();
-                return _settings.TemporaryKustoDatabase;
+                return _settings.TemporaryKustoDatabase ?? string.Empty;
             }
             set
             {
@@ -159,7 +159,7 @@ namespace SyncKusto
             get
             {
                 EnsureLoaded();
-                return _settings.AADAuthority;
+                return _settings.AADAuthority ?? string.Empty;
             }
             set
             {

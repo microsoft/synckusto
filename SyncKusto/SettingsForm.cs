@@ -62,7 +62,11 @@ namespace SyncKusto
 
             foreach (var radioButton in lineEndingRadioButtons)
             {
-                radioButton.Checked = (LineEndingMode)radioButton.Tag == SettingsWrapper.LineEndingMode;
+                var tag = radioButton.Tag;
+                if (tag != null)
+                {
+                    radioButton.Checked = (LineEndingMode)tag == SettingsWrapper.LineEndingMode;
+                }
             }
         }
 
@@ -73,7 +77,7 @@ namespace SyncKusto
         /// <param name="e"></param>
         private void btnOk_Click(object sender, System.EventArgs e)
         {
-            Cursor lastCursor = Cursor.Current;
+            Cursor? lastCursor = Cursor.Current;
             Cursor.Current = Cursors.WaitCursor;
 
             SettingsWrapper.TableFieldsOnNewLine = cbTableFieldsOnNewLine.Checked;
@@ -81,8 +85,14 @@ namespace SyncKusto
             SettingsWrapper.KustoObjectDropWarning = chkTableDropWarning.Checked;
             SettingsWrapper.AADAuthority = txtAuthority.Text;
             SettingsWrapper.UseLegacyCslExtension = cbUseLegacyCslExtension.Checked;
-            SettingsWrapper.LineEndingMode = (LineEndingMode)lineEndingRadioButtons.Where(b => b.Checked).Single().Tag;
-            SettingsWrapper.CertificateLocation = (StoreLocation)cbCertLocation.SelectedItem;
+            
+            var checkedButton = lineEndingRadioButtons.Where(b => b.Checked).FirstOrDefault();
+            if (checkedButton?.Tag != null)
+            {
+                SettingsWrapper.LineEndingMode = (LineEndingMode)checkedButton.Tag;
+            }
+            
+            SettingsWrapper.CertificateLocation = (StoreLocation)cbCertLocation.SelectedItem!;
 
             // Only check the Kusto settings if they changed
             if (SettingsWrapper.KustoClusterForTempDatabases != txtKustoCluster.Text ||

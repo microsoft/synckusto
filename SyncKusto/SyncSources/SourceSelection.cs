@@ -25,14 +25,14 @@ namespace SyncKusto.SyncSources
 
         public static SourceSelection FilePath() => new SourceSelection(SourceModeRepresentation.FilePath);
 
-        public bool Equals(SourceSelection other)
+        public bool Equals(SourceSelection? other)
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
             return SourceMode == other.SourceMode;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is null) return false;
             if (ReferenceEquals(this, obj)) return true;
