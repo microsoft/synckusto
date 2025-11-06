@@ -57,5 +57,6 @@
   <ItemGroup>
     <ProjectReference Include="..\SyncKusto.Core\SyncKusto.Core.csproj" />
     <ProjectReference Include="..\SyncKusto.Kusto\SyncKusto.Kusto.csproj" />
+    <ProjectReference Include="..\SyncKusto.FileSystem\SyncKusto.FileSystem.csproj" />
   </ItemGroup>
 </Project>

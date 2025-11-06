@@ -2,24 +2,27 @@
 // Licensed under the MIT License.
 
 // This file is kept for backward compatibility but the actual implementations
-// are now in SyncKusto.Kusto.Extensions.KustoSchemaOperationExtensions
-// Consider using the new namespace in new code.
+// are now split between:
+// - SyncKusto.Kusto.Extensions.KustoSchemaOperationExtensions (Kusto operations)
+// - SyncKusto.FileSystem.Extensions.FileSystemSchemaExtensions (File operations)
+// Consider using the new namespaces in new code.
 
 using System;
 using Kusto.Data.Common;
 using SyncKusto.Kusto;
 using SyncKusto.Kusto.Extensions;
+using SyncKusto.FileSystem.Extensions;
 
 namespace SyncKusto
 {
-    [Obsolete("Use SyncKusto.Kusto.Extensions.KustoSchemaOperationExtensions instead")]
+    [Obsolete("Use SyncKusto.Kusto.Extensions.KustoSchemaOperationExtensions or SyncKusto.FileSystem.Extensions.FileSystemSchemaExtensions instead")]
     public static class ExtensionMethods
     {
         /// <summary>
         /// Write the function to the file system.
         /// </summary>
         public static void WriteToFile(this FunctionSchema functionSchema, string rootFolder, string fileExtension) =>
-            functionSchema.WriteToFile(rootFolder, fileExtension);
+            FileSystemSchemaExtensions.WriteToFile(functionSchema, rootFolder, fileExtension);
 
         /// <summary>
         /// Write a function to Kusto
@@ -31,7 +34,7 @@ namespace SyncKusto
         /// Delete a function from the file system
         /// </summary>
         public static void DeleteFromFolder(this FunctionSchema functionSchema, string rootFolder, string fileExtension) =>
-            functionSchema.DeleteFromFolder(rootFolder, fileExtension);
+            FileSystemSchemaExtensions.DeleteFromFolder(functionSchema, rootFolder, fileExtension);
 
         /// <summary>
         /// Delete a function from Kusto
@@ -43,7 +46,7 @@ namespace SyncKusto
         /// Write a table to the file system
         /// </summary>
         public static void WriteToFile(this TableSchema tableSchema, string rootFolder, string fileExtension) =>
-            KustoSchemaOperationExtensions.WriteToFile(
+            FileSystemSchemaExtensions.WriteToFile(
                 tableSchema, 
                 rootFolder, 
                 fileExtension,
@@ -66,7 +69,7 @@ namespace SyncKusto
         /// Delete a table from the file system
         /// </summary>
         public static void DeleteFromFolder(this TableSchema tableSchema, string rootFolder, string fileExtension) =>
-            tableSchema.DeleteFromFolder(rootFolder, fileExtension);
+            FileSystemSchemaExtensions.DeleteFromFolder(tableSchema, rootFolder, fileExtension);
 
         /// <summary>
         /// Delete a table from Kusto
@@ -78,22 +81,7 @@ namespace SyncKusto
         /// Convert to long path to avoid issues with long file names
         /// https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#win32-file-namespaces
         /// </summary>
-        public static string HandleLongFileNames(this string filename)
-        {
-            const string LongPathPrefix = "\\\\?\\";
-
-            if (filename.Length > 248)
-            {
-                return LongPathPrefix + filename;
-            }
-            else if (filename.StartsWith(LongPathPrefix))
-            {
-                return filename.Substring(LongPathPrefix.Length);
-            }
-            else
-            {
-                return filename;
-            }
-        }
+        public static string HandleLongFileNames(this string filename) =>
+            FileSystemSchemaExtensions.HandleLongFileNames(filename);
     }
 }

@@ -555,21 +555,612 @@ public record KustoConnectionOptions(
 ### Phase 6: Refactor UI Layer
 **Goal:** Clean UI code, introduce presentation layer patterns
 
-1. Create `SyncKusto.UI.WinForms` project
-2. Move forms and controls to new project
-3. Create view model or presenter pattern for MainForm
-4. MainForm only handles:
-   - User input
-   - Calling services
-   - Displaying results (no business logic)
-   - Catching and displaying exceptions
-5. Remove business logic from event handlers
-6. Use `IProgress<T>` for progress reporting
+#### Context from Completed Phases
 
-**Deliverables:**
-- Thin UI layer
-- Business logic fully extracted
-- UI testable via view models/presenters
+**Phase 1-3 Accomplishments:**
+- ? Core abstractions defined in `SyncKusto.Core`
+- ? Kusto operations isolated in `SyncKusto.Kusto`
+- ? File system operations isolated in `SyncKusto.FileSystem`
+- ? Exception-based error handling established
+- ? `ISchemaRepository` pattern implemented
+- ? `IErrorMessageResolver` pattern implemented
+
+**Available Infrastructure:**
+1. **Repositories** (Ready to Use)
+   - `KustoSchemaRepository` - Kusto database access
+   - `FileSystemSchemaRepository` - File system access
+   - Both implement `ISchemaRepository` with async methods
+
+2. **Error Handling** (Ready to Use)
+   - `FileSystemErrorMessageResolver` - File system errors
+   - `KustoErrorMessageResolver` - Kusto errors
+   - `CompositeErrorMessageResolver` - Aggregates resolvers
+   - `AggregateExceptionResolver` - Unwraps aggregate exceptions
+
+3. **Exception Hierarchy** (Ready to Use)
+   - `SyncKustoException` - Base
+   - `SchemaLoadException` - Schema loading failures
+   - `SchemaSyncException` - Schema synchronization failures
+   - `SchemaValidationException` - Validation errors with list
+   - `FileSchemaException` - File system errors
+   - `SchemaParseException` - Parse errors with failed objects list
+
+4. **Models** (Ready to Use)
+   - `SchemaDifference` - Represents schema differences
+   - `SchemaDifferenceResult` - Collection of differences
+   - `SyncProgress` - Progress reporting data
+   - `SyncResult` - Synchronization results
+   - `LineEndingMode`, `StoreLocation`, `AuthenticationMode` - Enums
+
+#### Current UI State Analysis
+
+**MainForm.cs** - 400+ lines, multiple responsibilities:
+- ? Has error message resolver (good!)
+- ? Direct schema loading via builders (should use repositories)
+- ? Business logic in `btnCompare_Click` (schema comparison)
+- ? Business logic in `btnUpdate_Click` (synchronization)
+- ? Direct persistence logic in `PersistChanges`
+- ? Tree view population mixed with comparison logic
+- ? Direct calls to `MessageBox.Show()` throughout
+- ? No progress reporting abstraction (hardcoded UI updates)
+- ? Validation logic embedded in event handlers
+
+**SchemaPickerControl.cs** - 300+ lines, multiple responsibilities:
+- ? UI, validation, and schema loading all mixed
+- ? Creates schema builders directly (tight coupling)
+- ? Settings access via static `SettingsWrapper`
+- ? Progress reporting directly to TextBox
+- ? Validation logic scattered across multiple methods
+- ? Recent values management mixed with UI
+- ? Authentication mode selection tightly coupled
+
+**Current Data Flow:**
+```
+User Click ? MainForm Event Handler ? Direct Builder Creation ? Schema Load ? 
+Direct Comparison Logic ? Tree Population ? Direct Persistence ? MessageBox
+```
+
+**Target Data Flow:**
+```
+User Click ? Presenter/ViewModel ? Service Call ? Repository ? 
+Result ? Presenter/ViewModel ? View Update ? User Feedback
+```
+
+#### Implementation Steps
+
+##### 1. Create Presentation Layer Abstractions
+
+**IMainFormPresenter** - Orchestrates main form operations
+```csharp
+public interface IMainFormPresenter
+{
+    /// <summary>
+    /// Compare source and target schemas
+    /// </summary>
+    Task<ComparisonResult> CompareAsync(
+        SchemaSourceInfo source,
+        SchemaSourceInfo target,
+        IProgress<SyncProgress>? progress = null,
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Synchronize selected differences
+    /// </summary>
+    Task<SyncResult> SynchronizeAsync(
+        IEnumerable<SchemaDifference> selectedDifferences,
+        IProgress<SyncProgress>? progress = null,
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Validate that settings are configured
+    /// </summary>
+    ValidationResult ValidateSettings(SchemaSourceInfo source, SchemaSourceInfo target);
+}
+
+public record SchemaSourceInfo(
+    SourceSelection SourceType,
+    string? FilePath = null,
+    KustoConnectionInfo? KustoInfo = null);
+
+public record KustoConnectionInfo(
+    string Cluster,
+    string Database,
+    AuthenticationMode AuthMode,
+    string Authority,
+    string? AppId = null,
+    string? AppKey = null,
+    string? CertificateThumbprint = null);
+
+public record ComparisonResult(
+    SchemaDifferenceResult Differences,
+    DatabaseSchema SourceSchema,
+    DatabaseSchema TargetSchema);
+
+public record ValidationResult(
+    bool IsValid,
+    string? ErrorMessage = null);
+```
+
+**ISchemaSourceSelector** - Abstracts schema source selection
+```csharp
+public interface ISchemaSourceSelector
+{
+    /// <summary>
+    /// Get schema source information from the control
+    /// </summary>
+    SchemaSourceInfo GetSourceInfo();
+    
+    /// <summary>
+    /// Validate the current source configuration
+    /// </summary>
+    ValidationResult Validate();
+    
+    /// <summary>
+    /// Report progress to the user
+    /// </summary>
+    void ReportProgress(string message);
+    
+    /// <summary>
+    /// Save recent values for next session
+    /// </summary>
+    void SaveRecentValues();
+    
+    /// <summary>
+    /// Reload recent values
+    /// </summary>
+    void ReloadRecentValues();
+}
+```
+
+##### 2. Create MainFormPresenter Implementation
+
+```csharp
+public class MainFormPresenter : IMainFormPresenter
+{
+    private readonly ISchemaSyncService _syncService;
+    private readonly Func<SchemaSourceInfo, ISchemaRepository> _repositoryFactory;
+    private readonly IErrorMessageResolver _errorResolver;
+    
+    // Cached for synchronization
+    private ISchemaRepository? _lastSourceRepository;
+    private ISchemaRepository? _lastTargetRepository;
+    
+    public async Task<ComparisonResult> CompareAsync(
+        SchemaSourceInfo source,
+        SchemaSourceInfo target,
+        IProgress<SyncProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        _lastSourceRepository = _repositoryFactory(source);
+        _lastTargetRepository = _repositoryFactory(target);
+        
+        var differences = await _syncService.CompareAsync(
+            _lastSourceRepository,
+            _lastTargetRepository,
+            progress,
+            cancellationToken);
+        
+        // Also get the actual schemas for display
+        var sourceSchema = await _lastSourceRepository.GetSchemaAsync(cancellationToken);
+        var targetSchema = await _lastTargetRepository.GetSchemaAsync(cancellationToken);
+        
+        return new ComparisonResult(differences, sourceSchema, targetSchema);
+    }
+    
+    public async Task<SyncResult> SynchronizeAsync(
+        IEnumerable<SchemaDifference> selectedDifferences,
+        IProgress<SyncProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (_lastSourceRepository == null || _lastTargetRepository == null)
+            throw new InvalidOperationException("Must compare before synchronizing");
+        
+        return await _syncService.SynchronizeAsync(
+            _lastSourceRepository,
+            _lastTargetRepository,
+            selectedDifferences,
+            progress,
+            cancellationToken);
+    }
+    
+    public ValidationResult ValidateSettings(SchemaSourceInfo source, SchemaSourceInfo target)
+    {
+        // Validation logic extracted from MainForm
+        if ((source.SourceType == SourceSelection.FilePath() || 
+             target.SourceType == SourceSelection.FilePath()) &&
+            string.IsNullOrWhiteSpace(/* settings */.TempCluster))
+        {
+            return new ValidationResult(
+                false, 
+                "File system sources require temp cluster configuration");
+        }
+        
+        return new ValidationResult(true);
+    }
+}
+```
+
+##### 3. Update MainForm to Use Presenter
+
+**Before (Current):**
+```csharp
+private void btnCompare_Click(object sender, EventArgs e)
+{
+    // 60+ lines of validation, schema loading, comparison logic
+    _sourceSchema = spcSource.LoadSchema();
+    _targetSchema = spcTarget.LoadSchema();
+    // ... comparison logic ...
+    // ... tree population ...
+}
+```
+
+**After (Target):**
+```csharp
+private IMainFormPresenter _presenter;
+private ComparisonResult? _lastComparison;
+
+private async void btnCompare_Click(object sender, EventArgs e)
+{
+    try
+    {
+        // Get source info from controls
+        var source = spcSource.GetSourceInfo();
+        var target = spcTarget.GetSourceInfo();
+        
+        // Validate
+        var validation = _presenter.ValidateSettings(source, target);
+        if (!validation.IsValid)
+        {
+            MessageBox.Show(validation.ErrorMessage, "Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+        
+        // Compare with progress
+        var progress = new Progress<SyncProgress>(p => 
+        {
+            spcSource.ReportProgress(p.Message);
+            spcTarget.ReportProgress(p.Message);
+        });
+        
+        _lastComparison = await _presenter.CompareAsync(source, target, progress);
+        
+        // Update UI
+        PopulateTree(_lastComparison.Differences);
+        btnUpdate.Enabled = true;
+    }
+    catch (Exception ex)
+    {
+        var message = _errorResolver.ResolveErrorMessage(ex);
+        MessageBox.Show(message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+}
+```
+
+##### 4. Extract Schema Source Selection Logic
+
+Create `SchemaSourceSelectorAdapter` to wrap `SchemaPickerControl`:
+
+```csharp
+public class SchemaSourceSelectorAdapter : ISchemaSourceSelector
+{
+    private readonly SchemaPickerControl _control;
+    
+    public SchemaSourceInfo GetSourceInfo()
+    {
+        if (_control.SourceSelection == SourceSelection.FilePath())
+        {
+            return new SchemaSourceInfo(
+                SourceSelection.FilePath(),
+                FilePath: _control.SourceFilePath);
+        }
+        else
+        {
+            return new SchemaSourceInfo(
+                SourceSelection.Kusto(),
+                KustoInfo: new KustoConnectionInfo(
+                    // ... extract from _control.KustoConnection
+                ));
+        }
+    }
+    
+    public ValidationResult Validate() => 
+        _control.IsValid() 
+            ? new ValidationResult(true) 
+            : new ValidationResult(false, "Invalid source configuration");
+    
+    public void ReportProgress(string message) => 
+        _control.ReportProgress(message);
+}
+```
+
+##### 5. Create Repository Factory
+
+```csharp
+public class SchemaRepositoryFactory
+{
+    private readonly ISettingsProvider _settings;
+    
+    public ISchemaRepository CreateRepository(SchemaSourceInfo sourceInfo)
+    {
+        return sourceInfo.SourceType switch
+        {
+            _ when sourceInfo.SourceType == SourceSelection.FilePath() => 
+                new FileSystemSchemaRepository(
+                    sourceInfo.FilePath!,
+                    _settings.GetSetting("FileExtension") ?? "kql",
+                    _settings.GetSetting("TempCluster")!,
+                    _settings.GetSetting("TempDatabase")!,
+                    _settings.GetSetting("Authority") ?? ""),
+            
+            _ when sourceInfo.SourceType == SourceSelection.Kusto() =>
+                new KustoSchemaRepository(
+                    sourceInfo.KustoInfo!.Cluster,
+                    sourceInfo.KustoInfo.Database,
+                    sourceInfo.KustoInfo.AuthMode,
+                    sourceInfo.KustoInfo.Authority,
+                    sourceInfo.KustoInfo.AppId,
+                    sourceInfo.KustoInfo.AppKey,
+                    sourceInfo.KustoInfo.CertificateThumbprint),
+            
+            _ => throw new InvalidOperationException("Unknown source type")
+        };
+    }
+}
+```
+
+##### 6. Simplify SchemaPickerControl
+
+**Current Responsibilities** (300+ lines):
+- UI rendering ? Keep
+- Validation logic ? Move to adapter/presenter
+- Schema loading ? Remove (use repository via presenter)
+- Settings management ? Move to settings provider
+- Recent values ? Keep (UI state)
+- Progress reporting ? Keep (UI update)
+
+**Target** (~150 lines):
+- Only UI and state management
+- Expose properties for data binding
+- Simple validation of UI inputs only
+- No business logic
+
+##### 7. Update Program.cs for Dependency Injection
+
+```csharp
+static void Main(string[] args)
+{
+    // Configure DI container
+    var services = new ServiceCollection();
+    
+    // Core services
+    services.AddSingleton<ISchemaComparisonService, SchemaComparisonService>();
+    services.AddSingleton<ISchemaSyncService, SchemaSyncService>();
+    
+    // Error resolvers
+    services.AddSingleton<IErrorMessageResolver, FileSystemErrorMessageResolver>();
+    services.AddSingleton<IErrorMessageResolver, KustoErrorMessageResolver>();
+    services.AddSingleton<IErrorMessageResolver, AggregateExceptionResolver>();
+    services.AddSingleton<IErrorMessageResolver, CompositeErrorMessageResolver>();
+    
+    // Settings (Phase 5 dependency)
+    services.AddSingleton<ISettingsProvider, JsonFileSettingsProvider>();
+    
+    // Repository factory
+    services.AddSingleton<SchemaRepositoryFactory>();
+    
+    // Presenters
+    services.AddSingleton<IMainFormPresenter, MainFormPresenter>();
+    
+    // Build and run
+    var serviceProvider = services.BuildServiceProvider();
+    
+    Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
+    Application.SetDefaultFont(new Font("Microsoft Sans Serif", 8.25f));
+    Application.EnableVisualStyles();
+    Application.SetCompatibleTextRenderingDefault(false);
+    
+    var mainForm = new MainForm(
+        serviceProvider.GetRequiredService<IMainFormPresenter>(),
+        serviceProvider.GetRequiredService<IErrorMessageResolver>());
+    
+    Application.Run(mainForm);
+}
+```
+
+#### Migration Checklist
+
+**MainForm.cs:**
+- [ ] Add constructor parameter for `IMainFormPresenter`
+- [ ] Add constructor parameter for `IErrorMessageResolver`
+- [ ] Replace schema loading with `_presenter.CompareAsync()`
+- [ ] Replace synchronization with `_presenter.SynchronizeAsync()`
+- [ ] Use `IProgress<SyncProgress>` for progress reporting
+- [ ] Catch exceptions and use error resolver
+- [ ] Remove direct `SettingsWrapper` access
+- [ ] Remove direct builder instantiation
+- [ ] Keep only UI-specific logic (tree population, node clicking, etc.)
+
+**SchemaPickerControl.cs:**
+- [ ] Remove `LoadSchema()` method
+- [ ] Add `GetSourceInfo()` method
+- [ ] Simplify `IsValid()` to only check UI inputs
+- [ ] Remove direct `SettingsWrapper` access (except for recent values UI)
+- [ ] Keep UI state management
+- [ ] Keep progress reporting UI updates
+
+**Settings Management:**
+- [ ] Wait for Phase 5 to complete `ISettingsProvider`
+- [ ] Then inject `ISettingsProvider` into components
+- [ ] Replace `SettingsWrapper` static calls with injected provider
+
+**Progress Reporting:**
+- [ ] Use `IProgress<SyncProgress>` throughout
+- [ ] Create progress adapter for UI updates
+- [ ] Support cancellation via `CancellationToken`
+
+#### Dependencies on Other Phases
+
+**Requires Phase 4** (In Progress):
+- ? `ISchemaComparisonService` - Schema comparison logic
+- ? `ISchemaSyncService` - Synchronization orchestration
+- ? Need implementations created
+
+**Requires Phase 5** (Not Started):
+- ? `ISettingsProvider` - Configuration abstraction
+- ? `SyncKustoSettings` - Immutable settings model
+- Workaround: Can still use static `SettingsWrapper` temporarily
+
+**Enables Phase 7** (Testing):
+- Presenters can be unit tested with mock services
+- UI can be tested by mocking presenters
+- Integration tests can verify full stack
+
+#### Key Design Decisions
+
+1. **Presenter Pattern vs MVVM**
+   - Choose Presenter pattern (simpler for WinForms)
+   - No data binding framework needed
+   - Direct method calls from view to presenter
+   - Easier to test than tightly coupled event handlers
+
+2. **Keep Existing Controls**
+   - Don't create new `SyncKusto.UI.WinForms` project yet
+   - Refactor in-place first
+   - Move to new project only if needed
+   - Reduces risk and scope
+
+3. **Progress Reporting**
+   - Use built-in `IProgress<T>` interface
+   - Create simple adapter for UI updates
+   - Support cancellation from start
+   - No custom progress events
+
+4. **Error Display**
+   - Always use `IErrorMessageResolver`
+   - Catch exceptions at UI boundary
+   - Display user-friendly messages
+   - Log full exception details
+
+5. **Backward Compatibility**
+   - Keep existing forms and controls
+   - Gradual migration
+   - No UI redesign (same user experience)
+   - Focus on architecture improvement
+
+#### Testing Strategy
+
+**Presenter Tests:**
+```csharp
+[Test]
+public async Task CompareAsync_WithValidSources_ReturnsComparison()
+{
+    var mockService = new Mock<ISchemaSyncService>();
+    var mockRepoFactory = new Mock<Func<SchemaSourceInfo, ISchemaRepository>>();
+    var presenter = new MainFormPresenter(mockService.Object, mockRepoFactory.Object, ...);
+    
+    var result = await presenter.CompareAsync(source, target);
+    
+    Assert.IsNotNull(result);
+    mockService.Verify(s => s.CompareAsync(It.IsAny<ISchemaRepository>(), 
+        It.IsAny<ISchemaRepository>(), null, default), Times.Once);
+}
+```
+
+**Integration Tests:**
+```csharp
+[Test]
+public async Task EndToEnd_FileToKusto_Success()
+{
+    // Setup real repositories
+    var fileRepo = new FileSystemSchemaRepository(...);
+    var kustoRepo = new KustoSchemaRepository(...);
+    
+    // Setup real services
+    var comparisonService = new SchemaComparisonService();
+    var syncService = new SchemaSyncService(comparisonService);
+    
+    // Setup presenter
+    var presenter = new MainFormPresenter(syncService, ...);
+    
+    // Execute
+    var result = await presenter.CompareAsync(fileSource, kustoTarget);
+    
+    // Verify
+    Assert.IsNotEmpty(result.Differences.AllDifferences);
+}
+```
+
+#### Success Criteria
+
+1. **Thin UI Layer**
+   - MainForm < 200 lines (currently 400+)
+   - SchemaPickerControl < 150 lines (currently 300+)
+   - No business logic in event handlers
+   - Only UI updates and presenter calls
+
+2. **Testable Presenters**
+   - Can unit test with mock services
+   - No UI dependencies in presenters
+   - All paths covered by tests
+
+3. **Clean Exception Handling**
+   - All exceptions caught at UI boundary
+   - Error resolver used consistently
+   - User-friendly messages displayed
+   - Full exceptions logged
+
+4. **Progress Reporting**
+   - Uses `IProgress<SyncProgress>`
+   - UI remains responsive
+   - Can be cancelled
+   - Clear progress messages
+
+5. **No Regression**
+   - All existing features work
+   - Same user experience
+   - No performance degradation
+   - All UI interactions preserved
+
+#### Deliverables
+
+- ? `IMainFormPresenter` interface and implementation
+- ? `ISchemaSourceSelector` interface and adapter
+- ? `SchemaRepositoryFactory` for creating repositories
+- ? Updated MainForm using presenter
+- ? Updated SchemaPickerControl (simplified)
+- ? DI configuration in Program.cs
+- ? Progress reporting abstraction
+- ? Comprehensive presenter tests
+- ? Updated UI migration guide
+
+#### Notes for Implementer
+
+**Start Here:**
+1. Implement `IMainFormPresenter` interface
+2. Create `MainFormPresenter` with dependencies on Phase 4 services
+3. Update `MainForm` constructor to accept presenter
+4. Replace `btnCompare_Click` logic with presenter call
+5. Test that comparison still works
+
+**Then:**
+6. Replace `btnUpdate_Click` logic with presenter call
+7. Test that synchronization still works
+8. Add progress reporting
+9. Add cancellation support
+10. Write unit tests
+
+**Finally:**
+11. Simplify `SchemaPickerControl`
+12. Extract repository factory
+13. Configure DI in Program.cs
+14. Remove remaining static dependencies
+15. Full integration testing
+
+**Dependencies to Watch:**
+- Phase 4 must provide `ISchemaSyncService` implementation
+- Phase 5 will replace `SettingsWrapper` usage
+- Keep interfaces compatible for future changes
 
 ### Phase 7: Add Comprehensive Tests
 **Goal:** Achieve high test coverage of core logic

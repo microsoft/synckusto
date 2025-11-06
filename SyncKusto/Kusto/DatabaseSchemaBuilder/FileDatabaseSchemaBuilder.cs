@@ -6,11 +6,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using Kusto.Data.Common;
+using SyncKusto.FileSystem.Exceptions;
+using SyncKusto.FileSystem.Extensions;
 
 namespace SyncKusto.Kusto.DatabaseSchemaBuilder
 {
+    /// <summary>
+    /// DEPRECATED: Use SyncKusto.FileSystem.Repositories.FileSystemSchemaRepository instead
+    /// This class is kept for backward compatibility but will be removed in a future version
+    /// </summary>
+    [Obsolete("Use SyncKusto.FileSystem.Repositories.FileSystemSchemaRepository instead")]
     public class FileDatabaseSchemaBuilder : BaseDatabaseSchemaBuilder
     {
         private readonly string rootFolder;
@@ -18,15 +24,8 @@ namespace SyncKusto.Kusto.DatabaseSchemaBuilder
 
         public FileDatabaseSchemaBuilder(string rootFolder, string fileExtension)
         {
-            if (string.IsNullOrWhiteSpace(rootFolder))
-            {
-                throw new ArgumentException($"'{nameof(rootFolder)}' cannot be null or whitespace.", nameof(rootFolder));
-            }
-
-            if (string.IsNullOrWhiteSpace(fileExtension))
-            {
-                throw new ArgumentException($"'{nameof(fileExtension)}' cannot be null or whitespace.", nameof(fileExtension));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(rootFolder);
+            ArgumentException.ThrowIfNullOrWhiteSpace(fileExtension);
 
             this.rootFolder = rootFolder;
             this.fileExtension = fileExtension;
@@ -58,28 +57,31 @@ namespace SyncKusto.Kusto.DatabaseSchemaBuilder
                 // Load Kusto Query Engine, this makes it a lot easier to deal with slightly malformed CSL files.
                 using (var queryEngine = new QueryEngine())
                 {
-
                     // Deploy all the tables and functions
                     var tableTasks = new List<Task>();
                     foreach (string table in tableFiles)
                     {
-                        tableTasks.Add(queryEngine.CreateOrAlterTableAsync(File.ReadAllText(table.HandleLongFileNames()), Path.GetFileName(table), true));
+                        tableTasks.Add(queryEngine.CreateOrAlterTableAsync(
+                            File.ReadAllText(FileSystemSchemaExtensions.HandleLongFileNames(table)), 
+                            Path.GetFileName(table), 
+                            true));
                     }
                     failedObjects.AddRange(WaitAllAndGetFailedObjects(tableTasks));
 
                     var functionTasks = new List<Task>();
                     foreach (string function in functionFiles)
                     {
-                        string csl = File.ReadAllText(function.HandleLongFileNames());
+                        string csl = File.ReadAllText(FileSystemSchemaExtensions.HandleLongFileNames(function));
                         functionTasks.Add(queryEngine.CreateOrAlterFunctionAsync(csl, Path.GetFileName(function)));
                     }
                     failedObjects.AddRange(WaitAllAndGetFailedObjects(functionTasks));
 
                     if (failedObjects.Count > 0)
                     {
-                        MessageBox.Show(
-                            $"The following objects could not be parsed and will be ignored:\r\n{failedObjects.Aggregate((current, next) => current + "\r\n" + next)}",
-                            "Failure", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        // Instead of showing MessageBox, throw an exception that the UI layer can catch and display
+                        throw new SchemaParseException(
+                            $"Failed to parse {failedObjects.Count} schema object(s)",
+                            failedObjects);
                     }
 
                     // Read the functions and tables back from the locally hosted version of Kusto.
