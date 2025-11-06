@@ -4,12 +4,10 @@
 using Kusto.Data;
 using Kusto.Data.Common;
 using SyncKusto.Exceptions;
-using SyncKusto.Functional;
 using SyncKusto.Kusto;
 using SyncKusto.Kusto.DatabaseSchemaBuilder;
 using SyncKusto.SyncSources;
 using SyncKusto.Utilities;
-using SyncKusto.Validation.ErrorMessages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -276,46 +274,6 @@ namespace SyncKusto
             catch (Exception ex) when (ex is not SchemaLoadException)
             {
                 throw new SchemaLoadException("Failed to load database schema", ex);
-            }
-        }
-
-        /// <summary>
-        /// Attempt to load the schema specified in the control
-        /// </summary>
-        /// <returns>Either an error or the schema that was loaded</returns>
-        [Obsolete("Use LoadSchema() instead which throws exceptions")]
-        public Either<IOperationError, DatabaseSchema> TryLoadSchema()
-        {
-            IDatabaseSchemaBuilder schemaBuilder = EmptyDatabaseSchemaBuilder.Value;
-
-            try
-            {
-                if (SourceSelection == SourceSelection.Kusto())
-                {
-                    schemaBuilder = new KustoDatabaseSchemaBuilder(new QueryEngine(KustoConnection));
-                }
-
-                if (SourceSelection == SourceSelection.FilePath())
-                {
-                    SettingsWrapper.PreviousFilePath = SourceFilePath;
-                    schemaBuilder = new FileDatabaseSchemaBuilder(SourceFilePath, SettingsWrapper.FileExtension);
-                }
-
-                switch (schemaBuilder)
-                {
-                    case KustoDatabaseSchemaBuilder _:
-                    case FileDatabaseSchemaBuilder _:
-                        ReportProgress($@"Constructing schema...");
-                        return Task.Run(async () =>
-                            await schemaBuilder.Build().ConfigureAwait(false)).Result;
-
-                    default:
-                        return new DatabaseSchemaOperationError(new InvalidOperationException("An unknown type was supplied."));
-                }
-            }
-            catch (Exception e)
-            {
-                return new DatabaseSchemaOperationError(e);
             }
         }
 

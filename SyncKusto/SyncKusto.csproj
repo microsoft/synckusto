@@ -48,4 +48,10 @@
     <Content Include="icons\SyncArrow_16x.png" />
     <Content Include="icons\UploadFile_16x.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Functional\" />
+    <Folder Include="Models\" />
+    <Folder Include="Validation\ErrorMessages\Specifications\" />
+    <Folder Include="Validation\Infrastructure\" />
+  </ItemGroup>
 </Project>
