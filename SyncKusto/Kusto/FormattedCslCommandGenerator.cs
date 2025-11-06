@@ -1,5 +1,14 @@
-﻿using Kusto.Data.Common;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+// This file is kept for backward compatibility but the actual implementation
+// is now in SyncKusto.Kusto.Services.FormattedCslCommandGenerator
+// Consider using the new namespace in new code.
+
+using System;
+using Kusto.Data.Common;
 using SyncKusto.Core.Models;
+using SyncKusto.Kusto.Services;
 
 namespace SyncKusto.Kusto
 {
@@ -7,6 +16,7 @@ namespace SyncKusto.Kusto
     /// If this tool wants to save CSL files that are formatted slightly differently than the Kusto default, the Kusto
     /// calls to CslCommandGenerator can be wrapped in this class.
     /// </summary>
+    [Obsolete("Use SyncKusto.Kusto.Services.FormattedCslCommandGenerator instead")]
     public static class FormattedCslCommandGenerator
     {
         /// <summary>
@@ -18,26 +28,12 @@ namespace SyncKusto.Kusto
         /// <returns></returns>
         public static string GenerateTableCreateCommand(TableSchema table, bool forceNormalizeColumnName = false)
         {
-            string result = SettingsWrapper.CreateMergeEnabled == true
-                ? CslCommandGenerator.GenerateTableCreateMergeCommandWithExtraProperties(table, forceNormalizeColumnName)
-                : CslCommandGenerator.GenerateTableCreateCommand(table, forceNormalizeColumnName);
-
-            if (SettingsWrapper.TableFieldsOnNewLine == true)
-            {
-                // We have to do some kind of line break. The three options in settings are "leave as is", "windows",
-                // or "unix" but the default is "leave as is." "Leave as is" doesn't make sense in this scenario so
-                // we'll bucket it with "Windows" style.
-                string lineEnding = SettingsWrapper.LineEndingMode == LineEndingMode.UnixStyle ? "\n" : "\r\n";
-
-                // Add a line break between each field
-                result = result.Replace(", ['", $",{lineEnding}    ['");
-
-                // Add a line break before the first field
-                int parameterStartIndex = result.LastIndexOf("([");
-                result = result.Insert(parameterStartIndex + 1, $"{lineEnding}    ");
-            }
-
-            return result;
+            return SyncKusto.Kusto.Services.FormattedCslCommandGenerator.GenerateTableCreateCommand(
+                table,
+                forceNormalizeColumnName,
+                SettingsWrapper.CreateMergeEnabled ?? false,
+                SettingsWrapper.TableFieldsOnNewLine ?? false,
+                SettingsWrapper.LineEndingMode);
         }
     }
 }

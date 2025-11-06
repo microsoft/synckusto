@@ -14,8 +14,25 @@ namespace SyncKusto.Kusto.DatabaseSchemaBuilder
             QueryEngine = queryEngine ?? throw new ArgumentNullException(nameof(queryEngine));
         }
 
-        private QueryEngine QueryEngine { get; }
+        // For backward compatibility, also accept the new QueryEngine type
+        public KustoDatabaseSchemaBuilder(SyncKusto.Kusto.Services.QueryEngine queryEngine)
+        {
+            ArgumentNullException.ThrowIfNull(queryEngine);
+            // Store the new engine directly - we'll call it through the wrapper
+            _newQueryEngine = queryEngine;
+        }
 
-        public override Task<DatabaseSchema> Build() => Task.FromResult(QueryEngine.GetDatabaseSchema());
+        private QueryEngine? QueryEngine { get; }
+        private SyncKusto.Kusto.Services.QueryEngine? _newQueryEngine;
+
+        public override Task<DatabaseSchema> Build()
+        {
+            if (_newQueryEngine != null)
+            {
+                return Task.FromResult(_newQueryEngine.GetDatabaseSchema());
+            }
+            
+            return Task.FromResult(QueryEngine!.GetDatabaseSchema());
+        }
     }
 }

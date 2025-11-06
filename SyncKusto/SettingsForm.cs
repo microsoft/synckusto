@@ -29,7 +29,7 @@ namespace SyncKusto
         {
             InitializeComponent();
 
-            cbCertLocation.DataSource = Enum.GetValues(typeof(StoreLocation));
+            cbCertLocation.DataSource = Enum.GetValues(typeof(Core.Models.StoreLocation));
 
             // Set the radiobutton tag fields to each of the corresponding LineEndingMode enum values
             rbLineEndingsLeave.Tag = LineEndingMode.LeaveAsIs;
@@ -92,7 +92,7 @@ namespace SyncKusto
                 SettingsWrapper.LineEndingMode = (LineEndingMode)checkedButton.Tag;
             }
             
-            SettingsWrapper.CertificateLocation = (StoreLocation)cbCertLocation.SelectedItem!;
+            SettingsWrapper.CertificateLocation = (Core.Models.StoreLocation)cbCertLocation.SelectedItem!;
 
             // Only check the Kusto settings if they changed
             if (SettingsWrapper.KustoClusterForTempDatabases != txtKustoCluster.Text ||

@@ -1,32 +1,26 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Data;
-using System.Diagnostics;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+// This file is kept for backward compatibility but the actual implementation
+// is now in SyncKusto.Kusto.Services.QueryEngine
+// Consider using the new namespace in new code.
+
 using Kusto.Data;
 using Kusto.Data.Common;
-using Kusto.Data.Net.Client;
-using Newtonsoft.Json;
 using SyncKusto.Core.Models;
-using SyncKusto.Properties;
-using SyncKusto.Utilities;
+using SyncKusto.Kusto.Services;
+using System;
+using System.Threading.Tasks;
 
 namespace SyncKusto.Kusto
 {
     /// <summary>
     /// Central location for interacting with a Kusto cluster
     /// </summary>
+    [Obsolete("Use SyncKusto.Kusto.Services.QueryEngine instead")]
     public class QueryEngine : IDisposable
     {
-        private readonly ICslAdminProvider _adminClient;
-        private readonly ICslQueryProvider _queryClient;
-        private readonly string _databaseName;
-        private readonly string _cluster;
-        private readonly bool _tempDatabaseUsed = false;
+        private readonly SyncKusto.Kusto.Services.QueryEngine _inner;
 
         /// <summary>
         /// Constructor which gets ready to make queries to Kusto
@@ -34,10 +28,7 @@ namespace SyncKusto.Kusto
         /// <param name="kustoConnectionStringBuilder">The connection string builder to connect to Kusto</param>
         public QueryEngine(KustoConnectionStringBuilder kustoConnectionStringBuilder)
         {
-            _adminClient = KustoClientFactory.CreateCslAdminProvider(kustoConnectionStringBuilder);
-            _queryClient = KustoClientFactory.CreateCslQueryProvider(kustoConnectionStringBuilder);
-            _databaseName = kustoConnectionStringBuilder.InitialCatalog;
-            _cluster = kustoConnectionStringBuilder.DataSource;
+            _inner = new SyncKusto.Kusto.Services.QueryEngine(kustoConnectionStringBuilder, SettingsWrapper.LineEndingMode);
         }
 
         /// <summary>
@@ -45,128 +36,35 @@ namespace SyncKusto.Kusto
         /// </summary>
         public QueryEngine()
         {
-            if (string.IsNullOrEmpty(SettingsWrapper.KustoClusterForTempDatabases)) throw new ArgumentNullException(nameof(SettingsWrapper.KustoClusterForTempDatabases));
+            if (string.IsNullOrEmpty(SettingsWrapper.KustoClusterForTempDatabases)) 
+                throw new ArgumentNullException(nameof(SettingsWrapper.KustoClusterForTempDatabases));
 
-            _databaseName = SettingsWrapper.TemporaryKustoDatabase;
-            var connString = new KustoConnectionStringBuilder(SettingsWrapper.KustoClusterForTempDatabases)
-            {
-                FederatedSecurity = true,
-                InitialCatalog = _databaseName,
-                Authority = SettingsWrapper.AADAuthority
-            };
-
-            _adminClient = KustoClientFactory.CreateCslAdminProvider(connString);
-            _queryClient = KustoClientFactory.CreateCslQueryProvider(connString);
-            _tempDatabaseUsed = true;
-            _cluster = connString.DataSource;
-
-            CleanDatabase();
+            _inner = new SyncKusto.Kusto.Services.QueryEngine(
+                SettingsWrapper.KustoClusterForTempDatabases,
+                SettingsWrapper.TemporaryKustoDatabase,
+                SettingsWrapper.AADAuthority,
+                SettingsWrapper.LineEndingMode);
         }
 
         /// <summary>
         /// Remove any functions and tables that are present in the database. Note that this should only be called when
         /// connecting to the temporary database
         /// </summary>
-        public void CleanDatabase()
-        {
-            if (!_tempDatabaseUsed)
-            {
-                throw new Exception("CleanDatabase() was called on something other than the temporary database.");
-            }
-
-            var schema = GetDatabaseSchema();
-
-            if (schema.Functions.Count > 0)
-            {
-                _adminClient.ExecuteControlCommand(
-                    CslCommandGenerator.GenerateFunctionsDropCommand(
-                        schema.Functions.Select(f => f.Value.Name), true));
-            }
-
-            if (schema.Tables.Count > 0)
-            {
-                _adminClient.ExecuteControlCommand(
-                    CslCommandGenerator.GenerateTablesDropCommand(
-                        schema.Tables.Select(f => f.Value.Name), true));
-            }
-        }
+        public void CleanDatabase() => _inner.CleanDatabase();
 
         /// <summary>
         /// Get the full database schema
         /// </summary>
         /// <returns></returns>
-        public DatabaseSchema GetDatabaseSchema()
-        {
-            DatabaseSchema? result = null;
-            string csl = $@".show database ['{_databaseName}'] schema as json";
-            using (IDataReader reader = _adminClient.ExecuteControlCommand(_databaseName, csl))
-            {
-                reader.Read();
-                string? json = reader[0].ToString();
-                if (json == null)
-                {
-                    throw new InvalidOperationException("Failed to retrieve schema JSON from Kusto");
-                }
-                ClusterSchema? clusterSchema = JsonConvert.DeserializeObject<ClusterSchema>(json);
-                if (clusterSchema?.Databases == null || !clusterSchema.Databases.Any())
-                {
-                    throw new InvalidOperationException("Failed to deserialize cluster schema or no databases found");
-                }
-                result = clusterSchema.Databases.First().Value;
-            }
-            
-            if (result == null)
-            {
-                throw new InvalidOperationException("Failed to load database schema");
-            }
-
-            foreach (var function in result.Functions.Values)
-            {
-                switch (SettingsWrapper.LineEndingMode)
-                {
-                    case LineEndingMode.WindowsStyle:                        
-                        function.Body = Regex.Replace(function.Body, @"\r\n|\r|\n", "\r\n");
-                        break;
-                    case LineEndingMode.UnixStyle:
-                        function.Body = Regex.Replace(function.Body, @"\r\n|\r|\n", "\n");
-                        break;
-                }
-
-	            function.Folder ??= "";
-                function.DocString ??= "";
-            }
-            return result;
-        }
+        public DatabaseSchema GetDatabaseSchema() => _inner.GetDatabaseSchema();
 
         /// <summary>
         /// Create or alter the function definition to match what is specified in the command
         /// </summary>
         /// <param name="functionCommand">A create-or-alter function command</param>
         /// <param name="functionName">The name of the function</param>
-        public Task CreateOrAlterFunctionAsync(string functionCommand, string functionName)
-        {
-            return Task.Run(async () =>
-            {
-                try
-                {
-                    // If the CSL files on disk were written with an older version of the tool and did not have the skipvalidation paramter, they will fail.
-                    // This code will insert the parameter into the script.
-                    string skipValidationRegEx = @"skipvalidation[\s]*[=]+[\s""@']*true";
-                    if (!Regex.IsMatch(functionCommand, skipValidationRegEx))
-                    {
-                        string searchString = "(";
-                        string replaceString = searchString + "skipvalidation = @'true',";
-                        int firstIndexOf = functionCommand.IndexOf(searchString);
-                        functionCommand = functionCommand.Substring(0, firstIndexOf) + replaceString + functionCommand.Substring(firstIndexOf + searchString.Length);
-                    }
-                    await _adminClient.ExecuteControlCommandAsync(_databaseName, functionCommand).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    throw new CreateOrAlterException("Failed to create or alter a function", ex, functionName);
-                }
-            });
-        }
+        public Task CreateOrAlterFunctionAsync(string functionCommand, string functionName) =>
+            _inner.CreateOrAlterFunctionAsync(functionCommand, functionName);
 
         /// <summary>
         ///     Run the create table command. If the table exists, it's schema will be altered. This might result in
@@ -177,55 +75,20 @@ namespace SyncKusto.Kusto
         /// <param name="createOnly">
         ///     When this is true, the caller is saying that the table doesn't exist yet so we should skip the alter attempt
         /// </param>
-        public Task CreateOrAlterTableAsync(string tableCommand, string tableName, bool createOnly = false)
-        {
-            return Task.Run(async () =>
-            {
-                string createCommand = tableCommand;
-                string alterCommand = tableCommand.Replace(".create", ".alter");
-
-                try
-                {
-                    if (createOnly)
-                    {
-                        await _adminClient.ExecuteControlCommandAsync(_databaseName, createCommand).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        try
-                        {
-                            await _adminClient.ExecuteControlCommandAsync(_databaseName, alterCommand).ConfigureAwait(false);
-                        }
-                        catch
-                        {
-                            await _adminClient.ExecuteControlCommandAsync(_databaseName, createCommand).ConfigureAwait(false);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    throw new CreateOrAlterException("Failed to create or alter a table", ex, tableName);
-                }
-            });
-        }
+        public Task CreateOrAlterTableAsync(string tableCommand, string tableName, bool createOnly = false) =>
+            _inner.CreateOrAlterTableAsync(tableCommand, tableName, createOnly);
 
         /// <summary>
         /// Remove the specified function
         /// </summary>
         /// <param name="functionSchema">The function to drop</param>
-        public void DropFunction(FunctionSchema functionSchema)
-        {
-            _adminClient.ExecuteControlCommand(_databaseName, $".drop function ['{functionSchema.Name}']");
-        }
+        public void DropFunction(FunctionSchema functionSchema) => _inner.DropFunction(functionSchema);
 
         /// <summary>
         /// Remove the specified table
         /// </summary>
         /// <param name="tableName">The table to drop</param>
-        public void DropTable(string tableName)
-        {
-            _adminClient.ExecuteControlCommand(_databaseName, $".drop table ['{tableName}']");
-        }
+        public void DropTable(string tableName) => _inner.DropTable(tableName);
 
         /// <summary>
         /// Dispose of all the resources we created. Note that if this hangs and you're calling from a UI thread, you might
@@ -233,8 +96,8 @@ namespace SyncKusto.Kusto
         /// </summary>
         public void Dispose()
         {
-            _queryClient?.Dispose();
-            _adminClient?.Dispose();
+            _inner?.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -253,57 +116,29 @@ namespace SyncKusto.Kusto
             string? aadClientKey = null,
             string? certificateThumbprint = null)
         {
-            if (string.IsNullOrEmpty(aadClientId) != string.IsNullOrEmpty(aadClientKey) &&
-                string.IsNullOrEmpty(aadClientId) != string.IsNullOrEmpty(certificateThumbprint))
-            {
-                throw new ArgumentException("If either aadClientId or aadClientKey are specified, they must both be specified.");
-            }
-
-            if (string.IsNullOrWhiteSpace(SettingsWrapper.AADAuthority))
-            {
-                throw new Exception("Authority value must be specified in the Settings dialog.");
-            }
-
-            cluster = NormalizeClusterName(cluster);
-
-            // User auth
-            if (string.IsNullOrWhiteSpace(aadClientId))
-            {
-                return new KustoConnectionStringBuilder(cluster)
-                {
-                    FederatedSecurity = true,
-                    InitialCatalog = database,
-                    Authority = SettingsWrapper.AADAuthority
-                };
-            }
-
-            // App Key auth
+            var factory = new KustoConnectionFactory();
+            
+            AuthenticationMode authMode = AuthenticationMode.AadFederated;
             if (!string.IsNullOrWhiteSpace(aadClientId) && !string.IsNullOrWhiteSpace(aadClientKey))
             {
-                return new KustoConnectionStringBuilder(cluster)
-                {
-                    FederatedSecurity = true,
-                    InitialCatalog = database,
-                    Authority = SettingsWrapper.AADAuthority,
-                    ApplicationKey = aadClientKey,
-                    ApplicationClientId = aadClientId
-                };
+                authMode = AuthenticationMode.AadApplication;
             }
-
-            // App SNI auth
-            if (!string.IsNullOrWhiteSpace(aadClientId) && !string.IsNullOrWhiteSpace(certificateThumbprint))
+            else if (!string.IsNullOrWhiteSpace(aadClientId) && !string.IsNullOrWhiteSpace(certificateThumbprint))
             {
-                return new KustoConnectionStringBuilder(cluster)
-                {
-                    InitialCatalog = database,
-                }.WithAadApplicationCertificateAuthentication(
-                    aadClientId,
-                    CertificateStore.GetCertificate(certificateThumbprint),
-                    SettingsWrapper.AADAuthority,
-                    true);
+                authMode = AuthenticationMode.AadApplicationSni;
             }
 
-            throw new Exception("Could not determine how to create a connection string from provided parameters.");
+            var options = new Core.Abstractions.KustoConnectionOptions(
+                Cluster: cluster,
+                Database: database,
+                AuthMode: authMode,
+                Authority: SettingsWrapper.AADAuthority,
+                AppId: aadClientId,
+                AppKey: aadClientKey,
+                CertificateThumbprint: certificateThumbprint,
+                CertificateLocation: SettingsWrapper.CertificateLocation);
+
+            return (KustoConnectionStringBuilder)factory.CreateConnectionString(options);
         }
 
         /// <summary>
@@ -311,32 +146,7 @@ namespace SyncKusto.Kusto
         /// </summary>
         /// <param name="cluster">Input cluster name</param>
         /// <returns>Normalized cluster name e.g. https://cluster.eastus2.kusto.windows.net</returns>
-        public static string NormalizeClusterName(string cluster)
-        {
-            if (cluster.StartsWith("https://"))
-            {
-                // If it starts with https, take it verbatim and return from the function
-                return cluster;
-            }
-            else
-            {
-                // Trim any spaces and trailing '/'
-                cluster = cluster.TrimEnd('/').Trim();
-
-                // If it doesn't end with .com or .net then default to .kusto.windows.net
-                if (!cluster.EndsWith(".com") && !cluster.EndsWith(".net"))
-                {
-                    cluster = $@"https://{cluster}.kusto.windows.net";
-                }
-
-                // Make sure it starts with https
-                if (!cluster.StartsWith("https://"))
-                {
-                    cluster = $"https://{cluster}";
-                }
-
-                return cluster;
-            }
-        }
+        public static string NormalizeClusterName(string cluster) =>
+            KustoConnectionFactory.NormalizeClusterName(cluster);
     }
 }

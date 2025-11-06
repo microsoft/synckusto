@@ -1,21 +1,31 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+//
+// This file is kept for backward compatibility but uses composition instead of inheritance
+// Consider using SyncKusto.Kusto.Models.KustoFunctionSchema directly in new code.
 
 using System;
 using Kusto.Data.Common;
+using SyncKusto.Core.Abstractions;
 using SyncKusto.Kusto;
 
 namespace SyncKusto.ChangeModel
 {
+    [Obsolete("Use SyncKusto.Kusto.Models.KustoFunctionSchema instead")]
     public sealed class KustoFunctionSchema : IKustoSchema, IEquatable<KustoFunctionSchema>
     {
-        public static implicit operator FunctionSchema(KustoFunctionSchema schema) => schema.Value;
+        private readonly SyncKusto.Kusto.Models.KustoFunctionSchema _inner;
 
-        public KustoFunctionSchema(FunctionSchema value) => Value = value;
+        public static implicit operator FunctionSchema(KustoFunctionSchema schema) => schema._inner.Value;
 
-        private FunctionSchema Value { get; }
+        public KustoFunctionSchema(FunctionSchema value)
+        {
+            _inner = new SyncKusto.Kusto.Models.KustoFunctionSchema(value);
+        }
 
-        public string Name => Value.Name;
+        public FunctionSchema Value => _inner.Value;
+        
+        public string Name => _inner.Name;
 
         public void WriteToFile(string rootFolder, string fileExtension) => Value.WriteToFile(rootFolder, fileExtension);
 
@@ -36,21 +46,21 @@ namespace SyncKusto.ChangeModel
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((KustoFunctionSchema) obj);
+            if (obj.GetType() != GetType()) return false;
+            return Equals((KustoFunctionSchema)obj);
         }
 
         public override int GetHashCode()
         {
-            return (Value != null ? Value.GetHashCode() : 0);
+            return Value.GetHashCode();
         }
 
-        public static bool operator ==(KustoFunctionSchema left, KustoFunctionSchema right)
+        public static bool operator ==(KustoFunctionSchema? left, KustoFunctionSchema? right)
         {
             return Equals(left, right);
         }
 
-        public static bool operator !=(KustoFunctionSchema left, KustoFunctionSchema right)
+        public static bool operator !=(KustoFunctionSchema? left, KustoFunctionSchema? right)
         {
             return !Equals(left, right);
         }

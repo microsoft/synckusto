@@ -278,16 +278,16 @@ namespace SyncKusto
         /// <summary>
         /// Get or set the certificate location to search use when displaying certs in the Subject Name Issuer cert picker.
         /// </summary>
-        public static StoreLocation CertificateLocation
+        public static Core.Models.StoreLocation CertificateLocation
         {
             get
             {
                 EnsureLoaded();
                 if (string.IsNullOrWhiteSpace(_settings.CertificateLocation))
                 {
-                    return StoreLocation.CurrentUser;
+                    return Core.Models.StoreLocation.CurrentUser;
                 }
-                if (Enum.TryParse(_settings.CertificateLocation, out StoreLocation result))
+                if (Enum.TryParse(_settings.CertificateLocation, out Core.Models.StoreLocation result))
                 {
                     return result;
                 }
