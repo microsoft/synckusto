@@ -33,6 +33,7 @@
     <PackageReference Include="DiffPlex" Version="1.7.2" />
     <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="14.0.2" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.10" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="System.ComponentModel.Composition" Version="9.0.10" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
@@ -50,7 +51,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Functional\" />
-    <Folder Include="Models\" />
     <Folder Include="Validation\ErrorMessages\Specifications\" />
     <Folder Include="Validation\Infrastructure\" />
   </ItemGroup>

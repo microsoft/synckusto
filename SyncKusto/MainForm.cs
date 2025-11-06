@@ -5,7 +5,7 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using Kusto.Data.Common;
 using SyncKusto.ChangeModel;
-using CoreAbstractions = SyncKusto.Core.Abstractions;
+using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Models;
 using SyncKusto.ErrorHandling;
 using SyncKusto.Extensions;
@@ -15,6 +15,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using SyncKusto.SyncSources;
+using SyncKusto.Adapters;
+using SyncKusto.Abstractions;
+using SyncKusto.Models;
 
 namespace SyncKusto
 {
@@ -22,13 +25,17 @@ namespace SyncKusto
     {
         private DatabaseSchema? _sourceSchema;
         private DatabaseSchema? _targetSchema;
+        private ComparisonResult? _lastComparison;
 
         private readonly string _functionTreeNodeText = "Functions";
         private readonly string _tablesTreeNodeText = "Tables";
-        private readonly CoreAbstractions.IErrorMessageResolver _errorMessageResolver;
+        private readonly IErrorMessageResolver _errorMessageResolver;
+        private readonly IMainFormPresenter _presenter;
+        private readonly SchemaSourceSelectorAdapter _sourceAdapter;
+        private readonly SchemaSourceSelectorAdapter _targetAdapter;
 
         /// <summary>
-        /// Default constructor. Get the UI set up properly.
+        /// Default constructor for designer support
         /// </summary>
         public MainForm()
         {
@@ -36,6 +43,22 @@ namespace SyncKusto
             spcSource.ResetMainFormValueHolders = ResetValueHoldersOnChange;
             spcTarget.ResetMainFormValueHolders = ResetValueHoldersOnChange;
             _errorMessageResolver = ErrorMessageResolverFactory.CreateDefault();
+            
+            // Create temporary instances - will be replaced by DI constructor
+            _presenter = null!; // Set by DI
+            _sourceAdapter = new SchemaSourceSelectorAdapter(spcSource);
+            _targetAdapter = new SchemaSourceSelectorAdapter(spcTarget);
+        }
+
+        /// <summary>
+        /// Constructor with dependency injection
+        /// </summary>
+        public MainForm(
+            IMainFormPresenter presenter,
+            IErrorMessageResolver errorMessageResolver) : this()
+        {
+            _presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
+            _errorMessageResolver = errorMessageResolver ?? throw new ArgumentNullException(nameof(errorMessageResolver));
         }
 
         /// <summary>
@@ -45,6 +68,7 @@ namespace SyncKusto
         {
             tvComparison.Nodes.Clear();
             rtbSourceText.Clear();
+            _lastComparison = null;
         }
 
         /// <summary>
@@ -52,83 +76,97 @@ namespace SyncKusto
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void btnCompare_Click(object sender, EventArgs e)
+        private async void btnCompare_Click(object sender, EventArgs e)
         {
             rtbSourceText.Clear();
             tvComparison.Nodes.Clear();
 
             spcSource.ReportProgress($@"Validating...");
 
-            if (!spcSource.IsValid())
+            // Validate UI inputs
+            var sourceValidation = _sourceAdapter.Validate();
+            if (!sourceValidation.IsValid)
             {
                 MessageBox.Show(@"Source schema is not correctly specified.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 spcSource.ReportProgress(string.Empty);
                 return;
             }
-            if (!spcTarget.IsValid())
+            
+            var targetValidation = _targetAdapter.Validate();
+            if (!targetValidation.IsValid)
             {
                 MessageBox.Show(@"Target schema is not correctly specified.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 spcSource.ReportProgress(string.Empty);
                 return;
             }
 
-            if (!ValidateSettings())
+            // Get source info from adapters
+            var sourceInfo = _sourceAdapter.GetSourceInfo();
+            var targetInfo = _targetAdapter.GetSourceInfo();
+
+            // Validate settings
+            var settingsValidation = _presenter.ValidateSettings(sourceInfo, targetInfo);
+            if (!settingsValidation.IsValid)
             {
+                MessageBox.Show(settingsValidation.ErrorMessage, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                spcSource.ReportProgress(string.Empty);
                 return;
             }
 
-            // Load both of the schemas
+            // Compare with progress reporting
             Cursor? lastCursor = Cursor.Current;
             Cursor.Current = Cursors.WaitCursor;
 
             try
             {
-                spcSource.ReportProgress($@"Loading source schema...");
-                _sourceSchema = spcSource.LoadSchema();
-                spcSource.ReportProgress($@"Schema loaded.");
+                var progress = new Progress<SyncProgress>(p =>
+                {
+                    // Update both source and target progress displays
+                    if (p.Stage == SyncProgressStage.LoadingSourceSchema || 
+                        p.Stage == SyncProgressStage.ComparingSchemas)
+                    {
+                        spcSource.ReportProgress(p.Message);
+                    }
+                    
+                    if (p.Stage == SyncProgressStage.LoadingTargetSchema || 
+                        p.Stage == SyncProgressStage.ComparingSchemas)
+                    {
+                        spcTarget.ReportProgress(p.Message);
+                    }
+                });
+
+                _lastComparison = await _presenter.CompareAsync(sourceInfo, targetInfo, progress);
                 
-                spcTarget.ReportProgress($@"Loading target schema...");
-                _targetSchema = spcTarget.LoadSchema();
-                spcTarget.ReportProgress($@"Schema loaded.");
+                // Cache schemas for diff view
+                _sourceSchema = _lastComparison.SourceSchema;
+                _targetSchema = _lastComparison.TargetSchema;
+
+                // Populate tree with differences
+                PopulateTree(_lastComparison.Differences.AllDifferences, tvComparison);
+
+                spcSource.ReportProgress(string.Empty);
+                spcTarget.ReportProgress(string.Empty);
+
+                // Save and reload recent values
+                _sourceAdapter.SaveRecentValues();
+                _targetAdapter.SaveRecentValues();
+                _sourceAdapter.ReloadRecentValues();
+                _targetAdapter.ReloadRecentValues();
+
+                // Enable the update button now that a comparison has been generated.
+                btnUpdate.Enabled = true;
             }
             catch (Exception ex)
             {
-                Cursor.Current = lastCursor;
                 var errorMessage = _errorMessageResolver.ResolveErrorMessage(ex);
-                MessageBox.Show($@"Failed to load schema: {errorMessage}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($@"Failed to compare schemas: {errorMessage}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 spcSource.ReportProgress(string.Empty);
                 spcTarget.ReportProgress(string.Empty);
-                return;
             }
-
-            Cursor.Current = lastCursor;
-
-            spcSource.ReportProgress($@"Comparing differences...");
-            IEnumerable<CoreAbstractions.SchemaDifference> tableDifferences = new KustoSchemaDifferenceMapper(() =>
-                    _sourceSchema.Tables.AsKustoSchema().DifferenceFrom(_targetSchema.Tables.AsKustoSchema()))
-                .GetDifferences();
-
-            IEnumerable<CoreAbstractions.SchemaDifference> functionDifferences = new KustoSchemaDifferenceMapper(() =>
-                    _sourceSchema.Functions.AsKustoSchema().DifferenceFrom(_targetSchema.Functions.AsKustoSchema()))
-                .GetDifferences();
-
-            // Add to the tree view control
-            PopulateTree(tableDifferences.Concat(functionDifferences), tvComparison);
-
-            spcSource.ReportProgress(string.Empty);
-            spcTarget.ReportProgress(string.Empty);
-
-            // Save the cluster and databases used in recent history to populate the combo boxes for
-            // next time and then reload them both. (Note that combining save an reload into a
-            // single operation would mean that the source recent history list wouldn't contain
-            // whatever was just used in the target schema so we keep them as separate steps.)
-            spcSource.SaveRecentValues();
-            spcTarget.SaveRecentValues();
-            spcSource.ReloadRecentValues();
-            spcTarget.ReloadRecentValues();
-
-            // Enable the update button now that a comparison has been generated.
-            btnUpdate.Enabled = true;
+            finally
+            {
+                Cursor.Current = lastCursor;
+            }
         }
 
         /// <summary>
@@ -136,14 +174,14 @@ namespace SyncKusto
         /// </summary>
         /// <param name="differences">A list of differences to display</param>
         /// <param name="tv">The tree view control to populate with the differences</param>
-        private void PopulateTree(IEnumerable<CoreAbstractions.SchemaDifference> differences, TreeView tv)
+        private void PopulateTree(IEnumerable<SchemaDifference> differences, TreeView tv)
         {
             TreeNode functionRootNode = tv.Nodes.Add(_functionTreeNodeText);
             TreeNode functionAddNode = functionRootNode.Nodes.Add("Not In Target");
             TreeNode functionDropNode = functionRootNode.Nodes.Add("Only In Target");
             TreeNode functionEditNode = functionRootNode.Nodes.Add("Different");
 
-            TreeNode ToTreeNode(CoreAbstractions.SchemaDifference difference)
+            TreeNode ToTreeNode(SchemaDifference difference)
             {
                 return new TreeNode()
                 {
@@ -297,8 +335,14 @@ namespace SyncKusto
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void btnUpdate_Click(object sender, EventArgs e)
+        private async void btnUpdate_Click(object sender, EventArgs e)
         {
+            if (_lastComparison == null)
+            {
+                MessageBox.Show(@"No comparison available. Please compare schemas first.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             Cursor? lastCursor = Cursor.Current;
             Cursor.Current = Cursors.WaitCursor;
 
@@ -314,92 +358,69 @@ namespace SyncKusto
             if (!selectedNodes.Any())
             {
                 MessageBox.Show(@"No differences were selected. Nothing to update in the target.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Cursor.Current = lastCursor;
                 return;
             }
 
-            // Save the changes either to disk or to Kusto
-            if (spcTarget.SourceSelection == SourceSelection.FilePath())
+            // Check for drop operations and show warning if needed
+            var targetInfo = _targetAdapter.GetSourceInfo();
+            if (SettingsWrapper.KustoObjectDropWarning && 
+                targetInfo.SourceType == SourceSelection.Kusto() &&
+                selectedNodes.Any(n => n.Parent.Text == "Only In Target"))
             {
-                PersistChanges(selectedNodes);
-            }
-            else
-            {
-                if (SettingsWrapper.KustoObjectDropWarning && selectedNodes.Any(n => n.Parent.Text == "Only In Target"))
+                var dialogResult = new DropWarningForm().ShowDialog();
+                if (dialogResult != DialogResult.Yes)
                 {
-                    var dialogResult = new DropWarningForm().ShowDialog();
-                    if (dialogResult != DialogResult.Yes)
-                    {
-                        MessageBox.Show("Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        return;
-                    }
-                }
-
-                using (var kustoQueryEngine = new QueryEngine(spcTarget.KustoConnection))
-                {
-                    PersistChanges(selectedNodes, kustoQueryEngine);
+                    MessageBox.Show("Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    Cursor.Current = lastCursor;
+                    return;
                 }
             }
 
-            tvComparison.Nodes.Clear();
-            btnUpdate.Enabled = false;
-            Cursor.Current = lastCursor;
-
-            MessageBox.Show(@"Target update is complete.", @"Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        /// <summary>
-        /// Save the changes denoted by the selected nodes.
-        /// </summary>
-        /// <param name="selectedNodes">The changes to persist</param>
-        /// <param name="kustoQueryEngine">Pass a connection to Kusto if the target is Kusto</param>
-        private void PersistChanges(IEnumerable<TreeNode> selectedNodes, QueryEngine? kustoQueryEngine = null)
-        {
-            void WriteToTarget(IKustoSchema schema)
+            try
             {
-                if (spcTarget.SourceSelection == SourceSelection.FilePath())
+                // Get selected differences
+                var selectedDifferences = selectedNodes
+                    .Select(node => (SchemaDifference)node.Tag);
+
+                // Synchronize with progress reporting
+                var progress = new Progress<SyncProgress>(p =>
                 {
-                    schema.WriteToFile(spcTarget.SourceFilePath, SettingsWrapper.FileExtension);
+                    spcSource.ReportProgress(p.Message);
+                    spcTarget.ReportProgress(p.Message);
+                });
+
+                var result = await _presenter.SynchronizeAsync(selectedDifferences, progress);
+
+                if (!result.Success)
+                {
+                    var errorMessage = string.Join(Environment.NewLine, result.Errors);
+                    MessageBox.Show($@"Synchronization completed with errors:{Environment.NewLine}{errorMessage}", 
+                        @"Partial Success", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
                 else
                 {
-                    if (kustoQueryEngine == null)
-                        throw new InvalidOperationException("Kusto query engine is required for Kusto target");
-                    schema.WriteToKusto(kustoQueryEngine);
+                    MessageBox.Show(@"Target update is complete.", @"Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
+
+                // Clear the comparison
+                tvComparison.Nodes.Clear();
+                btnUpdate.Enabled = false;
+                _lastComparison = null;
+                
+                spcSource.ReportProgress(string.Empty);
+                spcTarget.ReportProgress(string.Empty);
             }
-
-            void DeleteFromTarget(IKustoSchema schema)
+            catch (Exception ex)
             {
-                if (spcTarget.SourceSelection == SourceSelection.Kusto())
-                {
-                    if (kustoQueryEngine == null)
-                        throw new InvalidOperationException("Kusto query engine is required for Kusto target");
-                    schema.DeleteFromKusto(kustoQueryEngine);
-                }
-                else
-                {
-                    schema.DeleteFromFolder(spcTarget.SourceFilePath, SettingsWrapper.FileExtension);
-                }
+                var errorMessage = _errorMessageResolver.ResolveErrorMessage(ex);
+                MessageBox.Show($@"Failed to synchronize schemas: {errorMessage}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                spcSource.ReportProgress(string.Empty);
+                spcTarget.ReportProgress(string.Empty);
             }
-
-            foreach (CoreAbstractions.SchemaDifference difference in selectedNodes.Select(node => (CoreAbstractions.SchemaDifference)node.Tag))
+            finally
             {
-                switch (difference.Schema)
-                {
-                    case IKustoSchema update when
-                        difference.Difference is Modified ||
-                        difference.Difference is OnlyInSource:
-                        WriteToTarget(update);
-                        break;
-
-                    case IKustoSchema delete when
-                        difference.Difference is OnlyInTarget:
-                        DeleteFromTarget(delete);
-                        break;
-
-                    default:
-                        throw new InvalidOperationException("Unhandled type supplied.");
-                }
+                Cursor.Current = lastCursor;
             }
         }
 
@@ -465,38 +486,6 @@ namespace SyncKusto
         {
             var frm = new SettingsForm();
             frm.ShowDialog();
-        }
-
-        /// <summary>
-        /// Validate that the user has specified the required settings
-        /// </summary>
-        /// <returns>True if everything is set up properly, false otherwise</returns>
-        private bool ValidateSettings()
-        {
-            // Using the local file system for either the source or the target requires access to a cluster where we can make a temporary database
-            if ((spcSource.SourceSelection == SourceSelection.FilePath() || spcTarget.SourceSelection == SourceSelection.FilePath()) &&
-                !IsTempClusterDefined())
-            {
-                MessageBox.Show("Cannot compare without cluster setting.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// If the temporary cluster isn't defined yet, show the dialog.
-        /// </summary>
-        /// <returns>True if the cluster is set, false otherwise.</returns>
-        private bool IsTempClusterDefined()
-        {
-            if (string.IsNullOrWhiteSpace(SettingsWrapper.KustoClusterForTempDatabases))
-            {
-                var frm = new SettingsForm();
-                frm.ShowDialog();
-            }
-
-            return !string.IsNullOrWhiteSpace(SettingsWrapper.KustoClusterForTempDatabases);
         }
     }
 }
