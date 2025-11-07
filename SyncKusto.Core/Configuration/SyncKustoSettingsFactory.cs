@@ -49,13 +49,16 @@ public static class SyncKustoSettingsFactory
             return LineEndingMode.LeaveAsIs;
         }
 
+        // Try parsing as integer first
         if (int.TryParse(value, out var intValue) &&
             Enum.IsDefined(typeof(LineEndingMode), intValue))
         {
             return (LineEndingMode)intValue;
         }
 
-        if (Enum.TryParse<LineEndingMode>(value, out var result))
+        // Try parsing as enum name
+        if (Enum.TryParse<LineEndingMode>(value, out var result) &&
+            Enum.IsDefined(typeof(LineEndingMode), result))
         {
             return result;
         }

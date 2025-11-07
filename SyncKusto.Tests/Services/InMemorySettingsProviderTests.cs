@@ -45,10 +45,10 @@ public class InMemorySettingsProviderTests
     }
 
     [Test]
-    public void SetSetting_WithNullKey_ThrowsArgumentException()
+    public void SetSetting_WithNullKey_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => _provider.SetSetting(null!, "value"));
+        Assert.Throws<ArgumentNullException>(() => _provider.SetSetting(null!, "value"));
     }
 
     [Test]

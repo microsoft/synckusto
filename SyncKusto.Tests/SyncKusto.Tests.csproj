@@ -1,41 +1,57 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- Align with main project TFM; tests need Windows only because main project is Windows-specific -->
     <TargetFramework>net8.0-windows</TargetFramework>
     <OutputType>Library</OutputType>
     <AssemblyTitle>SyncKusto.Tests</AssemblyTitle>
     <Product>SyncKusto.Tests</Product>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
-  <!-- Existing conditional property groups unchanged -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'x64|AnyCPU'">
-    <OutputPath>bin\x64\</OutputPath>
-    <Optimize>true</Optimize>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <OutputPath>bin\x64\Debug\</OutputPath>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'x64|x64'">
-    <OutputPath>bin\x64\x64\</OutputPath>
-    <Optimize>true</Optimize>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
+
   <ItemGroup>
-    <!-- Updated test packages -->
+    <!-- Core test frameworks -->
+    <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="14.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
-    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="NUnit" Version="3.14.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
-    <PackageReference Include="Bogus" Version="28.0.1" />
+    <PackageReference Include="NUnit.Analyzers" Version="3.9.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    
+    <!-- Mocking and test data generation -->
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="Bogus" Version="35.6.1" />
+    
+    <!-- Assertion libraries -->
+    <PackageReference Include="FluentAssertions" Version="6.12.1" />
+    
+    <!-- Integration testing -->
+    <PackageReference Include="Testcontainers" Version="3.10.0" />
+    
+    <!-- Retry/Resilience testing -->
+    <PackageReference Include="Polly" Version="8.4.2" />
+    <PackageReference Include="Polly.Testing" Version="8.4.2" />
+    
+    <!-- Coverage -->
+    <PackageReference Include="coverlet.collector" Version="6.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\SyncKusto\SyncKusto.csproj" />
+    <ProjectReference Include="..\SyncKusto.Core\SyncKusto.Core.csproj" />
+    <ProjectReference Include="..\SyncKusto.Kusto\SyncKusto.Kusto.csproj" />
+    <ProjectReference Include="..\SyncKusto.FileSystem\SyncKusto.FileSystem.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
 </Project>
