@@ -7,7 +7,6 @@ using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
 using SyncKusto.FileSystem.Extensions;
-using SyncKusto.Kusto.DatabaseSchemaBuilder;
 using SyncKusto.Utilities;
 using System;
 using System.Collections.Generic;
@@ -298,65 +297,6 @@ namespace SyncKusto
         {
             if (SourceValidationMap == null) return false;
             return SourceValidationMap[SourceSelection].Invoke();
-        }
-
-        /// <summary>
-        /// Load the schema specified in the control
-        /// </summary>
-        /// <returns>The loaded database schema</returns>
-        /// <exception cref="SchemaLoadException">Thrown when schema cannot be loaded</exception>
-        public DatabaseSchema LoadSchema()
-        {
-            if (_settingsProvider == null)
-                throw new InvalidOperationException("SettingsProvider not initialized. Call Initialize() first.");
-
-            try
-            {
-                if (SourceSelection == SourceSelection.Kusto())
-                {
-                    var lineEndingModeStr = _settingsProvider.GetSetting("LineEndingMode");
-                    var lineEndingMode = LineEndingMode.LeaveAsIs;
-                    if (int.TryParse(lineEndingModeStr, out var lineEndingInt) && 
-                        Enum.IsDefined(typeof(LineEndingMode), lineEndingInt))
-                    {
-                        lineEndingMode = (LineEndingMode)lineEndingInt;
-                    }
-
-                    var schemaBuilder = new KustoDatabaseSchemaBuilder(new SyncKusto.Kusto.Services.QueryEngine(KustoConnection, lineEndingMode));
-                    ReportProgress($@"Constructing schema...");
-                    return Task.Run(async () => await schemaBuilder.Build().ConfigureAwait(false)).Result;
-                }
-                else if (SourceSelection == SourceSelection.FilePath())
-                {
-                    _settingsProvider.SetSetting("PreviousFilePath", SourceFilePath);
-                    
-                    var fileExtension = _settingsProvider.GetSetting("FileExtension") ?? "kql";
-                    var tempCluster = _settingsProvider.GetSetting("TempCluster") 
-                        ?? throw new InvalidOperationException("TempCluster setting is not configured");
-                    var tempDatabase = _settingsProvider.GetSetting("TempDatabase") 
-                        ?? throw new InvalidOperationException("TempDatabase setting is not configured");
-                    var aadAuthority = _settingsProvider.GetSetting("AADAuthority") 
-                        ?? throw new InvalidOperationException("AADAuthority setting is not configured");
-
-                    var repository = new SyncKusto.FileSystem.Repositories.FileSystemSchemaRepository(
-                        SourceFilePath,
-                        fileExtension,
-                        tempCluster,
-                        tempDatabase,
-                        aadAuthority
-                    );
-                    ReportProgress($@"Constructing schema...");
-                    return Task.Run(async () => await repository.GetSchemaAsync().ConfigureAwait(false)).Result;
-                }
-                else
-                {
-                    throw new InvalidOperationException("An unknown source type was supplied.");
-                }
-            }
-            catch (Exception ex) when (ex is not SchemaLoadException)
-            {
-                throw new SchemaLoadException("Failed to load database schema", ex);
-            }
         }
 
         /// <summary>
