@@ -113,8 +113,8 @@ namespace SyncKusto
             }
 
             // Compare with progress reporting
-            Cursor? lastCursor = Cursor.Current;
-            Cursor.Current = Cursors.WaitCursor;
+            var previousCursor = this.Cursor;
+            this.Cursor = Cursors.WaitCursor;
 
             try
             {
@@ -164,7 +164,7 @@ namespace SyncKusto
             }
             finally
             {
-                Cursor.Current = lastCursor;
+                this.Cursor = previousCursor;
             }
         }
 
@@ -352,8 +352,8 @@ namespace SyncKusto
                 return;
             }
 
-            Cursor? lastCursor = Cursor.Current;
-            Cursor.Current = Cursors.WaitCursor;
+            var previousCursor = this.Cursor;
+            this.Cursor = Cursors.WaitCursor;
 
             rtbSourceText.Text = "";
 
@@ -367,7 +367,7 @@ namespace SyncKusto
             if (!selectedNodes.Any())
             {
                 MessageBox.Show(@"No differences were selected. Nothing to update in the target.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Cursor.Current = lastCursor;
+                this.Cursor = previousCursor;
                 return;
             }
 
@@ -381,7 +381,7 @@ namespace SyncKusto
                 if (dialogResult != DialogResult.Yes)
                 {
                     MessageBox.Show("Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    Cursor.Current = lastCursor;
+                    this.Cursor = previousCursor;
                     return;
                 }
             }
@@ -429,7 +429,7 @@ namespace SyncKusto
             }
             finally
             {
-                Cursor.Current = lastCursor;
+                this.Cursor = previousCursor;
             }
         }
 
