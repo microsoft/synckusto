@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using SyncKusto.SyncSources;
+using SyncKusto.Core.Models;
 
 namespace SyncKusto
 {

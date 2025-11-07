@@ -7,7 +7,6 @@ using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
 using SyncKusto.FileSystem.Extensions;
 using SyncKusto.Kusto.DatabaseSchemaBuilder;
-using SyncKusto.SyncSources;
 using SyncKusto.Utilities;
 using System;
 using System.Collections.Generic;

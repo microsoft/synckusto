@@ -2,10 +2,8 @@
 // Licensed under the MIT License.
 
 using System;
-using SyncKusto.Abstractions;
+using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Models;
-using SyncKusto.Models;
-using SyncKusto.SyncSources;
 using Kusto.Data;
 
 namespace SyncKusto.Adapters;

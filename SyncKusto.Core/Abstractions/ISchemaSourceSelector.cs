@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using SyncKusto.Models;
+using SyncKusto.Core.Models;
 
-namespace SyncKusto.Abstractions;
+namespace SyncKusto.Core.Abstractions;
 
 /// <summary>
 /// Abstracts schema source selection from a UI control

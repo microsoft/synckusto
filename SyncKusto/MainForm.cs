@@ -13,9 +13,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
-using SyncKusto.SyncSources;
-using SyncKusto.Adapters;
 using SyncKusto.Abstractions;
+using SyncKusto.Adapters;
 using SyncKusto.Models;
 
 namespace SyncKusto

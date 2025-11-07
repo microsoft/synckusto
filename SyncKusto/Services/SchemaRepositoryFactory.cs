@@ -5,11 +5,10 @@ using System;
 using Kusto.Data;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Configuration;
-using SyncKusto.Models;
+using SyncKusto.Core.Models;
 using SyncKusto.FileSystem.Repositories;
 using SyncKusto.Kusto.Repositories;
 using SyncKusto.Kusto.Services;
-using SyncKusto.SyncSources;
 
 namespace SyncKusto.Services;
 

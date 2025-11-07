@@ -10,7 +10,6 @@ using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Models;
 using SyncKusto.Models;
-using SyncKusto.SyncSources;
 using Kusto.Data.Common;
 
 namespace SyncKusto.Services;
