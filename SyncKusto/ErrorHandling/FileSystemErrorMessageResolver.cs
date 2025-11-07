@@ -4,7 +4,7 @@
 using System;
 using System.IO;
 using SyncKusto.Core.Abstractions;
-using SyncKusto.Exceptions;
+using SyncKusto.FileSystem.Exceptions;
 
 namespace SyncKusto.ErrorHandling
 {

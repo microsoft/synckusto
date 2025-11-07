@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SyncKusto.Abstractions;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Configuration;
+using SyncKusto.Core.Services;
 using SyncKusto.Services;
 using SyncKusto.ErrorHandling;
 
@@ -24,6 +25,7 @@ namespace SyncKusto
             // Core services
             services.AddSingleton<ISchemaComparisonService, SchemaComparisonService>();
             services.AddSingleton<ISchemaSyncService, SchemaSyncService>();
+            services.AddSingleton<ISchemaValidationService, SchemaValidationService>();
             
             // Error resolvers
             services.AddSingleton<IErrorMessageResolver>(provider => ErrorMessageResolverFactory.CreateDefault());

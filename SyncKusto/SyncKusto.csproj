@@ -62,4 +62,7 @@
     <ProjectReference Include="..\SyncKusto.Kusto\SyncKusto.Kusto.csproj" />
     <ProjectReference Include="..\SyncKusto.FileSystem\SyncKusto.FileSystem.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Exceptions\" />
+  </ItemGroup>
 </Project>

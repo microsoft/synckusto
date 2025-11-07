@@ -10,7 +10,7 @@ using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
 
-namespace SyncKusto.Services;
+namespace SyncKusto.Core.Services;
 
 /// <summary>
 /// Service for orchestrating schema synchronization operations

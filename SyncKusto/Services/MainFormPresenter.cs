@@ -20,6 +20,7 @@ namespace SyncKusto.Services;
 public class MainFormPresenter : IMainFormPresenter
 {
     private readonly ISchemaSyncService _syncService;
+    private readonly ISchemaValidationService _validationService;
     private readonly SchemaRepositoryFactory _repositoryFactory;
     private readonly SyncKustoSettings _settings;
     
@@ -31,10 +32,12 @@ public class MainFormPresenter : IMainFormPresenter
 
     public MainFormPresenter(
         ISchemaSyncService syncService,
+        ISchemaValidationService validationService,
         SchemaRepositoryFactory repositoryFactory,
         SyncKustoSettings settings)
     {
         _syncService = syncService ?? throw new ArgumentNullException(nameof(syncService));
+        _validationService = validationService ?? throw new ArgumentNullException(nameof(validationService));
         _repositoryFactory = repositoryFactory ?? throw new ArgumentNullException(nameof(repositoryFactory));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
     }
@@ -97,18 +100,6 @@ public class MainFormPresenter : IMainFormPresenter
     /// </summary>
     public ValidationResult ValidateSettings(SchemaSourceInfo source, SchemaSourceInfo target)
     {
-        ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(target);
-
-        // Using the local file system for either the source or the target requires access to a temp cluster
-        if ((source.SourceType == SourceSelection.FilePath() || 
-             target.SourceType == SourceSelection.FilePath()) &&
-            string.IsNullOrWhiteSpace(_settings.TempCluster))
-        {
-            return ValidationResult.Failure(
-                "File system sources require temp cluster configuration. Please configure in Settings.");
-        }
-        
-        return ValidationResult.Success();
+        return _validationService.ValidateSettings(source, target);
     }
 }
