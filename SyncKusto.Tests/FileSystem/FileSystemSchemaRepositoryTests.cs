@@ -312,7 +312,7 @@ public class FileSystemSchemaRepositoryTests
         var table1 = new KustoTableSchema(CreateTestTable("Table1"));
         var table2 = new KustoTableSchema(CreateTestTable("Table2"));
         var function1 = new KustoFunctionSchema(CreateTestFunction("Function1"));
-        var schemas = new List<Core.Abstractions.IKustoSchema> { table1, table2, function1 };
+        var schemas = new List<SyncKusto.Core.Abstractions.IKustoSchema> { table1, table2, function1 };
 
         // Act
         await repository.SaveSchemaAsync(schemas);
