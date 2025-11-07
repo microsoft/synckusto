@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using NUnit.Framework;
-using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Services;
 using System;
 using System.Linq;

@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Linq;
 using Kusto.Data.Common;
 using SyncKusto.ChangeModel;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Extensions;
+using System;
+using System.Linq;
 
 namespace SyncKusto.Services;
 

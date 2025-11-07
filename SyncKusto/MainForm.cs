@@ -4,18 +4,17 @@
 using DiffPlex;
 using DiffPlex.DiffBuilder;
 using Kusto.Data.Common;
+using SyncKusto.Abstractions;
+using SyncKusto.Adapters;
 using SyncKusto.ChangeModel;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Models;
 using SyncKusto.ErrorHandling;
-using SyncKusto.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
-using SyncKusto.Abstractions;
-using SyncKusto.Adapters;
 
 namespace SyncKusto
 {
@@ -42,9 +41,9 @@ namespace SyncKusto
         public MainForm()
         {
             InitializeComponent();
-            
+
             _errorMessageResolver = ErrorMessageResolverFactory.CreateDefault();
-            
+
             // Create temporary instances - will be replaced by DI constructor
             _presenter = null!; // Set by DI
             _settingsProvider = null!; // Set by DI
@@ -72,10 +71,10 @@ namespace SyncKusto
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _validationService = validationService ?? throw new ArgumentNullException(nameof(validationService));
             _kustoValidationService = kustoValidationService ?? throw new ArgumentNullException(nameof(kustoValidationService));
-            
+
             // Initialize the picker controls with settings provider
             InitializePickerControls();
-            
+
             // Wire up reset event handlers
             spcSource.ResetMainFormValueHolders = ResetValueHoldersOnChange;
             spcTarget.ResetMainFormValueHolders = ResetValueHoldersOnChange;
@@ -121,7 +120,7 @@ namespace SyncKusto
                 spcSource.ReportProgress(string.Empty);
                 return;
             }
-            
+
             var targetValidation = _targetAdapter.Validate();
             if (!targetValidation.IsValid)
             {
@@ -152,13 +151,13 @@ namespace SyncKusto
                 var progress = new Progress<SyncProgress>(p =>
                 {
                     // Update both source and target progress displays
-                    if (p.Stage == SyncProgressStage.LoadingSourceSchema || 
+                    if (p.Stage == SyncProgressStage.LoadingSourceSchema ||
                         p.Stage == SyncProgressStage.ComparingSchemas)
                     {
                         spcSource.ReportProgress(p.Message);
                     }
-                    
-                    if (p.Stage == SyncProgressStage.LoadingTargetSchema || 
+
+                    if (p.Stage == SyncProgressStage.LoadingTargetSchema ||
                         p.Stage == SyncProgressStage.ComparingSchemas)
                     {
                         spcTarget.ReportProgress(p.Message);
@@ -166,7 +165,7 @@ namespace SyncKusto
                 });
 
                 _lastComparison = await _presenter.CompareAsync(sourceInfo, targetInfo, progress);
-                
+
                 // Cache schemas for diff view
                 _sourceSchema = _lastComparison.SourceSchema;
                 _targetSchema = _lastComparison.TargetSchema;
@@ -311,7 +310,7 @@ namespace SyncKusto
             if (_sourceSchema.Tables.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_tablesTreeNodeText))
             {
                 sourceText = SyncKusto.Kusto.Services.FormattedCslCommandGenerator.GenerateTableCreateCommand(
-                    _sourceSchema.Tables[objectName], 
+                    _sourceSchema.Tables[objectName],
                     true,
                     _settings.CreateMergeEnabled,
                     _settings.TableFieldsOnNewLine,
@@ -326,7 +325,7 @@ namespace SyncKusto
             if (_targetSchema.Tables.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_tablesTreeNodeText))
             {
                 targetText = SyncKusto.Kusto.Services.FormattedCslCommandGenerator.GenerateTableCreateCommand(
-                    _targetSchema.Tables[objectName], 
+                    _targetSchema.Tables[objectName],
                     true,
                     _settings.CreateMergeEnabled,
                     _settings.TableFieldsOnNewLine,
@@ -404,7 +403,7 @@ namespace SyncKusto
 
             // Check for drop operations and show warning if needed
             var targetInfo = _targetAdapter.GetSourceInfo();
-            if (_settings.KustoObjectDropWarning && 
+            if (_settings.KustoObjectDropWarning &&
                 targetInfo.SourceType == SourceSelection.Kusto() &&
                 selectedNodes.Any(n => n.Parent.Text == "Only In Target"))
             {
@@ -435,7 +434,7 @@ namespace SyncKusto
                 if (!result.Success)
                 {
                     var errorMessage = string.Join(Environment.NewLine, result.Errors);
-                    MessageBox.Show($@"Synchronization completed with errors:{Environment.NewLine}{errorMessage}", 
+                    MessageBox.Show($@"Synchronization completed with errors:{Environment.NewLine}{errorMessage}",
                         @"Partial Success", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
                 else
@@ -447,7 +446,7 @@ namespace SyncKusto
                 tvComparison.Nodes.Clear();
                 btnUpdate.Enabled = false;
                 _lastComparison = null;
-                
+
                 spcSource.ReportProgress(string.Empty);
                 spcTarget.ReportProgress(string.Empty);
             }

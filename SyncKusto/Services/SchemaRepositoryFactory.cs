@@ -1,14 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using Kusto.Data;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Models;
 using SyncKusto.FileSystem.Repositories;
 using SyncKusto.Kusto.Repositories;
 using SyncKusto.Kusto.Services;
+using System;
 
 namespace SyncKusto.Services;
 
@@ -36,7 +35,7 @@ public class SchemaRepositoryFactory
         if (sourceInfo.SourceType == SourceSelection.FilePath())
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(sourceInfo.FilePath, nameof(sourceInfo.FilePath));
-            
+
             return new FileSystemSchemaRepository(
                 sourceInfo.FilePath,
                 _settings.FileExtension,
@@ -48,7 +47,7 @@ public class SchemaRepositoryFactory
         else if (sourceInfo.SourceType == SourceSelection.Kusto())
         {
             ArgumentNullException.ThrowIfNull(sourceInfo.KustoInfo, nameof(sourceInfo.KustoInfo));
-            
+
             var options = new KustoConnectionOptions(
                 Cluster: sourceInfo.KustoInfo.Cluster,
                 Database: sourceInfo.KustoInfo.Database,
@@ -58,9 +57,9 @@ public class SchemaRepositoryFactory
                 AppKey: sourceInfo.KustoInfo.AppKey,
                 CertificateThumbprint: sourceInfo.KustoInfo.CertificateThumbprint,
                 CertificateLocation: _settings.CertificateLocation);
-            
+
             var connectionString = (global::Kusto.Data.KustoConnectionStringBuilder)_kustoConnectionFactory.CreateConnectionString(options);
-            
+
             return new KustoSchemaRepository(connectionString, _settings.LineEndingMode);
         }
         else

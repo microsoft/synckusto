@@ -28,7 +28,7 @@ public class KustoConnectionFactory : IKustoConnectionFactory
         return options.AuthMode switch
         {
             AuthenticationMode.AadFederated => CreateUserAuthConnection(cluster, options.Database, options.Authority),
-            AuthenticationMode.AadApplication => CreateAppKeyAuthConnection(cluster, options.Database, options.Authority, 
+            AuthenticationMode.AadApplication => CreateAppKeyAuthConnection(cluster, options.Database, options.Authority,
                 options.AppId!, options.AppKey!),
             AuthenticationMode.AadApplicationSni => CreateAppSniAuthConnection(cluster, options.Database, options.Authority,
                 options.AppId!, options.CertificateThumbprint!, options.CertificateLocation),
@@ -40,8 +40,8 @@ public class KustoConnectionFactory : IKustoConnectionFactory
     /// Creates a connection string for user authentication (AAD Federated)
     /// </summary>
     private static KustoConnectionStringBuilder CreateUserAuthConnection(
-        string cluster, 
-        string database, 
+        string cluster,
+        string database,
         string authority)
     {
         return new KustoConnectionStringBuilder(cluster)
@@ -119,7 +119,7 @@ public class KustoConnectionFactory : IKustoConnectionFactory
         cluster = cluster.TrimEnd('/').Trim();
 
         // If it doesn't end with .com or .net then default to .kusto.windows.net
-        if (!cluster.EndsWith(".com", StringComparison.OrdinalIgnoreCase) && 
+        if (!cluster.EndsWith(".com", StringComparison.OrdinalIgnoreCase) &&
             !cluster.EndsWith(".net", StringComparison.OrdinalIgnoreCase))
         {
             cluster = $"https://{cluster}.kusto.windows.net";

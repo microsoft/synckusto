@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Kusto.Cloud.Platform.Utils;
 using System.Collections.Generic;
 using System.Linq;
-using Kusto.Cloud.Platform.Utils;
 
 namespace SyncKusto.Extensions
 {

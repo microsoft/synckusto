@@ -21,7 +21,7 @@ public static class FormattedCslCommandGenerator
     /// <param name="lineEndingMode">The line ending style to use when formatting</param>
     /// <returns>A CSL command string</returns>
     public static string GenerateTableCreateCommand(
-        TableSchema table, 
+        TableSchema table,
         bool forceNormalizeColumnName = false,
         bool createMergeEnabled = false,
         bool tableFieldsOnNewLine = false,

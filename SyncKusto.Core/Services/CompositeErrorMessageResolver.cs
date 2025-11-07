@@ -11,12 +11,12 @@ namespace SyncKusto.Core.Services;
 public class CompositeErrorMessageResolver : IErrorMessageResolver
 {
     private readonly IReadOnlyList<IErrorMessageResolver> _resolvers;
-    
+
     public CompositeErrorMessageResolver(IEnumerable<IErrorMessageResolver> resolvers)
     {
         _resolvers = resolvers.ToList();
     }
-    
+
     public string? ResolveErrorMessage(Exception exception)
     {
         foreach (var resolver in _resolvers)
@@ -25,7 +25,7 @@ public class CompositeErrorMessageResolver : IErrorMessageResolver
             if (message != null)
                 return message;
         }
-        
+
         return exception.Message;
     }
 }

@@ -11,6 +11,6 @@ namespace SyncKusto.Kusto.Exceptions;
 public class KustoClusterException : SchemaLoadException
 {
     public KustoClusterException(string message) : base(message) { }
-    public KustoClusterException(string message, Exception innerException) 
+    public KustoClusterException(string message, Exception innerException)
         : base(message, innerException) { }
 }

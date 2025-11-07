@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.IO;
 using Kusto.Data.Common;
 using SyncKusto.Core.Models;
 using SyncKusto.FileSystem.Exceptions;
@@ -54,7 +53,7 @@ public static class FileSystemSchemaExtensions
                 string cleanedFolder = string.Join("", functionSchema.Folder.Split(Path.GetInvalidPathChars()));
                 funcFolder = Path.Combine(funcFolder, cleanedFolder);
             }
-            
+
             string destinationFile = Path.Combine(funcFolder, filename);
             if (!Directory.Exists(funcFolder))
             {
@@ -62,7 +61,7 @@ public static class FileSystemSchemaExtensions
             }
 
             File.WriteAllText(
-                HandleLongFileNames(destinationFile), 
+                HandleLongFileNames(destinationFile),
                 CslCommandGenerator.GenerateCreateOrAlterFunctionCommand(functionSchema, true));
         }
         catch (Exception ex) when (ex is not FileSchemaException)
@@ -111,8 +110,8 @@ public static class FileSystemSchemaExtensions
     /// <param name="lineEndingMode">The line ending mode to use</param>
     /// <exception cref="FileSchemaException">Thrown when the file cannot be written</exception>
     public static void WriteToFile(
-        this TableSchema tableSchema, 
-        string rootFolder, 
+        this TableSchema tableSchema,
+        string rootFolder,
         string fileExtension,
         bool createMergeEnabled = false,
         bool tableFieldsOnNewLine = false,
@@ -137,9 +136,9 @@ public static class FileSystemSchemaExtensions
             }
 
             File.WriteAllText(
-                HandleLongFileNames(destinationFile), 
+                HandleLongFileNames(destinationFile),
                 FormattedCslCommandGenerator.GenerateTableCreateCommand(
-                    tableSchema, 
+                    tableSchema,
                     forceNormalizeColumnName: true,
                     createMergeEnabled: createMergeEnabled,
                     tableFieldsOnNewLine: tableFieldsOnNewLine,

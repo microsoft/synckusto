@@ -16,11 +16,11 @@ public class KustoDatabaseValidationException : SchemaValidationException
     public long TableCount { get; }
 
     public KustoDatabaseValidationException(
-        string clusterName, 
+        string clusterName,
         string databaseName,
         long functionCount,
         long tableCount,
-        string message) 
+        string message)
         : base(message, new List<string> { $"Functions: {functionCount}", $"Tables: {tableCount}" })
     {
         ClusterName = clusterName;

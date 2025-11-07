@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using Kusto.Data.Common;
 using SyncKusto.Abstractions;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Models;
-using Kusto.Data.Common;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SyncKusto.Services;
 
@@ -22,7 +22,7 @@ public class MainFormPresenter : IMainFormPresenter
     private readonly ISchemaValidationService _validationService;
     private readonly SchemaRepositoryFactory _repositoryFactory;
     private readonly SyncKustoSettings _settings;
-    
+
     // Cached for synchronization - need to use the same repository instances
     private ISchemaRepository? _lastSourceRepository;
     private ISchemaRepository? _lastTargetRepository;
@@ -56,21 +56,21 @@ public class MainFormPresenter : IMainFormPresenter
         // Create repositories
         _lastSourceRepository = _repositoryFactory.CreateRepository(source);
         _lastTargetRepository = _repositoryFactory.CreateRepository(target);
-        
+
         // Load schemas and compare
         var differences = await _syncService.CompareAsync(
             _lastSourceRepository,
             _lastTargetRepository,
             progress,
             cancellationToken);
-        
+
         // Also get the actual schemas for display (needed by MainForm for diff view)
         _lastSourceSchema = await _lastSourceRepository.GetSchemaAsync(cancellationToken);
         _lastTargetSchema = await _lastTargetRepository.GetSchemaAsync(cancellationToken);
-        
+
         return new ComparisonResult(differences, _lastSourceSchema, _lastTargetSchema);
     }
-    
+
     /// <summary>
     /// Synchronize selected differences
     /// </summary>
@@ -80,12 +80,12 @@ public class MainFormPresenter : IMainFormPresenter
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(selectedDifferences);
-        
+
         if (_lastSourceRepository == null || _lastTargetRepository == null)
         {
             throw new InvalidOperationException("Must compare before synchronizing");
         }
-        
+
         return await _syncService.SynchronizeAsync(
             _lastSourceRepository,
             _lastTargetRepository,
@@ -93,7 +93,7 @@ public class MainFormPresenter : IMainFormPresenter
             progress,
             cancellationToken);
     }
-    
+
     /// <summary>
     /// Validate that settings are configured properly
     /// </summary>

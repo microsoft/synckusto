@@ -14,22 +14,22 @@ public interface ISchemaSourceSelector
     /// Get schema source information from the control
     /// </summary>
     SchemaSourceInfo GetSourceInfo();
-    
+
     /// <summary>
     /// Validate the current source configuration
     /// </summary>
     ValidationResult Validate();
-    
+
     /// <summary>
     /// Report progress to the user
     /// </summary>
     void ReportProgress(string message);
-    
+
     /// <summary>
     /// Save recent values for next session
     /// </summary>
     void SaveRecentValues();
-    
+
     /// <summary>
     /// Reload recent values
     /// </summary>

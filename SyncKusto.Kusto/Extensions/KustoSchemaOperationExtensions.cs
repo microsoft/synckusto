@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.IO;
 using Kusto.Data.Common;
 using SyncKusto.Kusto.Services;
 
@@ -22,9 +21,9 @@ public static class KustoSchemaOperationExtensions
     {
         ArgumentNullException.ThrowIfNull(functionSchema);
         ArgumentNullException.ThrowIfNull(kustoQueryEngine);
-        
+
         kustoQueryEngine.CreateOrAlterFunctionAsync(
-            CslCommandGenerator.GenerateCreateOrAlterFunctionCommand(functionSchema, true), 
+            CslCommandGenerator.GenerateCreateOrAlterFunctionCommand(functionSchema, true),
             functionSchema.Name).Wait();
     }
 
@@ -37,7 +36,7 @@ public static class KustoSchemaOperationExtensions
     {
         ArgumentNullException.ThrowIfNull(functionSchema);
         ArgumentNullException.ThrowIfNull(kustoQueryEngine);
-        
+
         kustoQueryEngine.DropFunction(functionSchema);
     }
 
@@ -50,7 +49,7 @@ public static class KustoSchemaOperationExtensions
     /// <param name="tableFieldsOnNewLine">Whether to put each field on a new line</param>
     /// <param name="lineEndingMode">The line ending mode to use</param>
     public static void WriteToKusto(
-        this TableSchema tableSchema, 
+        this TableSchema tableSchema,
         QueryEngine kustoQueryEngine,
         bool createMergeEnabled = false,
         bool tableFieldsOnNewLine = false,
@@ -58,14 +57,14 @@ public static class KustoSchemaOperationExtensions
     {
         ArgumentNullException.ThrowIfNull(tableSchema);
         ArgumentNullException.ThrowIfNull(kustoQueryEngine);
-        
+
         kustoQueryEngine.CreateOrAlterTableAsync(
             FormattedCslCommandGenerator.GenerateTableCreateCommand(
-                tableSchema, 
+                tableSchema,
                 forceNormalizeColumnName: false,
                 createMergeEnabled: createMergeEnabled,
                 tableFieldsOnNewLine: tableFieldsOnNewLine,
-                lineEndingMode: lineEndingMode), 
+                lineEndingMode: lineEndingMode),
             tableSchema.Name).Wait();
     }
 
@@ -78,7 +77,7 @@ public static class KustoSchemaOperationExtensions
     {
         ArgumentNullException.ThrowIfNull(tableSchema);
         ArgumentNullException.ThrowIfNull(kustoQueryEngine);
-        
+
         kustoQueryEngine.DropTable(tableSchema.Name);
     }
 }

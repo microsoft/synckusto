@@ -14,7 +14,8 @@ namespace SyncKusto.ChangeModel
             DifferenceFactory = difference;
 
         private protected Func<(IDictionary<TKey, TValue> modified, IDictionary<TKey, TValue> onlyInSource,
-            IDictionary<TKey, TValue> onlyInTarget)> DifferenceFactory { get; }
+            IDictionary<TKey, TValue> onlyInTarget)> DifferenceFactory
+        { get; }
 
         private protected Dictionary<Difference, IDictionary<TKey, TValue>> MapDifferences()
         {

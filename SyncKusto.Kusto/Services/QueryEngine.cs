@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Data;
-using System.Text.RegularExpressions;
 using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
 using Newtonsoft.Json;
 using SyncKusto.Core.Models;
 using SyncKusto.Kusto.Exceptions;
+using System.Data;
+using System.Text.RegularExpressions;
 
 namespace SyncKusto.Kusto.Services;
 
@@ -30,11 +30,11 @@ public class QueryEngine : IDisposable
     /// <param name="kustoConnectionStringBuilder">The connection string builder to connect to Kusto</param>
     /// <param name="lineEndingMode">The line ending mode to use for function bodies</param>
     public QueryEngine(
-        KustoConnectionStringBuilder kustoConnectionStringBuilder, 
+        KustoConnectionStringBuilder kustoConnectionStringBuilder,
         LineEndingMode lineEndingMode = LineEndingMode.LeaveAsIs)
     {
         ArgumentNullException.ThrowIfNull(kustoConnectionStringBuilder);
-        
+
         _adminClient = KustoClientFactory.CreateCslAdminProvider(kustoConnectionStringBuilder);
         _queryClient = KustoClientFactory.CreateCslQueryProvider(kustoConnectionStringBuilder);
         _databaseName = kustoConnectionStringBuilder.InitialCatalog;
@@ -51,8 +51,8 @@ public class QueryEngine : IDisposable
     /// <param name="authority">The AAD authority</param>
     /// <param name="lineEndingMode">The line ending mode to use for function bodies</param>
     public QueryEngine(
-        string tempCluster, 
-        string tempDatabase, 
+        string tempCluster,
+        string tempDatabase,
         string authority,
         LineEndingMode lineEndingMode = LineEndingMode.LeaveAsIs)
     {
@@ -61,7 +61,7 @@ public class QueryEngine : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(authority);
 
         _databaseName = tempDatabase;
-        
+
         var connString = new KustoConnectionStringBuilder(KustoConnectionFactory.NormalizeClusterName(tempCluster))
         {
             FederatedSecurity = true,
@@ -115,7 +115,7 @@ public class QueryEngine : IDisposable
     {
         DatabaseSchema? result = null;
         string csl = $@".show database ['{_databaseName}'] schema as json";
-        
+
         using (IDataReader reader = _adminClient.ExecuteControlCommand(_databaseName, csl))
         {
             reader.Read();
@@ -124,16 +124,16 @@ public class QueryEngine : IDisposable
             {
                 throw new InvalidOperationException("Failed to retrieve schema JSON from Kusto");
             }
-            
+
             ClusterSchema? clusterSchema = JsonConvert.DeserializeObject<ClusterSchema>(json);
             if (clusterSchema?.Databases == null || !clusterSchema.Databases.Any())
             {
                 throw new InvalidOperationException("Failed to deserialize cluster schema or no databases found");
             }
-            
+
             result = clusterSchema.Databases.First().Value;
         }
-        
+
         if (result == null)
         {
             throw new InvalidOperationException("Failed to load database schema");
@@ -146,7 +146,7 @@ public class QueryEngine : IDisposable
             function.Folder ??= "";
             function.DocString ??= "";
         }
-        
+
         return result;
     }
 
@@ -167,10 +167,10 @@ public class QueryEngine : IDisposable
                 string searchString = "(";
                 string replaceString = searchString + "skipvalidation = @'true',";
                 int firstIndexOf = functionCommand.IndexOf(searchString, StringComparison.Ordinal);
-                functionCommand = functionCommand.Substring(0, firstIndexOf) + replaceString + 
+                functionCommand = functionCommand.Substring(0, firstIndexOf) + replaceString +
                     functionCommand.Substring(firstIndexOf + searchString.Length);
             }
-            
+
             await _adminClient.ExecuteControlCommandAsync(_databaseName, functionCommand).ConfigureAwait(false);
         }
         catch (Exception ex)

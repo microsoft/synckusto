@@ -5,7 +5,7 @@ namespace SyncKusto.Core.Models;
 
 public class Difference
 {
-    private protected Difference(){}
+    private protected Difference() { }
 
     public static Difference OnlyInTarget() => new OnlyInTarget();
     public static Difference OnlyInSource() => new OnlyInSource();

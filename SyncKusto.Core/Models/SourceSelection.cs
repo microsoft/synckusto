@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-
 namespace SyncKusto.Core.Models;
 
 public sealed class SourceSelection : IEquatable<SourceSelection>
@@ -36,10 +34,10 @@ public sealed class SourceSelection : IEquatable<SourceSelection>
     {
         if (obj is null) return false;
         if (ReferenceEquals(this, obj)) return true;
-        return obj.GetType() == this.GetType() && Equals((SourceSelection) obj);
+        return obj.GetType() == this.GetType() && Equals((SourceSelection)obj);
     }
 
-    public override int GetHashCode() => (int) SourceMode;
+    public override int GetHashCode() => (int)SourceMode;
 
     public static bool operator ==(SourceSelection left, SourceSelection right) => Equals(left, right);
 

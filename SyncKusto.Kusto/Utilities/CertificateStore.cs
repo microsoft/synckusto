@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 using System.Security.Cryptography.X509Certificates;
-using X509StoreLocation = System.Security.Cryptography.X509Certificates.StoreLocation;
 using AppStoreLocation = SyncKusto.Core.Models.StoreLocation;
+using X509StoreLocation = System.Security.Cryptography.X509Certificates.StoreLocation;
 
 namespace SyncKusto.Kusto.Utilities;
 
@@ -22,7 +22,7 @@ internal class CertificateStore
     {
         var location = ConvertStoreLocation(storeLocation);
         var certificate = GetCertificate(location, StoreName.My, thumbprint);
-        
+
         if (certificate == null)
         {
             throw new Exception($"Cannot find certificate with thumbprint: {thumbprint}");
@@ -55,8 +55,8 @@ internal class CertificateStore
     /// <param name="thumbprint">The thumbprint of the certificate to retrieve.</param>
     /// <returns>The requested certificate or null if it is not found.</returns>
     private static X509Certificate2? GetCertificate(
-        X509StoreLocation storeLocation, 
-        StoreName storeName, 
+        X509StoreLocation storeLocation,
+        StoreName storeName,
         string thumbprint)
     {
         var certStore = new X509Store(storeName, storeLocation);

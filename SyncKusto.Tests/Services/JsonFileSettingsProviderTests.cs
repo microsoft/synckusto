@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 using NUnit.Framework;
-using SyncKusto.Services;
 using SyncKusto.Core.Models;
+using SyncKusto.Services;
 using System;
 using System.IO;
 
@@ -236,7 +236,7 @@ public class JsonFileSettingsProviderTests
     public void SetSetting_WithInvalidKey_ThrowsArgumentException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => 
+        Assert.Throws<ArgumentException>(() =>
             _provider.SetSetting("InvalidKey", "value"));
     }
 }

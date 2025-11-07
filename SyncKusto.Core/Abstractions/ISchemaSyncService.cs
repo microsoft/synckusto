@@ -21,7 +21,7 @@ public interface ISchemaSyncService
         ISchemaRepository target,
         IProgress<SyncProgress>? progress = null,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Synchronizes selected differences from source to target.
     /// </summary>

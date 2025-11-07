@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using SyncKusto.Core.Models;
-
 namespace SyncKusto.Core.Abstractions;
 
 /// <summary>
@@ -12,6 +10,6 @@ public record SchemaDifferenceResult(
     IReadOnlyList<SchemaDifference> TableDifferences,
     IReadOnlyList<SchemaDifference> FunctionDifferences)
 {
-    public IEnumerable<SchemaDifference> AllDifferences => 
+    public IEnumerable<SchemaDifference> AllDifferences =>
         TableDifferences.Concat(FunctionDifferences);
 }

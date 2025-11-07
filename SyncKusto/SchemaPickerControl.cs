@@ -58,12 +58,12 @@ namespace SyncKusto
         public void Initialize(ISettingsProvider settingsProvider)
         {
             _settingsProvider = settingsProvider ?? throw new ArgumentNullException(nameof(settingsProvider));
-            
+
             txtFilePath.Text = _settingsProvider.GetSetting("PreviousFilePath") ?? string.Empty;
-            
+
             this.cbCluster.Items.Clear();
             this.cbCluster.Items.AddRange(_settingsProvider.GetRecentValues("RecentClusters").ToArray());
-            
+
             this.cbDatabase.Items.Clear();
             this.cbDatabase.Items.AddRange(_settingsProvider.GetRecentValues("RecentDatabases").ToArray());
         }
@@ -97,7 +97,7 @@ namespace SyncKusto
             {
                 var certificateLocation = GetCertificateLocation();
                 var authority = _settingsProvider?.GetSetting("AADAuthority") ?? string.Empty;
-                
+
                 var kustoInfo = new KustoConnectionInfo(
                     Cluster: cbCluster.Text,
                     Database: cbDatabase.Text,
@@ -107,10 +107,10 @@ namespace SyncKusto
                     AppKey: GetAppKey(),
                     CertificateThumbprint: GetCertificateThumbprint(),
                     CertificateLocation: certificateLocation);
-                
+
                 return new SchemaSourceInfo(SourceSelection.Kusto(), KustoInfo: kustoInfo);
             }
-            
+
             throw new InvalidOperationException($"Unknown source selection type: {SourceSelection}");
         }
 
@@ -233,7 +233,7 @@ namespace SyncKusto
         private void EnableSourceSelections()
         {
             if (SourceAllowedMap == null) return;
-            
+
             foreach ((bool enabled, Action<bool> whenAllowed) value in SourceAllowedMap.Values)
             {
                 value.whenAllowed.Invoke(value.enabled);
@@ -243,7 +243,7 @@ namespace SyncKusto
         private void ToggleSourceSelections()
         {
             if (SourceSelectionMap == null) return;
-            
+
             foreach (SourceSelection source in SourceSelectionMap.Keys)
             {
                 SourceSelectionMap[source].Invoke(source == SourceSelection);
@@ -256,23 +256,23 @@ namespace SyncKusto
         private void ToggleKustoSourcePanel(bool predicate) => pnlKusto.Visible = predicate;
 
         private bool FilePathSourceSpecification() =>
-            SourceSelection == SourceSelection.FilePath() && 
+            SourceSelection == SourceSelection.FilePath() &&
             !string.IsNullOrWhiteSpace(txtFilePath.Text);
 
         private bool KustoSourceSpecification()
         {
             if (SourceSelection != SourceSelection.Kusto())
                 return false;
-                
+
             if (string.IsNullOrWhiteSpace(cbCluster.Text) || string.IsNullOrWhiteSpace(cbDatabase.Text))
                 return false;
-                
+
             return GetAuthenticationMode() switch
             {
                 AuthenticationMode.AadFederated => true,
-                AuthenticationMode.AadApplication => 
+                AuthenticationMode.AadApplication =>
                     !string.IsNullOrWhiteSpace(cbAppId.Text) && !string.IsNullOrWhiteSpace(txtAppKey.Text),
-                AuthenticationMode.AadApplicationSni => 
+                AuthenticationMode.AadApplicationSni =>
                     !string.IsNullOrWhiteSpace(cbAppIdSni.Text) && !string.IsNullOrWhiteSpace(txtCertificate.Text),
                 _ => false
             };
@@ -293,12 +293,12 @@ namespace SyncKusto
             _ => null
         };
 
-        private string? GetAppKey() => GetAuthenticationMode() == AuthenticationMode.AadApplication 
-            ? txtAppKey.Text 
+        private string? GetAppKey() => GetAuthenticationMode() == AuthenticationMode.AadApplication
+            ? txtAppKey.Text
             : null;
 
-        private string? GetCertificateThumbprint() => GetAuthenticationMode() == AuthenticationMode.AadApplicationSni 
-            ? txtCertificate.Text 
+        private string? GetCertificateThumbprint() => GetAuthenticationMode() == AuthenticationMode.AadApplicationSni
+            ? txtCertificate.Text
             : null;
 
         private CoreStoreLocation GetCertificateLocation()

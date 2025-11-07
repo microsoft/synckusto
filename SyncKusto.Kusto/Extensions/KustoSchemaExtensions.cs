@@ -16,7 +16,7 @@ public static class KustoSchemaExtensions
     /// Converts a TableSchema to IKustoSchema
     /// </summary>
     public static IKustoSchema AsKustoSchema(this TableSchema schema) => new KustoTableSchema(schema);
-    
+
     /// <summary>
     /// Converts a FunctionSchema to IKustoSchema
     /// </summary>

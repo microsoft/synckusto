@@ -2,14 +2,13 @@
 // Licensed under the MIT License.
 
 using SyncKusto.Core.Abstractions;
-using SyncKusto.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace SyncKusto.ChangeModel
 {
-    public class KustoSchemaDifferenceMapper : DictionaryDifferenceMapper<string,IKustoSchema>
+    public class KustoSchemaDifferenceMapper : DictionaryDifferenceMapper<string, IKustoSchema>
     {
         public KustoSchemaDifferenceMapper(
             Func<(IDictionary<string, IKustoSchema> modified, IDictionary<string, IKustoSchema> onlyInSource,

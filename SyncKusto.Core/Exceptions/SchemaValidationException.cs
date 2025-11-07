@@ -9,8 +9,8 @@ namespace SyncKusto.Core.Exceptions;
 public class SchemaValidationException : SyncKustoException
 {
     public IReadOnlyList<string> ValidationErrors { get; }
-    
-    public SchemaValidationException(string message, IReadOnlyList<string> validationErrors) 
+
+    public SchemaValidationException(string message, IReadOnlyList<string> validationErrors)
         : base(message)
     {
         ValidationErrors = validationErrors;

@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using SyncKusto.Core.Exceptions;
-
 namespace SyncKusto.FileSystem.Exceptions;
 
 /// <summary>
@@ -15,13 +13,13 @@ public class SchemaParseException : FileSchemaException
     /// </summary>
     public IReadOnlyList<string> FailedObjects { get; }
 
-    public SchemaParseException(string message, IReadOnlyList<string> failedObjects) 
+    public SchemaParseException(string message, IReadOnlyList<string> failedObjects)
         : base(message)
     {
         FailedObjects = failedObjects;
     }
 
-    public SchemaParseException(string message, IReadOnlyList<string> failedObjects, Exception innerException) 
+    public SchemaParseException(string message, IReadOnlyList<string> failedObjects, Exception innerException)
         : base(message, innerException)
     {
         FailedObjects = failedObjects;

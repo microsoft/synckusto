@@ -17,20 +17,20 @@ public interface ISchemaRepository
     /// <exception cref="SchemaLoadException">Thrown when schema cannot be loaded</exception>
     Task<DatabaseSchema> GetSchemaAsync(
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Saves schemas to the repository.
     /// </summary>
     /// <exception cref="SchemaSyncException">Thrown when schemas cannot be saved</exception>
     Task SaveSchemaAsync(
-        IEnumerable<IKustoSchema> schemas, 
+        IEnumerable<IKustoSchema> schemas,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Deletes schemas from the repository.
     /// </summary>
     /// <exception cref="SchemaSyncException">Thrown when schemas cannot be deleted</exception>
     Task DeleteSchemaAsync(
-        IEnumerable<IKustoSchema> schemas, 
+        IEnumerable<IKustoSchema> schemas,
         CancellationToken cancellationToken = default);
 }

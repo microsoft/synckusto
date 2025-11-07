@@ -9,6 +9,6 @@ namespace SyncKusto.Core.Exceptions;
 public abstract class SyncKustoException : Exception
 {
     protected SyncKustoException(string message) : base(message) { }
-    protected SyncKustoException(string message, Exception innerException) 
+    protected SyncKustoException(string message, Exception innerException)
         : base(message, innerException) { }
 }

@@ -11,6 +11,6 @@ namespace SyncKusto.FileSystem.Exceptions;
 public class FileSchemaException : SyncKustoException
 {
     public FileSchemaException(string message) : base(message) { }
-    public FileSchemaException(string message, Exception innerException) 
+    public FileSchemaException(string message, Exception innerException)
         : base(message, innerException) { }
 }

@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using SyncKusto.Core.Exceptions;
-
 namespace SyncKusto.Core.Exceptions;
 
 /// <summary>
@@ -10,12 +8,12 @@ namespace SyncKusto.Core.Exceptions;
 /// </summary>
 public class KustoSettingsException : SchemaValidationException
 {
-    public KustoSettingsException(string message) 
+    public KustoSettingsException(string message)
         : base(message, new List<string>())
     {
     }
 
-    public KustoSettingsException(string message, IReadOnlyList<string> validationErrors) 
+    public KustoSettingsException(string message, IReadOnlyList<string> validationErrors)
         : base(message, validationErrors)
     {
     }

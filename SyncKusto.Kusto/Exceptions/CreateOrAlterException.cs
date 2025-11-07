@@ -12,7 +12,7 @@ public class CreateOrAlterException : SchemaSyncException
 {
     public string FailedEntityName { get; }
 
-    public CreateOrAlterException(string message, Exception inner, string failedEntityName) 
+    public CreateOrAlterException(string message, Exception inner, string failedEntityName)
         : base(message, inner)
     {
         FailedEntityName = failedEntityName;

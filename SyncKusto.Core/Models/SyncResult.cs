@@ -13,7 +13,7 @@ public record SyncResult(
 {
     public static SyncResult Successful(int itemsSynchronized) =>
         new(true, itemsSynchronized, Array.Empty<string>());
-    
+
     public static SyncResult Failed(IReadOnlyList<string> errors) =>
         new(false, 0, errors);
 }

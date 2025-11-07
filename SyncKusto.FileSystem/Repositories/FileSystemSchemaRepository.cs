@@ -1,20 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Kusto.Data.Common;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.FileSystem.Exceptions;
 using SyncKusto.FileSystem.Extensions;
-using SyncKusto.Kusto.Services;
 using SyncKusto.Kusto.Exceptions;
 using SyncKusto.Kusto.Models;
+using SyncKusto.Kusto.Services;
 
 namespace SyncKusto.FileSystem.Repositories;
 
@@ -40,7 +35,7 @@ public class FileSystemSchemaRepository : ISchemaRepository
     /// <param name="authority">The AAD authority for authentication</param>
     /// <param name="settings">Application settings</param>
     public FileSystemSchemaRepository(
-        string rootFolder, 
+        string rootFolder,
         string fileExtension,
         string tempCluster,
         string tempDatabase,
@@ -89,7 +84,7 @@ public class FileSystemSchemaRepository : ISchemaRepository
             // Load Kusto Query Engine to parse and validate CSL files
             // This makes it easier to deal with slightly malformed CSL files
             DatabaseSchema? resultSchema = null;
-            
+
             await Task.Run(() =>
             {
                 using (var queryEngine = new QueryEngine(_tempCluster, _tempDatabase, _authority))
@@ -140,7 +135,7 @@ public class FileSystemSchemaRepository : ISchemaRepository
     /// Saves schemas to the file system
     /// </summary>
     public Task SaveSchemaAsync(
-        IEnumerable<IKustoSchema> schemas, 
+        IEnumerable<IKustoSchema> schemas,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(schemas);
@@ -153,7 +148,7 @@ public class FileSystemSchemaRepository : ISchemaRepository
                 if (schema is KustoTableSchema kustoTable)
                 {
                     kustoTable.Value.WriteToFile(
-                        _rootFolder, 
+                        _rootFolder,
                         _fileExtension,
                         _settings.CreateMergeEnabled,
                         _settings.TableFieldsOnNewLine,
@@ -181,7 +176,7 @@ public class FileSystemSchemaRepository : ISchemaRepository
     /// Deletes schemas from the file system
     /// </summary>
     public Task DeleteSchemaAsync(
-        IEnumerable<IKustoSchema> schemas, 
+        IEnumerable<IKustoSchema> schemas,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(schemas);

@@ -66,7 +66,7 @@ namespace SyncKusto
             cbTableFieldsOnNewLine.Checked = bool.Parse(_settingsProvider.GetSetting("TableFieldsOnNewLine") ?? "false");
             cbCreateMerge.Checked = bool.Parse(_settingsProvider.GetSetting("CreateMergeEnabled") ?? "false");
             cbUseLegacyCslExtension.Checked = bool.Parse(_settingsProvider.GetSetting("UseLegacyCslExtension") ?? "true");
-            
+
             var certLocationStr = _settingsProvider.GetSetting("CertificateLocation");
             if (Enum.TryParse<Core.Models.StoreLocation>(certLocationStr, out var certLocation))
             {
@@ -79,7 +79,7 @@ namespace SyncKusto
 
             var lineEndingModeStr = _settingsProvider.GetSetting("LineEndingMode");
             var lineEndingMode = LineEndingMode.LeaveAsIs;
-            if (int.TryParse(lineEndingModeStr, out var lineEndingInt) && 
+            if (int.TryParse(lineEndingModeStr, out var lineEndingInt) &&
                 Enum.IsDefined(typeof(LineEndingMode), lineEndingInt))
             {
                 lineEndingMode = (LineEndingMode)lineEndingInt;
@@ -113,13 +113,13 @@ namespace SyncKusto
                 _settingsProvider.SetSetting("KustoObjectDropWarning", chkTableDropWarning.Checked.ToString());
                 _settingsProvider.SetSetting("AADAuthority", txtAuthority.Text);
                 _settingsProvider.SetSetting("UseLegacyCslExtension", cbUseLegacyCslExtension.Checked.ToString());
-                
+
                 var checkedButton = lineEndingRadioButtons.Where(b => b.Checked).FirstOrDefault();
                 if (checkedButton?.Tag != null)
                 {
                     _settingsProvider.SetSetting("LineEndingMode", ((int)(LineEndingMode)checkedButton.Tag).ToString());
                 }
-                
+
                 _settingsProvider.SetSetting("CertificateLocation", cbCertLocation.SelectedItem!.ToString()!);
 
                 var currentCluster = _settingsProvider.GetSetting("TempCluster") ?? string.Empty;
@@ -131,8 +131,8 @@ namespace SyncKusto
                     // Validate Kusto settings - this will throw exceptions on validation failure
                     // and return the normalized cluster name
                     txtKustoCluster.Text = await _kustoValidationService.ValidateKustoSettingsAsync(
-                        txtKustoCluster.Text, 
-                        txtKustoDatabase.Text, 
+                        txtKustoCluster.Text,
+                        txtKustoDatabase.Text,
                         txtAuthority.Text);
 
                     // Check if database is empty and get confirmation if not
@@ -153,7 +153,7 @@ namespace SyncKusto
                             "Non-Empty Database",
                             MessageBoxButtons.YesNo,
                             MessageBoxIcon.Warning);
-                        
+
                         if (wipeDialogResult != DialogResult.Yes)
                         {
                             Cursor.Current = lastCursor;

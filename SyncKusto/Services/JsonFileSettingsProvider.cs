@@ -28,7 +28,7 @@ public class JsonFileSettingsProvider : ISettingsProvider
     public JsonFileSettingsProvider()
     {
         _settingsDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "SyncKusto");
         _settingsFilePath = Path.Combine(_settingsDirectory, "userSettings.json");
     }
@@ -40,7 +40,7 @@ public class JsonFileSettingsProvider : ISettingsProvider
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(settingsFilePath);
         _settingsFilePath = settingsFilePath;
-        _settingsDirectory = Path.GetDirectoryName(settingsFilePath) 
+        _settingsDirectory = Path.GetDirectoryName(settingsFilePath)
             ?? throw new ArgumentException("Invalid settings file path", nameof(settingsFilePath));
     }
 
@@ -102,7 +102,7 @@ public class JsonFileSettingsProvider : ISettingsProvider
                 {
                     Directory.CreateDirectory(_settingsDirectory);
                 }
-                
+
                 var options = new JsonSerializerOptions
                 {
                     WriteIndented = true,
@@ -144,7 +144,7 @@ public class JsonFileSettingsProvider : ISettingsProvider
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         ArgumentNullException.ThrowIfNull(value);
-        
+
         EnsureLoaded();
 
         switch (key)
@@ -205,7 +205,7 @@ public class JsonFileSettingsProvider : ISettingsProvider
     public void AddRecentValue(string key, string value)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        
+
         if (string.IsNullOrWhiteSpace(value))
         {
             return;
@@ -231,7 +231,7 @@ public class JsonFileSettingsProvider : ISettingsProvider
 
         // Add to the top of the list
         itemList.Insert(0, value);
-        
+
         // Keep only the 10 most recent
         while (itemList.Count > 10)
         {

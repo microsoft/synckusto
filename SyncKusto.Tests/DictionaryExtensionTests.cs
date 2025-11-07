@@ -18,13 +18,13 @@ namespace SyncKusto.Tests
         public static string CommonWord { get; } = Fake.Commerce.Color();
 
         public static Dictionary<string, string> CommonKeyCommonValue() =>
-            new Dictionary<string, string>() {{CommonWord, CommonWord}};
+            new Dictionary<string, string>() { { CommonWord, CommonWord } };
 
         public static Dictionary<string, string> CommonKeyRandomValue() =>
-            new Dictionary<string, string>() {{CommonWord, RandomWord}};
+            new Dictionary<string, string>() { { CommonWord, RandomWord } };
 
         public static Dictionary<string, string> RandomKeyRandomValue() =>
-            new Dictionary<string, string>() {{RandomWord, RandomWord}};
+            new Dictionary<string, string>() { { RandomWord, RandomWord } };
 
         public static Dictionary<string, string> CommonKeyCommonValueWithRandomKeyRandomValue() =>
             CommonKeyCommonValue().Concat(RandomKeyRandomValue()).ToDictionary(x => x.Key, x => x.Value);

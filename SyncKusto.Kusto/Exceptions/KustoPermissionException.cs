@@ -13,14 +13,14 @@ public class KustoPermissionException : SchemaLoadException
     public string ClusterName { get; }
     public string DatabaseName { get; }
 
-    public KustoPermissionException(string clusterName, string databaseName, string message) 
+    public KustoPermissionException(string clusterName, string databaseName, string message)
         : base(message)
     {
         ClusterName = clusterName;
         DatabaseName = databaseName;
     }
 
-    public KustoPermissionException(string clusterName, string databaseName, string message, Exception innerException) 
+    public KustoPermissionException(string clusterName, string databaseName, string message, Exception innerException)
         : base(message, innerException)
     {
         ClusterName = clusterName;

@@ -13,7 +13,7 @@ public sealed class KustoFunctionSchema : IKustoSchema, IEquatable<KustoFunction
 {
     public static implicit operator FunctionSchema(KustoFunctionSchema schema) => schema.Value;
 
-    public KustoFunctionSchema(FunctionSchema value) 
+    public KustoFunctionSchema(FunctionSchema value)
     {
         ArgumentNullException.ThrowIfNull(value);
         Value = value;

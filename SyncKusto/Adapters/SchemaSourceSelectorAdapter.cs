@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Models;
+using System;
 
 namespace SyncKusto.Adapters;
 
@@ -26,17 +26,17 @@ public class SchemaSourceSelectorAdapter : ISchemaSourceSelector
     {
         return _control.GetSourceInfo();
     }
-    
+
     /// <summary>
     /// Validate the current source configuration
     /// </summary>
     public ValidationResult Validate()
     {
-        return _control.IsValid() 
-            ? ValidationResult.Success() 
+        return _control.IsValid()
+            ? ValidationResult.Success()
             : ValidationResult.Failure("Invalid source configuration");
     }
-    
+
     /// <summary>
     /// Report progress to the user
     /// </summary>
@@ -44,7 +44,7 @@ public class SchemaSourceSelectorAdapter : ISchemaSourceSelector
     {
         _control.ReportProgress(message);
     }
-    
+
     /// <summary>
     /// Save recent values for next session
     /// </summary>
@@ -52,7 +52,7 @@ public class SchemaSourceSelectorAdapter : ISchemaSourceSelector
     {
         _control.SaveRecentValues();
     }
-    
+
     /// <summary>
     /// Reload recent values
     /// </summary>

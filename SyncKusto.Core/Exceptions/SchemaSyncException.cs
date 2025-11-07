@@ -9,6 +9,6 @@ namespace SyncKusto.Core.Exceptions;
 public class SchemaSyncException : SyncKustoException
 {
     public SchemaSyncException(string message) : base(message) { }
-    public SchemaSyncException(string message, Exception innerException) 
+    public SchemaSyncException(string message, Exception innerException)
         : base(message, innerException) { }
 }

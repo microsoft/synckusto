@@ -30,15 +30,15 @@ public class InMemorySettingsProvider : ISettingsProvider
     public IEnumerable<string> GetRecentValues(string key)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        return _recentValues.TryGetValue(key, out var values) 
-            ? values.ToList() 
+        return _recentValues.TryGetValue(key, out var values)
+            ? values.ToList()
             : Enumerable.Empty<string>();
     }
 
     public void AddRecentValue(string key, string value)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        
+
         if (string.IsNullOrWhiteSpace(value))
         {
             return;

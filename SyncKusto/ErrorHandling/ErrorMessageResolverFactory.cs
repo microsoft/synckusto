@@ -22,9 +22,9 @@ namespace SyncKusto.ErrorHandling
                 new SyncKusto.Kusto.Services.KustoErrorMessageResolver(),
                 new FileSystemErrorMessageResolver()
             };
-            
+
             var composite = new CompositeErrorMessageResolver(resolvers);
-            
+
             // Wrap with aggregate exception resolver to handle async exceptions
             return new AggregateExceptionResolver(composite);
         }

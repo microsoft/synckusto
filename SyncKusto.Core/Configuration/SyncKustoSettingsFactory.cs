@@ -49,7 +49,7 @@ public static class SyncKustoSettingsFactory
             return LineEndingMode.LeaveAsIs;
         }
 
-        if (int.TryParse(value, out var intValue) && 
+        if (int.TryParse(value, out var intValue) &&
             Enum.IsDefined(typeof(LineEndingMode), intValue))
         {
             return (LineEndingMode)intValue;

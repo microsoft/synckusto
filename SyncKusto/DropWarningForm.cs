@@ -54,7 +54,7 @@ namespace SyncKusto
             {
                 _settingsProvider.SetSetting("KustoObjectDropWarning", chkNextTime.Checked.ToString());
             }
-            
+
             this.DialogResult = DialogResult.Yes;
             this.Close();
         }

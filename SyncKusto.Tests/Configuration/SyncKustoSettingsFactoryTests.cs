@@ -137,7 +137,7 @@ public class SyncKustoSettingsFactoryTests
 
         // Act - Test with legacy enabled (default)
         var settingsLegacy = SyncKustoSettingsFactory.CreateFromProvider(_provider);
-        
+
         // Change to new extension
         _provider.SetSetting("UseLegacyCslExtension", "false");
         var settingsNew = SyncKustoSettingsFactory.CreateFromProvider(_provider);
@@ -151,7 +151,7 @@ public class SyncKustoSettingsFactoryTests
     public void CreateFromProvider_WithNullProvider_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => 
+        Assert.Throws<ArgumentNullException>(() =>
             SyncKustoSettingsFactory.CreateFromProvider(null!));
     }
 

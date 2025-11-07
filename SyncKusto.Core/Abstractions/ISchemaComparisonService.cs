@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Kusto.Data.Common;
-using SyncKusto.Core.Models;
 
 namespace SyncKusto.Core.Abstractions;
 
@@ -15,6 +14,6 @@ public interface ISchemaComparisonService
     /// Compares two database schemas and returns their differences.
     /// </summary>
     SchemaDifferenceResult CompareSchemas(
-        DatabaseSchema source, 
+        DatabaseSchema source,
         DatabaseSchema target);
 }

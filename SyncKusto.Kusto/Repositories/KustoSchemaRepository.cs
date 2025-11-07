@@ -50,7 +50,7 @@ public class KustoSchemaRepository : ISchemaRepository, IDisposable
     /// </summary>
     /// <exception cref="SchemaSyncException">Thrown when schemas cannot be saved</exception>
     public async Task SaveSchemaAsync(
-        IEnumerable<IKustoSchema> schemas, 
+        IEnumerable<IKustoSchema> schemas,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(schemas);
@@ -91,7 +91,7 @@ public class KustoSchemaRepository : ISchemaRepository, IDisposable
     /// </summary>
     /// <exception cref="SchemaSyncException">Thrown when schemas cannot be deleted</exception>
     public Task DeleteSchemaAsync(
-        IEnumerable<IKustoSchema> schemas, 
+        IEnumerable<IKustoSchema> schemas,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(schemas);

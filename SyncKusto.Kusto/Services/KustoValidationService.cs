@@ -1,16 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Kusto.Exceptions;
-using SyncKusto.Kusto.Services;
 
 namespace SyncKusto.Kusto.Services;
 
@@ -69,7 +65,7 @@ public class KustoValidationService : IKustoValidationService
             if (ex.Message.Contains("403-Forbidden"))
             {
                 throw new KustoPermissionException(
-                    clusterName, 
+                    clusterName,
                     databaseName,
                     $"The current user does not have permission to create a function on cluster('{clusterName}').database('{databaseName}')",
                     ex);
