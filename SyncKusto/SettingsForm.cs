@@ -5,7 +5,6 @@ using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
 using SyncKusto.Core.Models;
-using SyncKusto.Kusto;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -104,7 +103,7 @@ namespace SyncKusto
                     MessageBox.Show($"No Kusto cluster was specified.", "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-                string clusterName = QueryEngine.NormalizeClusterName(txtKustoCluster.Text);
+                string clusterName = SyncKusto.Kusto.Services.KustoConnectionFactory.NormalizeClusterName(txtKustoCluster.Text);
 
                 string databaseName = txtKustoDatabase.Text;
                 if (string.IsNullOrEmpty(databaseName))

@@ -24,7 +24,7 @@ namespace SyncKusto.Kusto.DatabaseSchemaBuilder
                 AggregateException flattendedException = ex.Flatten();
                 foreach (Exception exception in flattendedException.InnerExceptions)
                 {
-                    failedObjects.Add(((CreateOrAlterException)exception).FailedEntityName);
+                    failedObjects.Add(((SyncKusto.Kusto.Exceptions.CreateOrAlterException)exception).FailedEntityName);
                 } 
             }
             return failedObjects;

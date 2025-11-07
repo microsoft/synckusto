@@ -9,7 +9,6 @@ using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Models;
 using SyncKusto.ErrorHandling;
 using SyncKusto.Extensions;
-using SyncKusto.Kusto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -280,7 +279,12 @@ namespace SyncKusto
 
             if (_sourceSchema.Tables.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_tablesTreeNodeText))
             {
-                sourceText = FormattedCslCommandGenerator.GenerateTableCreateCommand(_sourceSchema.Tables[objectName], true);
+                sourceText = SyncKusto.Kusto.Services.FormattedCslCommandGenerator.GenerateTableCreateCommand(
+                    _sourceSchema.Tables[objectName], 
+                    true,
+                    SettingsWrapper.CreateMergeEnabled ?? false,
+                    SettingsWrapper.TableFieldsOnNewLine ?? false,
+                    SettingsWrapper.LineEndingMode);
             }
 
             if (_targetSchema.Functions.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_functionTreeNodeText))
@@ -290,7 +294,12 @@ namespace SyncKusto
 
             if (_targetSchema.Tables.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_tablesTreeNodeText))
             {
-                targetText = FormattedCslCommandGenerator.GenerateTableCreateCommand(_targetSchema.Tables[objectName], true);
+                targetText = SyncKusto.Kusto.Services.FormattedCslCommandGenerator.GenerateTableCreateCommand(
+                    _targetSchema.Tables[objectName], 
+                    true,
+                    SettingsWrapper.CreateMergeEnabled ?? false,
+                    SettingsWrapper.TableFieldsOnNewLine ?? false,
+                    SettingsWrapper.LineEndingMode);
             }
 
             var diffBuilder = new InlineDiffBuilder(new Differ());

@@ -5,7 +5,6 @@ using Kusto.Data;
 using Kusto.Data.Common;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
-using SyncKusto.Kusto;
 using SyncKusto.Kusto.DatabaseSchemaBuilder;
 using SyncKusto.SyncSources;
 using SyncKusto.Utilities;
@@ -108,28 +107,44 @@ namespace SyncKusto
         {
             get
             {
-                switch (Authentication)
+                var factory = new SyncKusto.Kusto.Services.KustoConnectionFactory();
+                
+                var options = Authentication switch
                 {
-                    case AuthenticationMode.AadFederated:
-                        return QueryEngine.GetKustoConnectionStringBuilder(cbCluster.Text, cbDatabase.Text);
+                    AuthenticationMode.AadFederated => new SyncKusto.Core.Abstractions.KustoConnectionOptions(
+                        Cluster: cbCluster.Text,
+                        Database: cbDatabase.Text,
+                        AuthMode: Authentication,
+                        Authority: SettingsWrapper.AADAuthority,
+                        AppId: null,
+                        AppKey: null,
+                        CertificateThumbprint: null,
+                        CertificateLocation: SettingsWrapper.CertificateLocation),
+                        
+                    AuthenticationMode.AadApplication => new SyncKusto.Core.Abstractions.KustoConnectionOptions(
+                        Cluster: cbCluster.Text,
+                        Database: cbDatabase.Text,
+                        AuthMode: Authentication,
+                        Authority: SettingsWrapper.AADAuthority,
+                        AppId: cbAppId.Text,
+                        AppKey: txtAppKey.Text,
+                        CertificateThumbprint: null,
+                        CertificateLocation: SettingsWrapper.CertificateLocation),
+                        
+                    AuthenticationMode.AadApplicationSni => new SyncKusto.Core.Abstractions.KustoConnectionOptions(
+                        Cluster: cbCluster.Text,
+                        Database: cbDatabase.Text,
+                        AuthMode: Authentication,
+                        Authority: SettingsWrapper.AADAuthority,
+                        AppId: cbAppIdSni.Text,
+                        AppKey: null,
+                        CertificateThumbprint: txtCertificate.Text,
+                        CertificateLocation: SettingsWrapper.CertificateLocation),
+                        
+                    _ => throw new Exception("Unknown authentication type")
+                };
 
-                    case AuthenticationMode.AadApplication:
-                        return QueryEngine.GetKustoConnectionStringBuilder(
-                            cbCluster.Text,
-                            cbDatabase.Text,
-                            aadClientId: cbAppId.Text,
-                            aadClientKey: txtAppKey.Text);
-
-                    case AuthenticationMode.AadApplicationSni:
-                        return QueryEngine.GetKustoConnectionStringBuilder(
-                            cbCluster.Text,
-                            cbDatabase.Text,
-                            aadClientId: cbAppIdSni.Text,
-                            certificateThumbprint: txtCertificate.Text);
-
-                    default:
-                        throw new Exception("Unknown authentication type");
-                }
+                return (KustoConnectionStringBuilder)factory.CreateConnectionString(options);
             }
         }
 
@@ -268,12 +283,15 @@ namespace SyncKusto
 
                 if (SourceSelection == SourceSelection.Kusto())
                 {
-                    schemaBuilder = new KustoDatabaseSchemaBuilder(new QueryEngine(KustoConnection));
+                    schemaBuilder = new KustoDatabaseSchemaBuilder(new SyncKusto.Kusto.Services.QueryEngine(KustoConnection, SettingsWrapper.LineEndingMode));
                 }
                 else if (SourceSelection == SourceSelection.FilePath())
                 {
                     SettingsWrapper.PreviousFilePath = SourceFilePath;
+                    // Use the deprecated FileDatabaseSchemaBuilder temporarily until the refactoring is complete
+                    #pragma warning disable CS0618 // Type or member is obsolete
                     schemaBuilder = new FileDatabaseSchemaBuilder(SourceFilePath, SettingsWrapper.FileExtension);
+                    #pragma warning restore CS0618 // Type or member is obsolete
                 }
                 else
                 {

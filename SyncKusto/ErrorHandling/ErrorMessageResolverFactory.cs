@@ -19,7 +19,7 @@ namespace SyncKusto.ErrorHandling
         {
             var resolvers = new List<IErrorMessageResolver>
             {
-                new KustoErrorMessageResolver(),
+                new SyncKusto.Kusto.Services.KustoErrorMessageResolver(),
                 new FileSystemErrorMessageResolver()
             };
             
