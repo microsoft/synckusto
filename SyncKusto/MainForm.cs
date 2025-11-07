@@ -6,6 +6,7 @@ using DiffPlex.DiffBuilder;
 using Kusto.Data.Common;
 using SyncKusto.ChangeModel;
 using SyncKusto.Core.Abstractions;
+using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Models;
 using SyncKusto.ErrorHandling;
 using SyncKusto.Extensions;
@@ -29,6 +30,8 @@ namespace SyncKusto
         private readonly string _tablesTreeNodeText = "Tables";
         private readonly IErrorMessageResolver _errorMessageResolver;
         private readonly IMainFormPresenter _presenter;
+        private readonly ISettingsProvider _settingsProvider;
+        private readonly SyncKustoSettings _settings;
         private readonly SchemaSourceSelectorAdapter _sourceAdapter;
         private readonly SchemaSourceSelectorAdapter _targetAdapter;
 
@@ -38,12 +41,13 @@ namespace SyncKusto
         public MainForm()
         {
             InitializeComponent();
-            spcSource.ResetMainFormValueHolders = ResetValueHoldersOnChange;
-            spcTarget.ResetMainFormValueHolders = ResetValueHoldersOnChange;
+            
             _errorMessageResolver = ErrorMessageResolverFactory.CreateDefault();
             
             // Create temporary instances - will be replaced by DI constructor
             _presenter = null!; // Set by DI
+            _settingsProvider = null!; // Set by DI
+            _settings = null!; // Set by DI
             _sourceAdapter = new SchemaSourceSelectorAdapter(spcSource);
             _targetAdapter = new SchemaSourceSelectorAdapter(spcTarget);
         }
@@ -53,10 +57,31 @@ namespace SyncKusto
         /// </summary>
         public MainForm(
             IMainFormPresenter presenter,
-            IErrorMessageResolver errorMessageResolver) : this()
+            IErrorMessageResolver errorMessageResolver,
+            ISettingsProvider settingsProvider,
+            SyncKustoSettings settings) : this()
         {
             _presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
             _errorMessageResolver = errorMessageResolver ?? throw new ArgumentNullException(nameof(errorMessageResolver));
+            _settingsProvider = settingsProvider ?? throw new ArgumentNullException(nameof(settingsProvider));
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            
+            // Initialize the picker controls with settings provider
+            InitializePickerControls();
+            
+            // Wire up reset event handlers
+            spcSource.ResetMainFormValueHolders = ResetValueHoldersOnChange;
+            spcTarget.ResetMainFormValueHolders = ResetValueHoldersOnChange;
+        }
+
+        /// <summary>
+        /// Initialize picker controls with settings provider
+        /// </summary>
+        private void InitializePickerControls()
+        {
+            // Initialize picker controls created by the designer with the settings provider
+            spcSource.Initialize(_settingsProvider);
+            spcTarget.Initialize(_settingsProvider);
         }
 
         /// <summary>
@@ -281,9 +306,9 @@ namespace SyncKusto
                 sourceText = SyncKusto.Kusto.Services.FormattedCslCommandGenerator.GenerateTableCreateCommand(
                     _sourceSchema.Tables[objectName], 
                     true,
-                    SettingsWrapper.CreateMergeEnabled ?? false,
-                    SettingsWrapper.TableFieldsOnNewLine ?? false,
-                    SettingsWrapper.LineEndingMode);
+                    _settings.CreateMergeEnabled,
+                    _settings.TableFieldsOnNewLine,
+                    _settings.LineEndingMode);
             }
 
             if (_targetSchema.Functions.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_functionTreeNodeText))
@@ -296,9 +321,9 @@ namespace SyncKusto
                 targetText = SyncKusto.Kusto.Services.FormattedCslCommandGenerator.GenerateTableCreateCommand(
                     _targetSchema.Tables[objectName], 
                     true,
-                    SettingsWrapper.CreateMergeEnabled ?? false,
-                    SettingsWrapper.TableFieldsOnNewLine ?? false,
-                    SettingsWrapper.LineEndingMode);
+                    _settings.CreateMergeEnabled,
+                    _settings.TableFieldsOnNewLine,
+                    _settings.LineEndingMode);
             }
 
             var diffBuilder = new InlineDiffBuilder(new Differ());
@@ -372,11 +397,11 @@ namespace SyncKusto
 
             // Check for drop operations and show warning if needed
             var targetInfo = _targetAdapter.GetSourceInfo();
-            if (SettingsWrapper.KustoObjectDropWarning && 
+            if (_settings.KustoObjectDropWarning && 
                 targetInfo.SourceType == SourceSelection.Kusto() &&
                 selectedNodes.Any(n => n.Parent.Text == "Only In Target"))
             {
-                var dialogResult = new DropWarningForm().ShowDialog();
+                var dialogResult = new DropWarningForm(_settingsProvider).ShowDialog();
                 if (dialogResult != DialogResult.Yes)
                 {
                     MessageBox.Show("Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -492,7 +517,7 @@ namespace SyncKusto
         /// <param name="e"></param>
         private void btnSettings_Click(object sender, EventArgs e)
         {
-            var frm = new SettingsForm();
+            var frm = new SettingsForm(_settingsProvider);
             frm.ShowDialog();
         }
     }

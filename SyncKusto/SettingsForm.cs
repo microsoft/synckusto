@@ -4,12 +4,11 @@
 using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
+using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Models;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Windows.Forms;
 
 namespace SyncKusto
@@ -20,13 +19,15 @@ namespace SyncKusto
     public partial class SettingsForm : Form
     {
         private RadioButton[] lineEndingRadioButtons;
+        private readonly ISettingsProvider _settingsProvider;
 
         /// <summary>
-        /// Default constructor
+        /// Default constructor for designer support
         /// </summary>
         public SettingsForm()
         {
             InitializeComponent();
+            _settingsProvider = null!; // Will be set by public constructor
 
             cbCertLocation.DataSource = Enum.GetValues(typeof(Core.Models.StoreLocation));
 
@@ -44,27 +45,52 @@ namespace SyncKusto
         }
 
         /// <summary>
+        /// Constructor with dependency injection
+        /// </summary>
+        public SettingsForm(ISettingsProvider settingsProvider) : this()
+        {
+            _settingsProvider = settingsProvider ?? throw new ArgumentNullException(nameof(settingsProvider));
+        }
+
+        /// <summary>
         /// Populate the existing settings into the text boxes
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void SettingsForm_Load(object sender, EventArgs e)
         {
-            txtKustoCluster.Text = SettingsWrapper.KustoClusterForTempDatabases;
-            txtKustoDatabase.Text = SettingsWrapper.TemporaryKustoDatabase;
-            txtAuthority.Text = SettingsWrapper.AADAuthority;
-            chkTableDropWarning.Checked = SettingsWrapper.KustoObjectDropWarning;
-            cbTableFieldsOnNewLine.Checked = SettingsWrapper.TableFieldsOnNewLine ?? false;
-            cbCreateMerge.Checked = SettingsWrapper.CreateMergeEnabled ?? false;
-            cbUseLegacyCslExtension.Checked = SettingsWrapper.UseLegacyCslExtension ?? false;
-            cbCertLocation.SelectedItem = SettingsWrapper.CertificateLocation;
+            txtKustoCluster.Text = _settingsProvider.GetSetting("TempCluster") ?? string.Empty;
+            txtKustoDatabase.Text = _settingsProvider.GetSetting("TempDatabase") ?? string.Empty;
+            txtAuthority.Text = _settingsProvider.GetSetting("AADAuthority") ?? string.Empty;
+            chkTableDropWarning.Checked = bool.Parse(_settingsProvider.GetSetting("KustoObjectDropWarning") ?? "true");
+            cbTableFieldsOnNewLine.Checked = bool.Parse(_settingsProvider.GetSetting("TableFieldsOnNewLine") ?? "false");
+            cbCreateMerge.Checked = bool.Parse(_settingsProvider.GetSetting("CreateMergeEnabled") ?? "false");
+            cbUseLegacyCslExtension.Checked = bool.Parse(_settingsProvider.GetSetting("UseLegacyCslExtension") ?? "true");
+            
+            var certLocationStr = _settingsProvider.GetSetting("CertificateLocation");
+            if (Enum.TryParse<Core.Models.StoreLocation>(certLocationStr, out var certLocation))
+            {
+                cbCertLocation.SelectedItem = certLocation;
+            }
+            else
+            {
+                cbCertLocation.SelectedItem = Core.Models.StoreLocation.CurrentUser;
+            }
+
+            var lineEndingModeStr = _settingsProvider.GetSetting("LineEndingMode");
+            var lineEndingMode = LineEndingMode.LeaveAsIs;
+            if (int.TryParse(lineEndingModeStr, out var lineEndingInt) && 
+                Enum.IsDefined(typeof(LineEndingMode), lineEndingInt))
+            {
+                lineEndingMode = (LineEndingMode)lineEndingInt;
+            }
 
             foreach (var radioButton in lineEndingRadioButtons)
             {
                 var tag = radioButton.Tag;
                 if (tag != null)
                 {
-                    radioButton.Checked = (LineEndingMode)tag == SettingsWrapper.LineEndingMode;
+                    radioButton.Checked = (LineEndingMode)tag == lineEndingMode;
                 }
             }
         }
@@ -79,28 +105,31 @@ namespace SyncKusto
             Cursor? lastCursor = Cursor.Current;
             Cursor.Current = Cursors.WaitCursor;
 
-            SettingsWrapper.TableFieldsOnNewLine = cbTableFieldsOnNewLine.Checked;
-            SettingsWrapper.CreateMergeEnabled = cbCreateMerge.Checked;
-            SettingsWrapper.KustoObjectDropWarning = chkTableDropWarning.Checked;
-            SettingsWrapper.AADAuthority = txtAuthority.Text;
-            SettingsWrapper.UseLegacyCslExtension = cbUseLegacyCslExtension.Checked;
+            _settingsProvider.SetSetting("TableFieldsOnNewLine", cbTableFieldsOnNewLine.Checked.ToString());
+            _settingsProvider.SetSetting("CreateMergeEnabled", cbCreateMerge.Checked.ToString());
+            _settingsProvider.SetSetting("KustoObjectDropWarning", chkTableDropWarning.Checked.ToString());
+            _settingsProvider.SetSetting("AADAuthority", txtAuthority.Text);
+            _settingsProvider.SetSetting("UseLegacyCslExtension", cbUseLegacyCslExtension.Checked.ToString());
             
             var checkedButton = lineEndingRadioButtons.Where(b => b.Checked).FirstOrDefault();
             if (checkedButton?.Tag != null)
             {
-                SettingsWrapper.LineEndingMode = (LineEndingMode)checkedButton.Tag;
+                _settingsProvider.SetSetting("LineEndingMode", ((int)(LineEndingMode)checkedButton.Tag).ToString());
             }
             
-            SettingsWrapper.CertificateLocation = (Core.Models.StoreLocation)cbCertLocation.SelectedItem!;
+            _settingsProvider.SetSetting("CertificateLocation", cbCertLocation.SelectedItem!.ToString()!);
+
+            var currentCluster = _settingsProvider.GetSetting("TempCluster") ?? string.Empty;
+            var currentDatabase = _settingsProvider.GetSetting("TempDatabase") ?? string.Empty;
 
             // Only check the Kusto settings if they changed
-            if (SettingsWrapper.KustoClusterForTempDatabases != txtKustoCluster.Text ||
-                SettingsWrapper.TemporaryKustoDatabase != txtKustoDatabase.Text)
+            if (currentCluster != txtKustoCluster.Text || currentDatabase != txtKustoDatabase.Text)
             {
                 // Allow for multiple ways of specifying a cluster name
                 if (string.IsNullOrEmpty(txtKustoCluster.Text))
                 {
                     MessageBox.Show($"No Kusto cluster was specified.", "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Cursor.Current = lastCursor;
                     return;
                 }
                 string clusterName = SyncKusto.Kusto.Services.KustoConnectionFactory.NormalizeClusterName(txtKustoCluster.Text);
@@ -109,6 +138,7 @@ namespace SyncKusto
                 if (string.IsNullOrEmpty(databaseName))
                 {
                     MessageBox.Show($"No Kusto database was specified.", "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Cursor.Current = lastCursor;
                     return;
                 }
 
@@ -154,6 +184,7 @@ namespace SyncKusto
                     {
                         MessageBox.Show($"Unknown error: {ex.Message}", "Error Validating Permissions", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
+                    Cursor.Current = lastCursor;
                     return;
                 }
 
@@ -185,6 +216,7 @@ namespace SyncKusto
                             MessageBoxIcon.Warning);
                         if (wipeDialogResult != DialogResult.Yes)
                         {
+                            Cursor.Current = lastCursor;
                             return;
                         }
 
@@ -196,11 +228,12 @@ namespace SyncKusto
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Unknown error: {ex.Message}", "Error Validating Empty Database", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Cursor.Current = lastCursor;
                     return;
                 }
                 // Store the settings now that we know they work
-                SettingsWrapper.KustoClusterForTempDatabases = clusterName;
-                SettingsWrapper.TemporaryKustoDatabase = databaseName;
+                _settingsProvider.SetSetting("TempCluster", clusterName);
+                _settingsProvider.SetSetting("TempDatabase", databaseName);
             }
 
             this.Close();

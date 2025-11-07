@@ -30,7 +30,7 @@ namespace SyncKusto
             // Error resolvers
             services.AddSingleton<IErrorMessageResolver>(provider => ErrorMessageResolverFactory.CreateDefault());
             
-            // Settings
+            // Settings - Register provider and load settings
             services.AddSingleton<ISettingsProvider, JsonFileSettingsProvider>();
             services.AddSingleton(provider =>
             {
@@ -54,9 +54,12 @@ namespace SyncKusto
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             
+            // Create MainForm with all dependencies
             var mainForm = new MainForm(
                 serviceProvider.GetRequiredService<IMainFormPresenter>(),
-                serviceProvider.GetRequiredService<IErrorMessageResolver>());
+                serviceProvider.GetRequiredService<IErrorMessageResolver>(),
+                serviceProvider.GetRequiredService<ISettingsProvider>(),
+                serviceProvider.GetRequiredService<SyncKustoSettings>());
             
             Application.Run(mainForm);
         }

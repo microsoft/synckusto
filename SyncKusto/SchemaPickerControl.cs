@@ -3,6 +3,7 @@
 
 using Kusto.Data;
 using Kusto.Data.Common;
+using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
 using SyncKusto.FileSystem.Extensions;
@@ -14,6 +15,8 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using CoreStoreLocation = SyncKusto.Core.Models.StoreLocation;
+using X509StoreLocation = System.Security.Cryptography.X509Certificates.StoreLocation;
 
 namespace SyncKusto
 {
@@ -22,6 +25,8 @@ namespace SyncKusto
         private const string ENTRA_ID_USER = "Microsoft Entra ID User";
         private const string ENTRA_ID_APP_KEY = "Microsoft Entra ID App (Key)";
         private const string ENTRA_ID_APP_SNI = "Microsoft Entra ID App (SubjectName/Issuer)";
+
+        private ISettingsProvider? _settingsProvider;
 
         /// <summary>
         ///     Default constructor to make the Windows Forms designer happy
@@ -38,9 +43,6 @@ namespace SyncKusto
 
             this.cmbAuthentication.SelectedIndex = 0;
 
-            this.cbCluster.Items.AddRange(SettingsWrapper.RecentClusters.ToArray());
-            this.cbDatabase.Items.AddRange(SettingsWrapper.RecentDatabases.ToArray());
-            
             // Initialize required properties to prevent nullable warnings
             SourceSelection = SourceSelection.FilePath();
             ProgressMessageState = new Stack<(string, SourceSelection)>();
@@ -52,8 +54,6 @@ namespace SyncKusto
         /// <param name="sourceSelectionFactory">Factory for picking a source</param>
         public SchemaPickerControl(ISourceSelectionFactory sourceSelectionFactory) : this()
         {
-            txtFilePath.Text = SettingsWrapper.PreviousFilePath;
-
             SourceSelectionMap =
                 sourceSelectionFactory.Choose(ToggleFilePathSourcePanel, ToggleKustoSourcePanel);
 
@@ -64,6 +64,24 @@ namespace SyncKusto
                 sourceSelectionFactory.Allowed(AllowedFilePathSource, AllowedKustoSource);
 
             SetDefaultControlView();
+        }
+
+        /// <summary>
+        /// Initialize the control with a settings provider
+        /// </summary>
+        /// <param name="settingsProvider">Settings provider for configuration</param>
+        public void Initialize(ISettingsProvider settingsProvider)
+        {
+            _settingsProvider = settingsProvider ?? throw new ArgumentNullException(nameof(settingsProvider));
+            
+            txtFilePath.Text = _settingsProvider.GetSetting("PreviousFilePath") ?? string.Empty;
+            
+            // Load recent values
+            this.cbCluster.Items.Clear();
+            this.cbCluster.Items.AddRange(_settingsProvider.GetRecentValues("RecentClusters").ToArray());
+            
+            this.cbDatabase.Items.Clear();
+            this.cbDatabase.Items.AddRange(_settingsProvider.GetRecentValues("RecentDatabases").ToArray());
         }
 
         private IReadOnlyDictionary<SourceSelection, (bool enabled, Action<bool> whenAllowed)>? SourceAllowedMap { get; }
@@ -107,7 +125,19 @@ namespace SyncKusto
         {
             get
             {
+                if (_settingsProvider == null)
+                    throw new InvalidOperationException("SettingsProvider not initialized. Call Initialize() first.");
+
                 var factory = new SyncKusto.Kusto.Services.KustoConnectionFactory();
+                
+                var certificateLocation = CoreStoreLocation.CurrentUser;
+                var certLocationStr = _settingsProvider.GetSetting("CertificateLocation");
+                if (Enum.TryParse<CoreStoreLocation>(certLocationStr, out var parsedLocation))
+                {
+                    certificateLocation = parsedLocation;
+                }
+
+                var aadAuthority = _settingsProvider.GetSetting("AADAuthority") ?? string.Empty;
                 
                 var options = Authentication switch
                 {
@@ -115,31 +145,31 @@ namespace SyncKusto
                         Cluster: cbCluster.Text,
                         Database: cbDatabase.Text,
                         AuthMode: Authentication,
-                        Authority: SettingsWrapper.AADAuthority,
+                        Authority: aadAuthority,
                         AppId: null,
                         AppKey: null,
                         CertificateThumbprint: null,
-                        CertificateLocation: SettingsWrapper.CertificateLocation),
+                        CertificateLocation: certificateLocation),
                         
                     AuthenticationMode.AadApplication => new SyncKusto.Core.Abstractions.KustoConnectionOptions(
                         Cluster: cbCluster.Text,
                         Database: cbDatabase.Text,
                         AuthMode: Authentication,
-                        Authority: SettingsWrapper.AADAuthority,
+                        Authority: aadAuthority,
                         AppId: cbAppId.Text,
                         AppKey: txtAppKey.Text,
                         CertificateThumbprint: null,
-                        CertificateLocation: SettingsWrapper.CertificateLocation),
+                        CertificateLocation: certificateLocation),
                         
                     AuthenticationMode.AadApplicationSni => new SyncKusto.Core.Abstractions.KustoConnectionOptions(
                         Cluster: cbCluster.Text,
                         Database: cbDatabase.Text,
                         AuthMode: Authentication,
-                        Authority: SettingsWrapper.AADAuthority,
+                        Authority: aadAuthority,
                         AppId: cbAppIdSni.Text,
                         AppKey: null,
                         CertificateThumbprint: txtCertificate.Text,
-                        CertificateLocation: SettingsWrapper.CertificateLocation),
+                        CertificateLocation: certificateLocation),
                         
                     _ => throw new Exception("Unknown authentication type")
                 };
@@ -277,23 +307,43 @@ namespace SyncKusto
         /// <exception cref="SchemaLoadException">Thrown when schema cannot be loaded</exception>
         public DatabaseSchema LoadSchema()
         {
+            if (_settingsProvider == null)
+                throw new InvalidOperationException("SettingsProvider not initialized. Call Initialize() first.");
+
             try
             {
                 if (SourceSelection == SourceSelection.Kusto())
                 {
-                    var schemaBuilder = new KustoDatabaseSchemaBuilder(new SyncKusto.Kusto.Services.QueryEngine(KustoConnection, SettingsWrapper.LineEndingMode));
+                    var lineEndingModeStr = _settingsProvider.GetSetting("LineEndingMode");
+                    var lineEndingMode = LineEndingMode.LeaveAsIs;
+                    if (int.TryParse(lineEndingModeStr, out var lineEndingInt) && 
+                        Enum.IsDefined(typeof(LineEndingMode), lineEndingInt))
+                    {
+                        lineEndingMode = (LineEndingMode)lineEndingInt;
+                    }
+
+                    var schemaBuilder = new KustoDatabaseSchemaBuilder(new SyncKusto.Kusto.Services.QueryEngine(KustoConnection, lineEndingMode));
                     ReportProgress($@"Constructing schema...");
                     return Task.Run(async () => await schemaBuilder.Build().ConfigureAwait(false)).Result;
                 }
                 else if (SourceSelection == SourceSelection.FilePath())
                 {
-                    SettingsWrapper.PreviousFilePath = SourceFilePath;
+                    _settingsProvider.SetSetting("PreviousFilePath", SourceFilePath);
+                    
+                    var fileExtension = _settingsProvider.GetSetting("FileExtension") ?? "kql";
+                    var tempCluster = _settingsProvider.GetSetting("TempCluster") 
+                        ?? throw new InvalidOperationException("TempCluster setting is not configured");
+                    var tempDatabase = _settingsProvider.GetSetting("TempDatabase") 
+                        ?? throw new InvalidOperationException("TempDatabase setting is not configured");
+                    var aadAuthority = _settingsProvider.GetSetting("AADAuthority") 
+                        ?? throw new InvalidOperationException("AADAuthority setting is not configured");
+
                     var repository = new SyncKusto.FileSystem.Repositories.FileSystemSchemaRepository(
                         SourceFilePath,
-                        SettingsWrapper.FileExtension,
-                        SettingsWrapper.KustoClusterForTempDatabases ?? throw new InvalidOperationException("KustoClusterForTempDatabases setting is not configured"),
-                        SettingsWrapper.TemporaryKustoDatabase ?? throw new InvalidOperationException("TemporaryKustoDatabase setting is not configured"),
-                        SettingsWrapper.AADAuthority ?? throw new InvalidOperationException("AADAuthority setting is not configured")
+                        fileExtension,
+                        tempCluster,
+                        tempDatabase,
+                        aadAuthority
                     );
                     ReportProgress($@"Constructing schema...");
                     return Task.Run(async () => await repository.GetSchemaAsync().ConfigureAwait(false)).Result;
@@ -321,9 +371,19 @@ namespace SyncKusto
 
         private void btnCertificate_Click(object sender, EventArgs e)
         {
+            if (_settingsProvider == null)
+                throw new InvalidOperationException("SettingsProvider not initialized. Call Initialize() first.");
+
+            var certificateLocation = CoreStoreLocation.CurrentUser;
+            var certLocationStr = _settingsProvider.GetSetting("CertificateLocation");
+            if (Enum.TryParse<CoreStoreLocation>(certLocationStr, out var parsedLocation))
+            {
+                certificateLocation = parsedLocation;
+            }
+
             // Show the certificate selection dialog
             var selectedCertificateCollection = X509Certificate2UI.SelectFromCollection(
-                CertificateStore.GetAllCertificates(SettingsWrapper.CertificateLocation),
+                CertificateStore.GetAllCertificates(certificateLocation),
                 "Select a certificate",
                 "Choose a certificate for authentication",
                 X509SelectionFlag.SingleSelection);
@@ -336,15 +396,17 @@ namespace SyncKusto
         }
 
         /// <summary>
-        /// For some of the inputs, we save the most recent values that were used. This method
+        /// For some of the inputs, we save the most recently used values that were used. This method
         /// updates the storage behind all those settings to include the most recently used values.
         /// </summary>
         public void SaveRecentValues()
         {
-            SettingsWrapper.AddRecentCluster(this.cbCluster.Text);
-            SettingsWrapper.AddRecentDatabase(this.cbDatabase.Text);
-            SettingsWrapper.AddRecentAppId(this.cbAppId.Text);
-            SettingsWrapper.AddRecentAppId(this.cbAppIdSni.Text);
+            if (_settingsProvider == null) return;
+
+            _settingsProvider.AddRecentValue("RecentClusters", this.cbCluster.Text);
+            _settingsProvider.AddRecentValue("RecentDatabases", this.cbDatabase.Text);
+            _settingsProvider.AddRecentValue("RecentAppIds", this.cbAppId.Text);
+            _settingsProvider.AddRecentValue("RecentAppIds", this.cbAppIdSni.Text);
         }
 
         /// <summary>
@@ -352,14 +414,16 @@ namespace SyncKusto
         /// </summary>
         public void ReloadRecentValues()
         {
+            if (_settingsProvider == null) return;
+
             this.cbCluster.Items.Clear();
-            this.cbCluster.Items.AddRange(SettingsWrapper.RecentClusters.ToArray());
+            this.cbCluster.Items.AddRange(_settingsProvider.GetRecentValues("RecentClusters").ToArray());
             this.cbDatabase.Items.Clear();
-            this.cbDatabase.Items.AddRange(SettingsWrapper.RecentDatabases.ToArray());
+            this.cbDatabase.Items.AddRange(_settingsProvider.GetRecentValues("RecentDatabases").ToArray());
             this.cbAppId.Items.Clear();
-            this.cbAppId.Items.AddRange(SettingsWrapper.RecentAppIds.ToArray());
+            this.cbAppId.Items.AddRange(_settingsProvider.GetRecentValues("RecentAppIds").ToArray());
             this.cbAppIdSni.Items.Clear();
-            this.cbAppIdSni.Items.AddRange(SettingsWrapper.RecentAppIds.ToArray());
+            this.cbAppIdSni.Items.AddRange(_settingsProvider.GetRecentValues("RecentAppIds").ToArray());
         }
     }
 }
