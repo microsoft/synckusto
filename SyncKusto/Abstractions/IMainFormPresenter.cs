@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Models;
-using SyncKusto.Models;
 
 namespace SyncKusto.Abstractions;
 

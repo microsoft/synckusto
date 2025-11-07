@@ -1,14 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using SyncKusto.Core.Abstractions;
-using SyncKusto.Core.Models;
 using Kusto.Data.Common;
+using SyncKusto.Core.Abstractions;
 
-namespace SyncKusto.Models;
+namespace SyncKusto.Core.Models;
 
 /// <summary>
-/// Result of a comparison operation
+/// Result of a schema comparison operation
 /// </summary>
 public record ComparisonResult(
     SchemaDifferenceResult Differences,

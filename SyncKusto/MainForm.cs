@@ -16,7 +16,6 @@ using System.Linq;
 using System.Windows.Forms;
 using SyncKusto.Abstractions;
 using SyncKusto.Adapters;
-using SyncKusto.Models;
 
 namespace SyncKusto
 {
