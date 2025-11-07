@@ -65,8 +65,4 @@
     <ProjectReference Include="..\SyncKusto.Kusto\SyncKusto.Kusto.csproj" />
     <ProjectReference Include="..\SyncKusto.FileSystem\SyncKusto.FileSystem.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ChangeModel\Schema\" />
-    <Folder Include="Extensions\" />
-  </ItemGroup>
 </Project>
