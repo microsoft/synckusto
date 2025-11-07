@@ -42,7 +42,8 @@ public class SchemaRepositoryFactory
                 _settings.FileExtension,
                 _settings.TempCluster,
                 _settings.TempDatabase,
-                _settings.AADAuthority ?? "");
+                _settings.AADAuthority ?? "",
+                _settings);
         }
         else if (sourceInfo.SourceType == SourceSelection.Kusto())
         {

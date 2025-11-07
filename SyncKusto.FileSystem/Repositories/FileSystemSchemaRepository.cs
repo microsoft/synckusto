@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kusto.Data.Common;
 using SyncKusto.Core.Abstractions;
+using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.FileSystem.Exceptions;
 using SyncKusto.FileSystem.Extensions;
@@ -27,6 +28,7 @@ public class FileSystemSchemaRepository : ISchemaRepository
     private readonly string _tempCluster;
     private readonly string _tempDatabase;
     private readonly string _authority;
+    private readonly SyncKustoSettings _settings;
 
     /// <summary>
     /// Initializes a new instance of the FileSystemSchemaRepository
@@ -36,23 +38,27 @@ public class FileSystemSchemaRepository : ISchemaRepository
     /// <param name="tempCluster">The temporary Kusto cluster for schema loading</param>
     /// <param name="tempDatabase">The temporary database for schema loading</param>
     /// <param name="authority">The AAD authority for authentication</param>
+    /// <param name="settings">Application settings</param>
     public FileSystemSchemaRepository(
         string rootFolder, 
         string fileExtension,
         string tempCluster,
         string tempDatabase,
-        string authority)
+        string authority,
+        SyncKustoSettings settings)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(rootFolder);
         ArgumentException.ThrowIfNullOrWhiteSpace(fileExtension);
         ArgumentException.ThrowIfNullOrWhiteSpace(tempCluster);
         ArgumentException.ThrowIfNullOrWhiteSpace(tempDatabase);
+        ArgumentNullException.ThrowIfNull(settings);
 
         _rootFolder = rootFolder;
         _fileExtension = fileExtension;
         _tempCluster = tempCluster;
         _tempDatabase = tempDatabase;
         _authority = authority;
+        _settings = settings;
     }
 
     /// <summary>
@@ -146,13 +152,12 @@ public class FileSystemSchemaRepository : ISchemaRepository
                 // Unwrap the schema to get the actual Kusto SDK types
                 if (schema is KustoTableSchema kustoTable)
                 {
-                    // TODO: Get these settings from configuration once Phase 5 is implemented
                     kustoTable.Value.WriteToFile(
                         _rootFolder, 
                         _fileExtension,
-                        createMergeEnabled: false,
-                        tableFieldsOnNewLine: false,
-                        Core.Models.LineEndingMode.WindowsStyle);
+                        _settings.CreateMergeEnabled,
+                        _settings.TableFieldsOnNewLine,
+                        _settings.LineEndingMode);
                 }
                 else if (schema is KustoFunctionSchema kustoFunction)
                 {
