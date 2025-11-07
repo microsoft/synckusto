@@ -31,10 +31,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Functional\**" />
+    <Compile Remove="Models\**" />
     <Compile Remove="Validation\**" />
     <EmbeddedResource Remove="Functional\**" />
+    <EmbeddedResource Remove="Models\**" />
     <EmbeddedResource Remove="Validation\**" />
     <None Remove="Functional\**" />
+    <None Remove="Models\**" />
     <None Remove="Validation\**" />
   </ItemGroup>
   <ItemGroup>
@@ -61,9 +64,5 @@
     <ProjectReference Include="..\SyncKusto.Core\SyncKusto.Core.csproj" />
     <ProjectReference Include="..\SyncKusto.Kusto\SyncKusto.Kusto.csproj" />
     <ProjectReference Include="..\SyncKusto.FileSystem\SyncKusto.FileSystem.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Exceptions\" />
-    <Folder Include="Models\" />
   </ItemGroup>
 </Project>
