@@ -9,6 +9,7 @@ using SyncKusto.Abstractions;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Services;
+using SyncKusto.Kusto.Services;
 using SyncKusto.Services;
 using SyncKusto.ErrorHandling;
 
@@ -26,6 +27,7 @@ namespace SyncKusto
             services.AddSingleton<ISchemaComparisonService, SchemaComparisonService>();
             services.AddSingleton<ISchemaSyncService, SchemaSyncService>();
             services.AddSingleton<ISchemaValidationService, SchemaValidationService>();
+            services.AddSingleton<IKustoValidationService, KustoValidationService>();
             
             // Error resolvers
             services.AddSingleton<IErrorMessageResolver>(provider => ErrorMessageResolverFactory.CreateDefault());
@@ -59,7 +61,9 @@ namespace SyncKusto
                 serviceProvider.GetRequiredService<IMainFormPresenter>(),
                 serviceProvider.GetRequiredService<IErrorMessageResolver>(),
                 serviceProvider.GetRequiredService<ISettingsProvider>(),
-                serviceProvider.GetRequiredService<SyncKustoSettings>());
+                serviceProvider.GetRequiredService<SyncKustoSettings>(),
+                serviceProvider.GetRequiredService<ISchemaValidationService>(),
+                serviceProvider.GetRequiredService<IKustoValidationService>());
             
             Application.Run(mainForm);
         }

@@ -31,6 +31,8 @@ namespace SyncKusto
         private readonly IMainFormPresenter _presenter;
         private readonly ISettingsProvider _settingsProvider;
         private readonly SyncKustoSettings _settings;
+        private readonly ISchemaValidationService _validationService;
+        private readonly IKustoValidationService _kustoValidationService;
         private readonly SchemaSourceSelectorAdapter _sourceAdapter;
         private readonly SchemaSourceSelectorAdapter _targetAdapter;
 
@@ -47,6 +49,8 @@ namespace SyncKusto
             _presenter = null!; // Set by DI
             _settingsProvider = null!; // Set by DI
             _settings = null!; // Set by DI
+            _validationService = null!; // Set by DI
+            _kustoValidationService = null!; // Set by DI
             _sourceAdapter = new SchemaSourceSelectorAdapter(spcSource);
             _targetAdapter = new SchemaSourceSelectorAdapter(spcTarget);
         }
@@ -58,12 +62,16 @@ namespace SyncKusto
             IMainFormPresenter presenter,
             IErrorMessageResolver errorMessageResolver,
             ISettingsProvider settingsProvider,
-            SyncKustoSettings settings) : this()
+            SyncKustoSettings settings,
+            ISchemaValidationService validationService,
+            IKustoValidationService kustoValidationService) : this()
         {
             _presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
             _errorMessageResolver = errorMessageResolver ?? throw new ArgumentNullException(nameof(errorMessageResolver));
             _settingsProvider = settingsProvider ?? throw new ArgumentNullException(nameof(settingsProvider));
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _validationService = validationService ?? throw new ArgumentNullException(nameof(validationService));
+            _kustoValidationService = kustoValidationService ?? throw new ArgumentNullException(nameof(kustoValidationService));
             
             // Initialize the picker controls with settings provider
             InitializePickerControls();
@@ -516,7 +524,7 @@ namespace SyncKusto
         /// <param name="e"></param>
         private void btnSettings_Click(object sender, EventArgs e)
         {
-            var frm = new SettingsForm(_settingsProvider);
+            var frm = new SettingsForm(_settingsProvider, _kustoValidationService);
             frm.ShowDialog();
         }
     }
