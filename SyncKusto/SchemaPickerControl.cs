@@ -5,6 +5,7 @@ using Kusto.Data;
 using Kusto.Data.Common;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
+using SyncKusto.FileSystem.Extensions;
 using SyncKusto.Kusto.DatabaseSchemaBuilder;
 using SyncKusto.SyncSources;
 using SyncKusto.Utilities;
@@ -101,7 +102,7 @@ namespace SyncKusto
             }
         }
 
-        public string SourceFilePath => txtFilePath.Text.HandleLongFileNames();
+        public string SourceFilePath => FileSystemSchemaExtensions.HandleLongFileNames(txtFilePath.Text);
 
         public KustoConnectionStringBuilder KustoConnection
         {

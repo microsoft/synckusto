@@ -51,6 +51,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Functional\" />
+    <Folder Include="Kusto\Model\" />
     <Folder Include="Validation\ErrorMessages\Specifications\" />
     <Folder Include="Validation\Infrastructure\" />
   </ItemGroup>

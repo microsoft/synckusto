@@ -55,7 +55,11 @@ namespace SyncKusto.Kusto.DatabaseSchemaBuilder
             var t = Task.Run(() =>
             {
                 // Load Kusto Query Engine, this makes it a lot easier to deal with slightly malformed CSL files.
-                using (var queryEngine = new QueryEngine())
+                using (var queryEngine = new SyncKusto.Kusto.Services.QueryEngine(
+                    SettingsWrapper.KustoClusterForTempDatabases ?? throw new InvalidOperationException("KustoClusterForTempDatabases setting is not configured"),
+                    SettingsWrapper.TemporaryKustoDatabase ?? throw new InvalidOperationException("TemporaryKustoDatabase setting is not configured"),
+                    SettingsWrapper.AADAuthority ?? throw new InvalidOperationException("AADAuthority setting is not configured"),
+                    SettingsWrapper.LineEndingMode))
                 {
                     // Deploy all the tables and functions
                     var tableTasks = new List<Task>();

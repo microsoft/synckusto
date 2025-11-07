@@ -12,8 +12,8 @@ namespace SyncKusto.ChangeModel
 {
     public static class KustoSchemaExtensions
     {
-        public static IKustoSchema AsKustoSchema(this TableSchema schema) => new KustoTableSchema(schema);
-        public static IKustoSchema AsKustoSchema(this FunctionSchema schema) => new KustoFunctionSchema(schema);
+        public static IKustoSchema AsKustoSchema(this TableSchema schema) => new SyncKusto.Kusto.Models.KustoTableSchema(schema);
+        public static IKustoSchema AsKustoSchema(this FunctionSchema schema) => new SyncKusto.Kusto.Models.KustoFunctionSchema(schema);
 
         public static Dictionary<string, IKustoSchema> AsKustoSchema(this Dictionary<string, TableSchema> schemas) =>
             schemas.ToDictionary(x => x.Key, x => x.Value.AsKustoSchema());
@@ -25,9 +25,9 @@ namespace SyncKusto.ChangeModel
         {
             switch (schema)
             {
-                case KustoTableSchema _:
+                case SyncKusto.Kusto.Models.KustoTableSchema _:
                     return new TableSchemaDifference(difference, schema);
-                case KustoFunctionSchema _:
+                case SyncKusto.Kusto.Models.KustoFunctionSchema _:
                     return new FunctionSchemaDifference(difference, schema);
                 default:
                     throw new InvalidOperationException("Unknown type supplied.");
