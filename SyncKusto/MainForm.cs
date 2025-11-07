@@ -6,7 +6,6 @@ using DiffPlex.DiffBuilder;
 using Kusto.Data.Common;
 using SyncKusto.Abstractions;
 using SyncKusto.Adapters;
-using SyncKusto.ChangeModel;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Models;

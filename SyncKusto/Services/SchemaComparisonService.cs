@@ -2,9 +2,10 @@
 // Licensed under the MIT License.
 
 using Kusto.Data.Common;
-using SyncKusto.ChangeModel;
 using SyncKusto.Core.Abstractions;
-using SyncKusto.Extensions;
+using SyncKusto.Core.Extensions;
+using SyncKusto.Core.Models;
+using SyncKusto.Kusto.Extensions;
 using System;
 using System.Linq;
 

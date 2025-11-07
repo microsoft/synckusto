@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using SyncKusto.Core.Abstractions;
@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SyncKusto.ChangeModel
+namespace SyncKusto.Core.Models
 {
     public class KustoSchemaDifferenceMapper : DictionaryDifferenceMapper<string, IKustoSchema>
     {

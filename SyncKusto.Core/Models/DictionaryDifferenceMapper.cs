@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using SyncKusto.Core.Models;
 using System;
 using System.Collections.Generic;
 
-namespace SyncKusto.ChangeModel
+namespace SyncKusto.Core.Models
 {
     public abstract class DictionaryDifferenceMapper<TKey, TValue>
     {

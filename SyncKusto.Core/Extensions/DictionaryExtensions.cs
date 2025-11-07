@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Kusto.Cloud.Platform.Utils;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SyncKusto.Extensions
+namespace SyncKusto.Core.Extensions
 {
     public static class DictionaryExtensions
     {
