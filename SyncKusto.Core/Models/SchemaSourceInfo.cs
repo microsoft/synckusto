@@ -21,4 +21,5 @@ public record KustoConnectionInfo(
     string Authority,
     string? AppId = null,
     string? AppKey = null,
-    string? CertificateThumbprint = null);
+    string? CertificateThumbprint = null,
+    StoreLocation CertificateLocation = StoreLocation.CurrentUser);

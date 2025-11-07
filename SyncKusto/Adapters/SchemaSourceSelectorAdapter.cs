@@ -4,7 +4,6 @@
 using System;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Models;
-using Kusto.Data;
 
 namespace SyncKusto.Adapters;
 
@@ -25,34 +24,7 @@ public class SchemaSourceSelectorAdapter : ISchemaSourceSelector
     /// </summary>
     public SchemaSourceInfo GetSourceInfo()
     {
-        if (_control.SourceSelection == SourceSelection.FilePath())
-        {
-            return new SchemaSourceInfo(
-                SourceSelection.FilePath(),
-                FilePath: _control.SourceFilePath);
-        }
-        else if (_control.SourceSelection == SourceSelection.Kusto())
-        {
-            var connection = _control.KustoConnection;
-            
-            // Extract connection info from the KustoConnectionStringBuilder
-            var kustoInfo = new KustoConnectionInfo(
-                Cluster: connection.DataSource,
-                Database: connection.InitialCatalog,
-                AuthMode: GetAuthenticationMode(connection),
-                Authority: connection.Authority ?? "",
-                AppId: connection.ApplicationClientId,
-                AppKey: connection.ApplicationKey,
-                CertificateThumbprint: connection.ApplicationCertificateThumbprint);
-            
-            return new SchemaSourceInfo(
-                SourceSelection.Kusto(),
-                KustoInfo: kustoInfo);
-        }
-        else
-        {
-            throw new InvalidOperationException($"Unknown source selection type: {_control.SourceSelection}");
-        }
+        return _control.GetSourceInfo();
     }
     
     /// <summary>
@@ -87,24 +59,5 @@ public class SchemaSourceSelectorAdapter : ISchemaSourceSelector
     public void ReloadRecentValues()
     {
         _control.ReloadRecentValues();
-    }
-
-    private AuthenticationMode GetAuthenticationMode(KustoConnectionStringBuilder connection)
-    {
-        // Determine auth mode based on what's set in the connection string
-        if (!string.IsNullOrWhiteSpace(connection.ApplicationClientId))
-        {
-            if (!string.IsNullOrWhiteSpace(connection.ApplicationKey))
-            {
-                return AuthenticationMode.AadApplication;
-            }
-            else if (!string.IsNullOrWhiteSpace(connection.ApplicationCertificateThumbprint))
-            {
-                return AuthenticationMode.AadApplicationSni;
-            }
-        }
-        
-        // Default to user authentication
-        return AuthenticationMode.AadFederated;
     }
 }
