@@ -30,6 +30,14 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Functional\**" />
+    <Compile Remove="Validation\**" />
+    <EmbeddedResource Remove="Functional\**" />
+    <EmbeddedResource Remove="Validation\**" />
+    <None Remove="Functional\**" />
+    <None Remove="Validation\**" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="DiffPlex" Version="1.7.2" />
     <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="14.0.2" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
@@ -48,12 +56,6 @@
     <Content Include="icons\SchemaCompare.ico" />
     <Content Include="icons\SyncArrow_16x.png" />
     <Content Include="icons\UploadFile_16x.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Functional\" />
-    <Folder Include="Kusto\Model\" />
-    <Folder Include="Validation\ErrorMessages\Specifications\" />
-    <Folder Include="Validation\Infrastructure\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SyncKusto.Core\SyncKusto.Core.csproj" />
