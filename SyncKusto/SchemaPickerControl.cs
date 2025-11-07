@@ -280,27 +280,29 @@ namespace SyncKusto
         {
             try
             {
-                IDatabaseSchemaBuilder schemaBuilder;
-
                 if (SourceSelection == SourceSelection.Kusto())
                 {
-                    schemaBuilder = new KustoDatabaseSchemaBuilder(new SyncKusto.Kusto.Services.QueryEngine(KustoConnection, SettingsWrapper.LineEndingMode));
+                    var schemaBuilder = new KustoDatabaseSchemaBuilder(new SyncKusto.Kusto.Services.QueryEngine(KustoConnection, SettingsWrapper.LineEndingMode));
+                    ReportProgress($@"Constructing schema...");
+                    return Task.Run(async () => await schemaBuilder.Build().ConfigureAwait(false)).Result;
                 }
                 else if (SourceSelection == SourceSelection.FilePath())
                 {
                     SettingsWrapper.PreviousFilePath = SourceFilePath;
-                    // Use the deprecated FileDatabaseSchemaBuilder temporarily until the refactoring is complete
-                    #pragma warning disable CS0618 // Type or member is obsolete
-                    schemaBuilder = new FileDatabaseSchemaBuilder(SourceFilePath, SettingsWrapper.FileExtension);
-                    #pragma warning restore CS0618 // Type or member is obsolete
+                    var repository = new SyncKusto.FileSystem.Repositories.FileSystemSchemaRepository(
+                        SourceFilePath,
+                        SettingsWrapper.FileExtension,
+                        SettingsWrapper.KustoClusterForTempDatabases ?? throw new InvalidOperationException("KustoClusterForTempDatabases setting is not configured"),
+                        SettingsWrapper.TemporaryKustoDatabase ?? throw new InvalidOperationException("TemporaryKustoDatabase setting is not configured"),
+                        SettingsWrapper.AADAuthority ?? throw new InvalidOperationException("AADAuthority setting is not configured")
+                    );
+                    ReportProgress($@"Constructing schema...");
+                    return Task.Run(async () => await repository.GetSchemaAsync().ConfigureAwait(false)).Result;
                 }
                 else
                 {
                     throw new InvalidOperationException("An unknown source type was supplied.");
                 }
-
-                ReportProgress($@"Constructing schema...");
-                return Task.Run(async () => await schemaBuilder.Build().ConfigureAwait(false)).Result;
             }
             catch (Exception ex) when (ex is not SchemaLoadException)
             {
