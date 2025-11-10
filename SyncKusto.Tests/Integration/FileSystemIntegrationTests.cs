@@ -5,7 +5,6 @@ using FluentAssertions;
 using NUnit.Framework;
 using SyncKusto.Core.Models;
 using SyncKusto.Services;
-using System.IO;
 
 namespace SyncKusto.Tests.Integration;
 
@@ -65,7 +64,7 @@ public class FileSystemIntegrationTests
         newProvider.GetSetting("TempDatabase").Should().Be("TestDB");
         // Boolean values may be stored as "False" or "false" depending on JSON serialization
         newProvider.GetSetting("KustoObjectDropWarning").Should().BeOneOf("false", "False");
-        
+
         var recentClusters = newProvider.GetRecentValues("RecentClusters").ToList();
         recentClusters.Should().Contain("cluster1.kusto.windows.net");
         recentClusters.Should().Contain("cluster2.kusto.windows.net");
@@ -77,7 +76,7 @@ public class FileSystemIntegrationTests
         // Arrange
         var settings1Path = Path.Combine(_testDirectory, "settings1.json");
         var settings2Path = Path.Combine(_testDirectory, "settings2.json");
-        
+
         var provider1 = new JsonFileSettingsProvider(settings1Path);
         var provider2 = new JsonFileSettingsProvider(settings2Path);
 
@@ -164,10 +163,10 @@ public class FileSystemIntegrationTests
 
         // Act
         var settings1 = _settingsProvider.GetSettings();
-        
+
         // Modify provider
         _settingsProvider.SetSetting("TempCluster", "cluster2");
-        
+
         var settings2 = _settingsProvider.GetSettings();
 
         // Assert

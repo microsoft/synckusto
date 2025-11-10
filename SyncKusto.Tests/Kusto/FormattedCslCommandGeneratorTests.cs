@@ -161,7 +161,7 @@ public class FormattedCslCommandGeneratorTests
         // Verify formatting was applied - should have indented fields
         result.Should().Match(s => s.Contains("\n    [") || s.Contains("\r\n    ["),
             "because tableFieldsOnNewLine should add indented field separators");
-        
+
         // Count the number of field separators with line breaks
         var fieldSeparatorCount = System.Text.RegularExpressions.Regex.Matches(result, @",[\r]?\n\s+\[").Count;
         // Should have separators between fields (columns.Count - 1)

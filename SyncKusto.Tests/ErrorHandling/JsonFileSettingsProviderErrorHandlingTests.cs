@@ -3,9 +3,7 @@
 
 using FluentAssertions;
 using NUnit.Framework;
-using SyncKusto.Core.Models;
 using SyncKusto.Services;
-using System.IO;
 
 namespace SyncKusto.Tests.ErrorHandling;
 
@@ -60,7 +58,7 @@ public class JsonFileSettingsProviderErrorHandlingTests
         // Path validation behavior depends on the operating system and .NET implementation
         // Some platforms may sanitize invalid characters, others may throw
         // Modern .NET on Windows is more permissive with path handling
-        
+
         // Arrange
         var invalidPath = "C:\\invalid\0path\\settings.json";
 
@@ -69,12 +67,12 @@ public class JsonFileSettingsProviderErrorHandlingTests
         // 1. Accept it and fail on actual file operations
         // 2. Sanitize the path
         // 3. Throw immediately
-        
+
         try
         {
             var provider = new JsonFileSettingsProvider(invalidPath);
             provider.SetSetting("TempCluster", "test");
-            
+
             // If we get here, the implementation handled it gracefully
             Assert.Pass("Implementation handles invalid path characters gracefully");
         }
@@ -108,7 +106,7 @@ public class JsonFileSettingsProviderErrorHandlingTests
         {
             // Act & Assert
             var act = () => _provider.SetSetting("TempCluster", "updated");
-            
+
             // The implementation may handle this differently (cache, queue, etc.)
             // Document the expected behavior rather than strict assertion
             try
@@ -188,7 +186,7 @@ public class JsonFileSettingsProviderErrorHandlingTests
 
         // Create a new provider instance after file deletion
         var newProvider = new JsonFileSettingsProvider(_testFilePath);
-        
+
         // Act
         var result = newProvider.GetSetting("TempCluster");
 

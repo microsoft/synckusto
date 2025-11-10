@@ -5,7 +5,6 @@ using NUnit.Framework;
 using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Models;
 using SyncKusto.Core.Services;
-using System;
 
 namespace SyncKusto.Tests.Core.Services;
 

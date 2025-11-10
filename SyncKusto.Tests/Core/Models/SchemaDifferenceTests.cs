@@ -4,9 +4,6 @@
 using NUnit.Framework;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Models;
-using SyncKusto.Tests.Core;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SyncKusto.Tests.Core.Models;
 

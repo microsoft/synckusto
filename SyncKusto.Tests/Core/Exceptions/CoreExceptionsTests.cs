@@ -3,8 +3,6 @@
 
 using NUnit.Framework;
 using SyncKusto.Core.Exceptions;
-using System;
-using System.Collections.Generic;
 
 namespace SyncKusto.Tests.Core.Exceptions;
 
@@ -176,7 +174,7 @@ public class SchemaValidationExceptionTests
     public void Exception_CanBeThrown()
     {
         // Act & Assert
-        Assert.Throws<SchemaValidationException>(() => 
+        Assert.Throws<SchemaValidationException>(() =>
             throw new SchemaValidationException("Test", new List<string> { "Error" }));
     }
 

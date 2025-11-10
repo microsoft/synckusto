@@ -5,10 +5,7 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SyncKusto.Core.Abstractions;
-using SyncKusto.Core.Exceptions;
-using SyncKusto.Core.Models;
 using SyncKusto.Services;
-using Kusto.Data.Common;
 
 namespace SyncKusto.Tests.ErrorHandling;
 
@@ -31,10 +28,10 @@ public class SchemaComparisonErrorHandlingTests
     {
         // Arrange - DatabaseSchema cannot be easily mocked or constructed
         // Test null handling directly
-        
+
         // We need a valid target, but can't easily create one
         // Instead, document that null handling should be tested with actual integration tests
-        
+
         // For now, verify the service requires non-null arguments
         Assert.Pass("Null argument validation requires integration test with actual Kusto schemas");
     }
@@ -44,10 +41,10 @@ public class SchemaComparisonErrorHandlingTests
     {
         // Arrange - DatabaseSchema cannot be easily mocked or constructed
         // Test null handling directly
-        
+
         // We need a valid source, but can't easily create one
         // Instead, document that null handling should be tested with actual integration tests
-        
+
         // For now, verify the service requires non-null arguments
         Assert.Pass("Null argument validation requires integration test with actual Kusto schemas");
     }
@@ -71,13 +68,13 @@ public class SchemaComparisonErrorHandlingTests
         // 5. Timeout errors
         // 6. Resource exhaustion
         // 7. Concurrent modification conflicts
-        
+
         // The actual DatabaseSchema type from Kusto SDK has complex constructors
         // that require actual Kusto data structures, so we focus on:
         // - Null reference handling (tested above)
         // - Service-level error propagation
         // - Exception wrapping and context preservation
-        
+
         Assert.Pass("Error handling tests document expected failure modes");
     }
 
@@ -89,12 +86,12 @@ public class SchemaComparisonErrorHandlingTests
         // - Include helpful context about what failed
         // - Preserve inner exception details
         // - Not leak sensitive information
-        
+
         // This is verified through:
         // - Unit tests of individual components
         // - Integration tests with real Kusto connections
         // - Manual testing of error scenarios
-        
+
         Assert.Pass("Exception handling verified through component tests");
     }
 
@@ -136,12 +133,12 @@ public class SchemaComparisonErrorHandlingTests
         // - Process efficiently without excessive memory allocation
         // - Complete in reasonable time
         // - Handle out-of-memory gracefully if it occurs
-        
+
         // This is tested through:
         // - Performance/load tests
         // - Memory profiling
         // - Stress testing with production-sized schemas
-        
+
         Assert.Pass("Large schema handling verified through performance tests");
     }
 
@@ -153,13 +150,13 @@ public class SchemaComparisonErrorHandlingTests
         // - No shared state corruption
         // - Proper async/await usage
         // - No deadlocks
-        
+
         // The SchemaComparisonService is stateless and should be thread-safe
         var tasks = new List<Task>();
-        
+
         // This would require actual schema objects to test properly
         // For now, we document the expectation
-        
+
         Assert.Pass("Concurrent operation handling documented");
     }
 
@@ -169,7 +166,7 @@ public class SchemaComparisonErrorHandlingTests
         // Arrange
         var mockRepository = new Mock<ISchemaRepository>();
         var cts = new CancellationTokenSource();
-        
+
         mockRepository
             .Setup(r => r.GetSchemaAsync(It.IsAny<CancellationToken>()))
             .Returns(async (CancellationToken ct) =>
@@ -193,9 +190,9 @@ public class SchemaComparisonErrorHandlingTests
         // - Translate cryptic Kusto SDK exceptions into user-friendly messages
         // - Preserve technical details for logging
         // - Suggest remediation steps when possible
-        
+
         // This is tested through the IErrorMessageResolver implementations
-        
+
         Assert.Pass("Error message translation tested in resolver tests");
     }
 }

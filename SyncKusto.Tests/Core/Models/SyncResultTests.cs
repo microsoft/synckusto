@@ -3,7 +3,6 @@
 
 using NUnit.Framework;
 using SyncKusto.Core.Models;
-using System.Collections.Generic;
 
 namespace SyncKusto.Tests.Core.Models;
 

@@ -7,12 +7,6 @@ using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
 using SyncKusto.Core.Services;
-using SyncKusto.Tests.Core;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SyncKusto.Tests.Core.Services;
 
@@ -80,7 +74,7 @@ public class SchemaSyncServiceTests
         var sourceRepo = new TestSchemaRepository();
         var targetRepo = new TestSchemaRepository();
         var progressReports = new List<SyncProgress>();
-        
+
         // Use a custom progress implementation that captures synchronously
         var progress = new SynchronousProgress<SyncProgress>(p => progressReports.Add(p));
 
@@ -279,7 +273,7 @@ public class SchemaSyncServiceTests
             new TableSchemaDifference(new OnlyInSource(), new TestKustoSchema("Table1"))
         };
         var progressReports = new List<SyncProgress>();
-        
+
         // Use a custom progress implementation that captures synchronously
         var progress = new SynchronousProgress<SyncProgress>(p => progressReports.Add(p));
 
@@ -331,7 +325,7 @@ public class SchemaSyncServiceTests
     }
 
     // Test helper classes
-    
+
     /// <summary>
     /// Synchronous progress reporter for testing that invokes callbacks immediately
     /// instead of posting to the synchronization context
@@ -350,7 +344,7 @@ public class SchemaSyncServiceTests
             _handler(value);
         }
     }
-    
+
     private class TestSchemaComparisonService : ISchemaComparisonService
     {
         public bool CompareSchemasCalled { get; private set; }

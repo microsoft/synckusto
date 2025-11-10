@@ -17,7 +17,7 @@ namespace SyncKusto.Core.Models
         {
             // Determine type based on schema properties or type name
             var typeName = schema.GetType().Name;
-            
+
             if (typeName.Contains("Table"))
             {
                 return new TableSchemaDifference(difference, schema);

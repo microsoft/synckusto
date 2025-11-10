@@ -2,11 +2,8 @@
 // Licensed under the MIT License.
 
 using FluentAssertions;
-using Moq;
 using NUnit.Framework;
 using Polly;
-using Polly.Retry;
-using System.Net;
 
 namespace SyncKusto.Tests.Resilience;
 
@@ -71,7 +68,7 @@ public class RetryPolicyTests
         var attempts = new List<DateTime>();
         var retryPolicy = Policy
             .Handle<Exception>()
-            .WaitAndRetryAsync(3, retryAttempt => 
+            .WaitAndRetryAsync(3, retryAttempt =>
                 TimeSpan.FromMilliseconds(Math.Pow(2, retryAttempt) * 100));
 
         async Task OperationThatFails()
@@ -93,7 +90,7 @@ public class RetryPolicyTests
 
         // Assert
         attempts.Should().HaveCount(4); // Initial + 3 retries
-        
+
         // Verify increasing delays (with some tolerance for timing)
         var delay1 = attempts[1] - attempts[0];
         var delay2 = attempts[2] - attempts[1];
@@ -246,7 +243,7 @@ public class RetryPolicyTests
 
         // Assert
         delays.Should().HaveCount(5);
-        delays.Should().OnlyContain(d => d >= TimeSpan.FromMilliseconds(100) && 
+        delays.Should().OnlyContain(d => d >= TimeSpan.FromMilliseconds(100) &&
                                          d <= TimeSpan.FromMilliseconds(150));
     }
 

@@ -4,8 +4,6 @@
 using FluentAssertions;
 using NUnit.Framework;
 using SyncKusto.Core.Extensions;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SyncKusto.Tests.Extensions;
 
@@ -190,11 +188,11 @@ public class DictionaryExtensionsEnhancedTests
         result.modified.Should().HaveCount(1);
         result.modified.Should().ContainKey("modified");
         result.modified["modified"].Should().Be("sourceValue");
-        
+
         result.onlyInSource.Should().HaveCount(1);
         result.onlyInSource.Should().ContainKey("onlyInSource");
         result.onlyInSource["onlyInSource"].Should().Be("sourceOnly");
-        
+
         result.onlyInTarget.Should().HaveCount(1);
         result.onlyInTarget.Should().ContainKey("onlyInTarget");
         result.onlyInTarget["onlyInTarget"].Should().Be("targetOnly");
@@ -287,7 +285,7 @@ public class DictionaryExtensionsEnhancedTests
         // Assert
         result.onlyInSource.Should().HaveCount(5000);
         result.onlyInTarget.Should().HaveCount(5000);
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000, 
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000,
             "Dictionary difference operation should complete efficiently");
     }
 
@@ -332,7 +330,7 @@ public class DictionaryExtensionsEnhancedTests
         var result = source.DifferenceFrom(target);
 
         // Assert
-        result.modified["key"].Should().Be("sourceValue", 
+        result.modified["key"].Should().Be("sourceValue",
             "Modified dictionary should contain source values, not target values");
     }
 }

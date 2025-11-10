@@ -4,8 +4,6 @@
 using NUnit.Framework;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Services;
-using System;
-using System.Collections.Generic;
 
 namespace SyncKusto.Tests.Core.Services;
 

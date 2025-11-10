@@ -4,8 +4,6 @@
 using Bogus;
 using NUnit.Framework;
 using SyncKusto.Core.Extensions;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SyncKusto.Tests
 {

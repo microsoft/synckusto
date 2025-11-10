@@ -4,8 +4,6 @@
 using NUnit.Framework;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Services;
-using System;
-using System.Collections.Generic;
 
 namespace SyncKusto.Tests.Core.Services;
 
@@ -18,7 +16,7 @@ public class AggregateExceptionResolverTests
         // Act & Assert
         // Note: The constructor doesn't currently validate null, so this test documents actual behavior
         var act = () => new AggregateExceptionResolver(null!);
-        
+
         // Current implementation doesn't throw - it will throw NullReferenceException when used
         // This test should be updated if null validation is added to the constructor
         Assert.DoesNotThrow(() => new AggregateExceptionResolver(null!));

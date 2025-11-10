@@ -443,7 +443,7 @@ public class KustoSchemaModelsTests
             new ColumnSchema("Col3", "System.DateTime")
         };
         var tableSchema = new TableSchema("ComplexTable", columns, "TestFolder", "This is a test table");
-        
+
         // Act
         var kustoTable = new KustoTableSchema(tableSchema);
 

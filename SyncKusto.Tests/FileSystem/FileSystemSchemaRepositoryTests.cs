@@ -3,12 +3,10 @@
 
 using FluentAssertions;
 using Kusto.Data.Common;
-using Moq;
 using NUnit.Framework;
 using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
-using SyncKusto.FileSystem.Exceptions;
 using SyncKusto.FileSystem.Repositories;
 using SyncKusto.Kusto.Models;
 
@@ -371,7 +369,7 @@ public class FileSystemSchemaRepositoryTests
         var repository = CreateRepository();
         var table = CreateTestTable("TestTable");
         var kustoTable = new KustoTableSchema(table);
-        
+
         // Create the file first
         await repository.SaveSchemaAsync(new[] { kustoTable });
         var filePath = Path.Combine(_testDirectory, "TestTable.kql");
@@ -391,7 +389,7 @@ public class FileSystemSchemaRepositoryTests
         var repository = CreateRepository();
         var function = CreateTestFunction("TestFunction");
         var kustoFunction = new KustoFunctionSchema(function);
-        
+
         // Create the file first
         await repository.SaveSchemaAsync(new[] { kustoFunction });
         var filePath = Path.Combine(_testDirectory, "Functions", "TestFunction.kql");
@@ -428,7 +426,7 @@ public class FileSystemSchemaRepositoryTests
         // Arrange
         var nonExistentDir = Path.Combine(_testDirectory, "NewDir");
         Directory.Exists(nonExistentDir).Should().BeFalse();
-        
+
         var repository = new FileSystemSchemaRepository(
             nonExistentDir,
             "kql",
@@ -489,7 +487,7 @@ public class FileSystemSchemaRepositoryTests
         {
             // Expected to fail without real QueryEngine
         }
-        
+
         // If we got here without OperationCanceledException, the token was accepted
         cts.Token.IsCancellationRequested.Should().BeFalse();
     }
@@ -564,7 +562,7 @@ public class FileSystemSchemaRepositoryTests
     {
         var parameters = new List<FunctionParameterSchema>();
         var outputColumns = new List<ColumnSchema>();
-        
+
         return new FunctionSchema(
             name: name,
             parameters: parameters,

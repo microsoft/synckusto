@@ -3,8 +3,6 @@
 
 using NUnit.Framework;
 using SyncKusto.Core.Services;
-using System;
-using System.Linq;
 
 namespace SyncKusto.Tests.Services;
 

@@ -4,7 +4,6 @@
 using FluentAssertions;
 using Kusto.Data.Common;
 using NUnit.Framework;
-using SyncKusto.Core.Models;
 using SyncKusto.FileSystem.Exceptions;
 using SyncKusto.FileSystem.Extensions;
 
@@ -166,7 +165,7 @@ public class FileSystemSchemaExtensionsTests
 
         // Act & Assert - The sanitization removes invalid chars but the resulting path may still have issues
         var act = () => function.WriteToFile(_testDirectory, "kql");
-        
+
         // This may succeed or fail depending on what characters remain after sanitization
         try
         {
@@ -339,7 +338,7 @@ public class FileSystemSchemaExtensionsTests
         // Act & Assert - The sanitization removes invalid chars but the resulting path may still have issues
         // The actual behavior is that it attempts to create the sanitized path
         var act = () => table.WriteToFile(_testDirectory, "kql");
-        
+
         // This may succeed or fail depending on what characters remain after sanitization
         // Since this is testing file system behavior, we just verify it handles the input
         try
@@ -500,7 +499,7 @@ public class FileSystemSchemaExtensionsTests
         // Using Kusto SDK's FunctionSchema - these are readonly types from the SDK
         var parameters = new List<FunctionParameterSchema>();
         var outputColumns = new List<ColumnSchema>();
-        
+
         return new FunctionSchema(
             name: name,
             parameters: parameters,

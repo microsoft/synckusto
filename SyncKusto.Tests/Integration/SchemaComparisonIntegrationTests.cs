@@ -1,12 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using FluentAssertions;
 using NUnit.Framework;
-using SyncKusto.Core.Models;
 using SyncKusto.Services;
-using Moq;
-using SyncKusto.Core.Abstractions;
 
 namespace SyncKusto.Tests.Integration;
 
@@ -32,12 +28,12 @@ public class SchemaComparisonIntegrationTests
         // This test verifies the service can handle schema comparison
         // For actual database schema objects, we would need real Kusto connections
         // or to use the actual Kusto SDK types which have complex constructors
-        
+
         // For now, this test documents that integration tests would require:
         // 1. Mock Kusto cluster setup
         // 2. Test data loaded into temporary databases
         // 3. Full end-to-end comparison workflows
-        
+
         Assert.Pass("Integration test placeholder - requires Kusto test infrastructure");
     }
 
@@ -53,7 +49,7 @@ public class SchemaComparisonIntegrationTests
         // 6. Identify differences (additions, deletions, modifications)
         // 7. Generate sync commands
         // 8. Apply changes to target
-        
+
         Assert.Pass("End-to-end integration test requires actual Kusto infrastructure");
     }
 
@@ -65,14 +61,14 @@ public class SchemaComparisonIntegrationTests
         // - Or connection to a test Kusto cluster
         // - Test data fixtures
         // - Cleanup procedures
-        
+
         // For now, the unit tests provide adequate coverage of the comparison logic
         // Integration tests would add value by testing:
         // - Network failures and retries
         // - Large dataset handling
         // - Permission issues
         // - Concurrent operations
-        
+
         Assert.Pass("Real integration test requires Kusto test cluster setup");
     }
 }
