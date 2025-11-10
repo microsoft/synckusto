@@ -231,7 +231,7 @@ public class FileSystemErrorMessageResolverTests
         result.Should().Contain("Object1");
         result.Should().Contain("Object50");
         // Count newlines to verify all objects are included
-        var lines = result.Split('\n');
+        var lines = result!.Split('\n');
         lines.Should().HaveCountGreaterThan(50);
     }
 
