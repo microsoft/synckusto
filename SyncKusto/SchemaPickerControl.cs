@@ -1,21 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Kusto.Data;
-using Kusto.Data.Common;
-using SyncKusto.Functional;
-using SyncKusto.Kusto;
-using SyncKusto.Kusto.DatabaseSchemaBuilder;
-using SyncKusto.SyncSources;
+using SyncKusto.Core.Abstractions;
+using SyncKusto.Core.Models;
+using SyncKusto.FileSystem.Extensions;
 using SyncKusto.Utilities;
-using SyncKusto.Validation.ErrorMessages;
-using SyncKusto.Validation.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using CoreStoreLocation = SyncKusto.Core.Models.StoreLocation;
 
 namespace SyncKusto
 {
@@ -25,8 +20,10 @@ namespace SyncKusto
         private const string ENTRA_ID_APP_KEY = "Microsoft Entra ID App (Key)";
         private const string ENTRA_ID_APP_SNI = "Microsoft Entra ID App (SubjectName/Issuer)";
 
+        private ISettingsProvider? _settingsProvider;
+
         /// <summary>
-        ///     Default constructor to make the Windows Forms designer happy
+        /// Default constructor to make the Windows Forms designer happy
         /// </summary>
         public SchemaPickerControl()
         {
@@ -40,38 +37,44 @@ namespace SyncKusto
 
             this.cmbAuthentication.SelectedIndex = 0;
 
-            this.cbCluster.Items.AddRange(SettingsWrapper.RecentClusters.ToArray());
-            this.cbDatabase.Items.AddRange(SettingsWrapper.RecentDatabases.ToArray());
+            SourceSelection = SourceSelection.FilePath();
+            ProgressMessageState = new Stack<(string, SourceSelection)>();
         }
 
         /// <summary>
         /// Constructor that defaults to type of source
         /// </summary>
-        /// <param name="sourceSelectionFactory">Factory for picking a source</param>
         public SchemaPickerControl(ISourceSelectionFactory sourceSelectionFactory) : this()
         {
-            txtFilePath.Text = SettingsWrapper.PreviousFilePath;
-
-            SourceSelectionMap =
-                sourceSelectionFactory.Choose(ToggleFilePathSourcePanel, ToggleKustoSourcePanel);
-
-            SourceValidationMap =
-                sourceSelectionFactory.Validate(FilePathSourceSpecification, KustoSourceSpecification);
-
-            SourceAllowedMap =
-                sourceSelectionFactory.Allowed(AllowedFilePathSource, AllowedKustoSource);
-
-            ProgressMessageState = new Stack<(string, SourceSelection)>();
+            SourceSelectionMap = sourceSelectionFactory.Choose(ToggleFilePathSourcePanel, ToggleKustoSourcePanel);
+            SourceValidationMap = sourceSelectionFactory.Validate(FilePathSourceSpecification, KustoSourceSpecification);
+            SourceAllowedMap = sourceSelectionFactory.Allowed(AllowedFilePathSource, AllowedKustoSource);
             SetDefaultControlView();
         }
 
-        private IReadOnlyDictionary<SourceSelection, (bool enabled, Action<bool> whenAllowed)> SourceAllowedMap { get; }
+        /// <summary>
+        /// Initialize the control with a settings provider
+        /// </summary>
+        public void Initialize(ISettingsProvider settingsProvider)
+        {
+            _settingsProvider = settingsProvider ?? throw new ArgumentNullException(nameof(settingsProvider));
 
-        private IReadOnlyDictionary<SourceSelection, Action<bool>> SourceSelectionMap { get; }
+            txtFilePath.Text = _settingsProvider.GetSetting("PreviousFilePath") ?? string.Empty;
 
-        private IReadOnlyDictionary<SourceSelection, Func<bool>> SourceValidationMap { get; }
+            this.cbCluster.Items.Clear();
+            this.cbCluster.Items.AddRange(_settingsProvider.GetRecentValues("RecentClusters").ToArray());
+
+            this.cbDatabase.Items.Clear();
+            this.cbDatabase.Items.AddRange(_settingsProvider.GetRecentValues("RecentDatabases").ToArray());
+        }
+
+        private IReadOnlyDictionary<SourceSelection, (bool enabled, Action<bool> whenAllowed)>? SourceAllowedMap { get; }
+        private IReadOnlyDictionary<SourceSelection, Action<bool>>? SourceSelectionMap { get; }
+        private IReadOnlyDictionary<SourceSelection, Func<bool>>? SourceValidationMap { get; }
 
         public SourceSelection SourceSelection { get; private set; }
+        private Stack<(string message, SourceSelection source)> ProgressMessageState { get; }
+        public Action? ResetMainFormValueHolders { private get; set; }
 
         public string Title
         {
@@ -79,128 +82,91 @@ namespace SyncKusto
             set => grpSourceSchema.Text = value;
         }
 
-        private AuthenticationMode Authentication
+        /// <summary>
+        /// Get schema source information from the control
+        /// </summary>
+        public SchemaSourceInfo GetSourceInfo()
         {
-            get
+            if (SourceSelection == SourceSelection.FilePath())
             {
-                switch (cmbAuthentication.SelectedItem)
-                {
-                    case ENTRA_ID_USER:
-                        return AuthenticationMode.AadFederated;
-
-                    case ENTRA_ID_APP_KEY:
-                        return AuthenticationMode.AadApplication;
-
-                    case ENTRA_ID_APP_SNI:
-                        return AuthenticationMode.AadApplicationSni;
-
-                    default:
-                        throw new Exception("Unknown authentication type");
-                }
+                return new SchemaSourceInfo(
+                    SourceSelection.FilePath(),
+                    FilePath: FileSystemSchemaExtensions.HandleLongFileNames(txtFilePath.Text));
             }
-        }
-
-        public string SourceFilePath => txtFilePath.Text.HandleLongFileNames();
-
-        public KustoConnectionStringBuilder KustoConnection
-        {
-            get
+            else if (SourceSelection == SourceSelection.Kusto())
             {
-                switch (Authentication)
-                {
-                    case AuthenticationMode.AadFederated:
-                        return QueryEngine.GetKustoConnectionStringBuilder(cbCluster.Text, cbDatabase.Text);
+                var certificateLocation = GetCertificateLocation();
+                var authority = _settingsProvider?.GetSetting("AADAuthority") ?? string.Empty;
 
-                    case AuthenticationMode.AadApplication:
-                        return QueryEngine.GetKustoConnectionStringBuilder(
-                            cbCluster.Text,
-                            cbDatabase.Text,
-                            aadClientId: cbAppId.Text,
-                            aadClientKey: txtAppKey.Text);
+                var kustoInfo = new KustoConnectionInfo(
+                    Cluster: cbCluster.Text,
+                    Database: cbDatabase.Text,
+                    AuthMode: GetAuthenticationMode(),
+                    Authority: authority,
+                    AppId: GetAppId(),
+                    AppKey: GetAppKey(),
+                    CertificateThumbprint: GetCertificateThumbprint(),
+                    CertificateLocation: certificateLocation);
 
-                    case AuthenticationMode.AadApplicationSni:
-                        return QueryEngine.GetKustoConnectionStringBuilder(
-                            cbCluster.Text,
-                            cbDatabase.Text,
-                            aadClientId: cbAppIdSni.Text,
-                            certificateThumbprint: txtCertificate.Text);
-
-                    default:
-                        throw new Exception("Unknown authentication type");
-                }
+                return new SchemaSourceInfo(SourceSelection.Kusto(), KustoInfo: kustoInfo);
             }
+
+            throw new InvalidOperationException($"Unknown source selection type: {SourceSelection}");
         }
 
-        private Stack<(string message, SourceSelection source)> ProgressMessageState { get; }
-
-        private Func<string, bool> IsConfigured => (input) => Spec<string>.NonEmptyString(s => s).IsSatisfiedBy(input);
-
-        public Action ResetMainFormValueHolders { private get; set; }
-
-        private static Func<ComboBox, bool> WhenSelectedItemAndEmptyValues
-            =>
-                (box) => Spec<ComboBox>.IsTrue(c => c.Items.Count == 0)
-                    .And(Spec<ComboBox>.NonEmptyString(c => c.Text))
-                    .IsSatisfiedBy(box);
-
-        private void SetDefaultControlView()
+        /// <summary>
+        /// Check if the user has correctly specified a schema source
+        /// </summary>
+        public bool IsValid()
         {
-            EnableSourceSelections();
-            SourceSelection = SourceSelection.FilePath();
-            ToggleSourceSelections();
+            if (SourceValidationMap == null) return false;
+            return SourceValidationMap[SourceSelection].Invoke();
         }
 
-        private void AllowedKustoSource(bool predicate) => rbKusto.Enabled = predicate;
-
-        private void AllowedFilePathSource(bool predicate) => rbFilePath.Enabled = predicate;
-
-        private bool FilePathSourceSpecification() =>
-            Spec<SchemaPickerControl>
-                .IsTrue(s => s.SourceSelection == SourceSelection.FilePath())
-                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.SourceFilePath))
-                .IsSatisfiedBy(this);
-
-        private bool KustoSourceSpecification() =>
-            Spec<SchemaPickerControl>
-                .IsTrue(s => s.SourceSelection == SourceSelection.Kusto())
-                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbCluster.Text))
-                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbDatabase.Text))
-                .And(
-                    Spec<SchemaPickerControl>.IsTrue(s => s.Authentication == AuthenticationMode.AadFederated)
-                        .Or(Spec<SchemaPickerControl>
-                            .IsTrue(s => s.Authentication == AuthenticationMode.AadApplication)
-                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbAppId.Text)
-                                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtAppKey.Text))))
-                        .Or(Spec<SchemaPickerControl>
-                            .IsTrue(s => s.Authentication == AuthenticationMode.AadApplicationSni)
-                            .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.cbAppIdSni.Text)
-                                .And(Spec<SchemaPickerControl>.NonEmptyString(s => s.txtCertificate.Text)))))
-                .IsSatisfiedBy(this);
-
-        private void ToggleFilePathSourcePanel(bool predicate) => pnlFilePath.Visible = predicate;
-
-        private void ToggleKustoSourcePanel(bool predicate) => pnlKusto.Visible = predicate;
-
-        private void EnableSourceSelections()
+        /// <summary>
+        /// Update the UI with the status message
+        /// </summary>
+        public void ReportProgress(string? message)
         {
-            foreach ((bool enabled, Action<bool> whenAllowed) value in SourceAllowedMap.Values)
-            {
-                value.whenAllowed.Invoke(value.enabled);
-            }
+            if (message != null)
+                txtOperationProgress.Text = message;
         }
 
-        private void ToggleSourceSelections()
+        /// <summary>
+        /// Save recently used values
+        /// </summary>
+        public void SaveRecentValues()
         {
-            foreach (SourceSelection source in SourceSelectionMap.Keys)
-            {
-                SourceSelectionMap[source].Invoke(source == SourceSelection);
-            }
+            if (_settingsProvider == null) return;
+
+            _settingsProvider.AddRecentValue("RecentClusters", this.cbCluster.Text);
+            _settingsProvider.AddRecentValue("RecentDatabases", this.cbDatabase.Text);
+            _settingsProvider.AddRecentValue("RecentAppIds", this.cbAppId.Text);
+            _settingsProvider.AddRecentValue("RecentAppIds", this.cbAppIdSni.Text);
         }
 
+        /// <summary>
+        /// Reload recently used values
+        /// </summary>
+        public void ReloadRecentValues()
+        {
+            if (_settingsProvider == null) return;
+
+            this.cbCluster.Items.Clear();
+            this.cbCluster.Items.AddRange(_settingsProvider.GetRecentValues("RecentClusters").ToArray());
+            this.cbDatabase.Items.Clear();
+            this.cbDatabase.Items.AddRange(_settingsProvider.GetRecentValues("RecentDatabases").ToArray());
+            this.cbAppId.Items.Clear();
+            this.cbAppId.Items.AddRange(_settingsProvider.GetRecentValues("RecentAppIds").ToArray());
+            this.cbAppIdSni.Items.Clear();
+            this.cbAppIdSni.Items.AddRange(_settingsProvider.GetRecentValues("RecentAppIds").ToArray());
+        }
+
+        // UI Event Handlers
         private void cmbAuthentication_SelectedValueChanged(object sender, EventArgs e)
         {
-            pnlApplicationAuthentication.Visible = Authentication == AuthenticationMode.AadApplication;
-            pnlApplicationSniAuthentication.Visible = Authentication == AuthenticationMode.AadApplicationSni;
+            pnlApplicationAuthentication.Visible = GetAuthenticationMode() == AuthenticationMode.AadApplication;
+            pnlApplicationSniAuthentication.Visible = GetAuthenticationMode() == AuthenticationMode.AadApplicationSni;
         }
 
         private void rbKusto_CheckedChanged(object sender, EventArgs e) =>
@@ -208,23 +174,6 @@ namespace SyncKusto
 
         private void rbFilePath_CheckedChanged(object sender, EventArgs e) =>
             SourceButtonCheckChange(sender, SourceSelection.FilePath());
-
-        private void SourceButtonCheckChange(object sender, SourceSelection source)
-        {
-            if (((RadioButton)sender).Checked)
-            {
-                if (Spec<string>.NonEmptyString(s => s).IsSatisfiedBy(txtOperationProgress.Text))
-                {
-                    ProgressMessageState.Push((txtOperationProgress.Text, SourceSelection));
-                }
-
-                SourceSelection = source;
-                (string message, SourceSelection _) = ProgressMessageState.FirstOrDefault(x => x.source == SourceSelection);
-                ReportProgress(message ?? string.Empty);
-            }
-
-            ToggleSourceSelections();
-        }
 
         private void btnChooseDirectory_Click(object sender, EventArgs e)
         {
@@ -241,102 +190,125 @@ namespace SyncKusto
             }
         }
 
-        /// <summary>
-        ///     Check if the user has correctly specified a schema source
-        /// </summary>
-        /// <returns>True if it is correctly set, false otherwise.</returns>
-        public bool IsValid() => SourceValidationMap[SourceSelection].Invoke();
-
-        /// <summary>
-        /// Attempt to load the schema specified in the control
-        /// </summary>
-        /// <returns>Either an error or the schema that was loaded</returns>
-        public Either<IOperationError, DatabaseSchema> TryLoadSchema()
-        {
-            IDatabaseSchemaBuilder schemaBuilder = EmptyDatabaseSchemaBuilder.Value;
-
-            try
-            {
-                if (SourceSelection == SourceSelection.Kusto())
-                {
-                    schemaBuilder = new KustoDatabaseSchemaBuilder(new QueryEngine(KustoConnection));
-                }
-
-                if (SourceSelection == SourceSelection.FilePath())
-                {
-                    SettingsWrapper.PreviousFilePath = SourceFilePath;
-                    schemaBuilder = new FileDatabaseSchemaBuilder(SourceFilePath, SettingsWrapper.FileExtension);
-                }
-
-                switch (schemaBuilder)
-                {
-                    case KustoDatabaseSchemaBuilder _:
-                    case FileDatabaseSchemaBuilder _:
-                        ReportProgress($@"Constructing schema...");
-                        return Task.Run(async () =>
-                            await schemaBuilder.Build().ConfigureAwait(false)).Result;
-
-                    default:
-                        return new DatabaseSchemaOperationError(new InvalidOperationException("An unknown type was supplied."));
-                }
-            }
-            catch (Exception e)
-            {
-                return new DatabaseSchemaOperationError(e);
-            }
-        }
-
-        /// <summary>
-        /// Update the UI with the status message
-        /// </summary>
-        /// <param name="message">The message to display</param>
-        public void ReportProgress(string message)
-        {
-            if (Spec<string>.NotNull(s => s).IsSatisfiedBy(message))
-                txtOperationProgress.Text = message;
-        }
-
         private void btnCertificate_Click(object sender, EventArgs e)
         {
-            // Show the certificate selection dialog
+            var certificateLocation = GetCertificateLocation();
             var selectedCertificateCollection = X509Certificate2UI.SelectFromCollection(
-                CertificateStore.GetAllCertificates(SettingsWrapper.CertificateLocation),
+                CertificateStore.GetAllCertificates(certificateLocation),
                 "Select a certificate",
                 "Choose a certificate for authentication",
                 X509SelectionFlag.SingleSelection);
 
-            if (selectedCertificateCollection != null &&
-                selectedCertificateCollection.Count == 1)
+            if (selectedCertificateCollection != null && selectedCertificateCollection.Count == 1)
             {
                 txtCertificate.Text = selectedCertificateCollection[0].Thumbprint;
             }
         }
 
-        /// <summary>
-        /// For some of the inputs, we save the most recent values that were used. This method
-        /// updates the storage behind all those settings to include the most recently used values.
-        /// </summary>
-        public void SaveRecentValues()
+        // Helper Methods
+        private void SetDefaultControlView()
         {
-            SettingsWrapper.AddRecentCluster(this.cbCluster.Text);
-            SettingsWrapper.AddRecentDatabase(this.cbDatabase.Text);
-            SettingsWrapper.AddRecentAppId(this.cbAppId.Text);
-            SettingsWrapper.AddRecentAppId(this.cbAppIdSni.Text);
+            EnableSourceSelections();
+            SourceSelection = SourceSelection.FilePath();
+            ToggleSourceSelections();
         }
 
-        /// <summary>
-        /// For the inputs where we store recents, reload them all with the latest values.
-        /// </summary>
-        public void ReloadRecentValues()
+        private void SourceButtonCheckChange(object sender, SourceSelection source)
         {
-            this.cbCluster.Items.Clear();
-            this.cbCluster.Items.AddRange(SettingsWrapper.RecentClusters.ToArray());
-            this.cbDatabase.Items.Clear();
-            this.cbDatabase.Items.AddRange(SettingsWrapper.RecentDatabases.ToArray());
-            this.cbAppId.Items.Clear();
-            this.cbAppId.Items.AddRange(SettingsWrapper.RecentAppIds.ToArray());
-            this.cbAppIdSni.Items.Clear();
-            this.cbAppIdSni.Items.AddRange(SettingsWrapper.RecentAppIds.ToArray());
+            if (((RadioButton)sender).Checked)
+            {
+                if (!string.IsNullOrWhiteSpace(txtOperationProgress.Text))
+                {
+                    ProgressMessageState.Push((txtOperationProgress.Text, SourceSelection));
+                }
+
+                SourceSelection = source;
+                (string message, SourceSelection _) = ProgressMessageState.FirstOrDefault(x => x.source == SourceSelection);
+                ReportProgress(message ?? string.Empty);
+            }
+
+            ToggleSourceSelections();
+        }
+
+        private void EnableSourceSelections()
+        {
+            if (SourceAllowedMap == null) return;
+
+            foreach ((bool enabled, Action<bool> whenAllowed) value in SourceAllowedMap.Values)
+            {
+                value.whenAllowed.Invoke(value.enabled);
+            }
+        }
+
+        private void ToggleSourceSelections()
+        {
+            if (SourceSelectionMap == null) return;
+
+            foreach (SourceSelection source in SourceSelectionMap.Keys)
+            {
+                SourceSelectionMap[source].Invoke(source == SourceSelection);
+            }
+        }
+
+        private void AllowedKustoSource(bool predicate) => rbKusto.Enabled = predicate;
+        private void AllowedFilePathSource(bool predicate) => rbFilePath.Enabled = predicate;
+        private void ToggleFilePathSourcePanel(bool predicate) => pnlFilePath.Visible = predicate;
+        private void ToggleKustoSourcePanel(bool predicate) => pnlKusto.Visible = predicate;
+
+        private bool FilePathSourceSpecification() =>
+            SourceSelection == SourceSelection.FilePath() &&
+            !string.IsNullOrWhiteSpace(txtFilePath.Text);
+
+        private bool KustoSourceSpecification()
+        {
+            if (SourceSelection != SourceSelection.Kusto())
+                return false;
+
+            if (string.IsNullOrWhiteSpace(cbCluster.Text) || string.IsNullOrWhiteSpace(cbDatabase.Text))
+                return false;
+
+            return GetAuthenticationMode() switch
+            {
+                AuthenticationMode.AadFederated => true,
+                AuthenticationMode.AadApplication =>
+                    !string.IsNullOrWhiteSpace(cbAppId.Text) && !string.IsNullOrWhiteSpace(txtAppKey.Text),
+                AuthenticationMode.AadApplicationSni =>
+                    !string.IsNullOrWhiteSpace(cbAppIdSni.Text) && !string.IsNullOrWhiteSpace(txtCertificate.Text),
+                _ => false
+            };
+        }
+
+        private AuthenticationMode GetAuthenticationMode() => cmbAuthentication.SelectedItem switch
+        {
+            ENTRA_ID_USER => AuthenticationMode.AadFederated,
+            ENTRA_ID_APP_KEY => AuthenticationMode.AadApplication,
+            ENTRA_ID_APP_SNI => AuthenticationMode.AadApplicationSni,
+            _ => throw new Exception("Unknown authentication type")
+        };
+
+        private string? GetAppId() => GetAuthenticationMode() switch
+        {
+            AuthenticationMode.AadApplication => cbAppId.Text,
+            AuthenticationMode.AadApplicationSni => cbAppIdSni.Text,
+            _ => null
+        };
+
+        private string? GetAppKey() => GetAuthenticationMode() == AuthenticationMode.AadApplication
+            ? txtAppKey.Text
+            : null;
+
+        private string? GetCertificateThumbprint() => GetAuthenticationMode() == AuthenticationMode.AadApplicationSni
+            ? txtCertificate.Text
+            : null;
+
+        private CoreStoreLocation GetCertificateLocation()
+        {
+            var certLocationStr = _settingsProvider?.GetSetting("CertificateLocation");
+            if (Enum.TryParse<CoreStoreLocation>(certLocationStr, out var parsedLocation))
+            {
+                return parsedLocation;
+            }
+            return CoreStoreLocation.CurrentUser;
         }
     }
 }
