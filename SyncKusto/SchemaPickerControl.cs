@@ -66,6 +66,12 @@ namespace SyncKusto
 
             this.cbDatabase.Items.Clear();
             this.cbDatabase.Items.AddRange(_settingsProvider.GetRecentValues("RecentDatabases").ToArray());
+
+            this.cbAppId.Items.Clear();
+            this.cbAppId.Items.AddRange(_settingsProvider.GetRecentValues("RecentAppIds").ToArray());
+
+            this.cbAppIdSni.Items.Clear();
+            this.cbAppIdSni.Items.AddRange(_settingsProvider.GetRecentValues("RecentAppIds").ToArray());
         }
 
         private IReadOnlyDictionary<SourceSelection, (bool enabled, Action<bool> whenAllowed)>? SourceAllowedMap { get; }
