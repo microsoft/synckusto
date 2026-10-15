@@ -25,12 +25,30 @@ jobs:
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 # v4.0
-          
+      with:
+        nuget-version: '7.9.0'
+
+    - name: Verify dependency lock files
+      shell: pwsh
+      run: |
+        $lockFiles = @(
+          'SyncKusto\packages.lock.json'
+          'SyncKusto.Core\packages.lock.json'
+          'SyncKusto.Kusto\packages.lock.json'
+          'SyncKusto.FileSystem\packages.lock.json'
+          'SyncKusto.Tests\packages.lock.json'
+        )
+        foreach ($lockFile in $lockFiles) {
+          if (-not (Test-Path -LiteralPath $lockFile -PathType Leaf)) {
+            throw "Required dependency lock file is missing: $lockFile"
+          }
+        }
+
     - name: Restore Packages
-      run: nuget restore SyncKusto.sln
+      run: nuget restore SyncKusto.sln -LockedMode -ConfigFile NuGet.Config -NonInteractive
 
     - name: Build Solution
-      run: msbuild.exe SyncKusto.sln /p:Configuration=Release
+      run: msbuild.exe SyncKusto.sln /t:Build /p:Configuration=Release
         
     - name: Upload Artifact
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
