@@ -16,6 +16,27 @@ The general usage pattern on our team is to make changes in a Kusto dev database
 ## Sync Kusto Binaries
 The release can be downloaded from the [GitHub Releases](https://github.com/microsoft/synckusto/releases) page. Individual builds can also be found in the [GitHub Actions](https://github.com/microsoft/synckusto/actions/workflows/official.yml) page, or the repo can be cloned and built in Visual Studio.
 
+## Dependency Restore and Build
+Use Windows with MSBuild/Visual Studio supporting the .NET 8 and Windows Desktop SDKs. Both build workflows use [NuGet CLI 7.9.0](https://dist.nuget.org/win-x86-commandline/v7.9.0/nuget.exe). Run these commands from the repository root in a Developer PowerShell with that version of `nuget.exe` on `PATH`:
+
+```powershell
+nuget restore SyncKusto.sln -LockedMode -ConfigFile NuGet.Config -NonInteractive
+if ($LASTEXITCODE -ne 0) { throw "Dependency restore failed" }
+msbuild.exe SyncKusto.sln /t:Build /p:Configuration=Release
+```
+
+`NuGet.Config` approves only the HTTPS NuGet.org v3 feed and clears inherited package sources and fallback package folders. `Directory.Build.props` also disables the SDK's implicit fallback and workload `library-packs` feeds. Do not add user/runner feeds, fallback folders, or source overrides to work around restore failures. NuGet's existing signature verification remains enabled; this policy does not introduce trusted-signer certificate pinning or require all packages to be signed.
+
+All five solution projects have a reviewed `packages.lock.json` containing resolved direct/transitive versions and package content hashes. CI checks that every lock file exists before restoring, fails on dependency or content-hash drift, and builds only after a successful locked restore. `/t:Build` does not perform another restore. Any subsequent `dotnet build` or `dotnet test` command must use `--no-restore` (and `--no-build` for tests of the existing build).
+
+For an intentional dependency update, change the relevant `PackageReference`, then use the same NuGet version and approved configuration to regenerate locks locally:
+
+```powershell
+nuget restore SyncKusto.sln -UseLockFile -ForceEvaluate -ConfigFile NuGet.Config -NonInteractive
+```
+
+Review all five lock files together with the project changes: explain every direct/transitive version change and unexpected hash change, and never hand-edit package hashes. To review a genuinely clean resolution, point `NUGET_PACKAGES` and `NUGET_HTTP_CACHE_PATH` at new disposable folders rather than clearing shared caches. Repeat the normal locked restore, build, and appropriate offline tests; the reviewed locks must remain unchanged. Include the updated locks in the dependency-update commit. Never delete locks, use `-ForceEvaluate`, or retry unlocked in CI to bypass a failure.
+
 ## Settings
 ### Temporary Databases
 When the local file system is selected as either the source or the target, Sync Kusto loads its schema definitions into the configured temporary database for Kusto-backed normalization. All selected files on both sides are read and checked before opening a temporary client or changing that database. An invalid file stops the comparison; no partial comparison is returned. After those checks pass, the temporary database's existing functions and tables are deleted before loading each file-backed side. Use a dedicated scratch database containing no valuable objects or data, with permissions to create and delete functions and tables. Do not point it at a source or target Kusto database. If two users share a temporary database concurrently, results can be incorrect; give each user their own. The settings check requires an initially empty database, but subsequent successful comparisons still delete its functions and tables.
