@@ -16,7 +16,7 @@ public interface ISchemaSyncService
     /// </summary>
     /// <exception cref="SchemaLoadException">Thrown when schemas cannot be loaded</exception>
     /// <exception cref="SchemaValidationException">Thrown when schema validation fails</exception>
-    Task<SchemaDifferenceResult> CompareAsync(
+    Task<ComparisonResult> CompareAsync(
         ISchemaRepository source,
         ISchemaRepository target,
         IProgress<SyncProgress>? progress = null,

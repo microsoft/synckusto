@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Kusto.Data.Common;
 using SyncKusto.Abstractions;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Models;
@@ -24,8 +23,6 @@ public class MainFormPresenter : IMainFormPresenter
     // Cached for synchronization - need to use the same repository instances
     private ISchemaRepository? _lastSourceRepository;
     private ISchemaRepository? _lastTargetRepository;
-    private DatabaseSchema? _lastSourceSchema;
-    private DatabaseSchema? _lastTargetSchema;
 
     public MainFormPresenter(
         ISchemaSyncService syncService,
@@ -49,22 +46,23 @@ public class MainFormPresenter : IMainFormPresenter
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(target);
 
+        _lastSourceRepository = null;
+        _lastTargetRepository = null;
+
         // Create repositories
-        _lastSourceRepository = _repositoryFactory.CreateRepository(source);
-        _lastTargetRepository = _repositoryFactory.CreateRepository(target);
+        var sourceRepository = _repositoryFactory.CreateRepository(source);
+        var targetRepository = _repositoryFactory.CreateRepository(target);
 
         // Load schemas and compare
-        var differences = await _syncService.CompareAsync(
-            _lastSourceRepository,
-            _lastTargetRepository,
+        var result = await _syncService.CompareAsync(
+            sourceRepository,
+            targetRepository,
             progress,
             cancellationToken);
 
-        // Also get the actual schemas for display (needed by MainForm for diff view)
-        _lastSourceSchema = await _lastSourceRepository.GetSchemaAsync(cancellationToken);
-        _lastTargetSchema = await _lastTargetRepository.GetSchemaAsync(cancellationToken);
-
-        return new ComparisonResult(differences, _lastSourceSchema, _lastTargetSchema);
+        _lastSourceRepository = sourceRepository;
+        _lastTargetRepository = targetRepository;
+        return result;
     }
 
     /// <summary>

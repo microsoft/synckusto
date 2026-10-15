@@ -24,7 +24,7 @@ public class SchemaSyncService : ISchemaSyncService
     /// </summary>
     /// <exception cref="SchemaLoadException">Thrown when schemas cannot be loaded</exception>
     /// <exception cref="SchemaValidationException">Thrown when schema validation fails</exception>
-    public async Task<SchemaDifferenceResult> CompareAsync(
+    public async Task<ComparisonResult> CompareAsync(
         ISchemaRepository source,
         ISchemaRepository target,
         IProgress<SyncProgress>? progress = null,
@@ -35,13 +35,26 @@ public class SchemaSyncService : ISchemaSyncService
 
         try
         {
+            progress?.Report(new SyncProgress("Checking schema files...", 0, SyncProgressStage.ComparingSchemas));
+            var (sourceSnapshot, targetSnapshot) = await Task.Run(() =>
+            {
+                // Freeze both sides before validating either; loading may clear the scratch database.
+                var sourceFiles = (source as ISchemaSnapshotSource)?.CaptureSnapshot("Source", cancellationToken);
+                var targetFiles = (target as ISchemaSnapshotSource)?.CaptureSnapshot("Target", cancellationToken);
+                sourceFiles?.Validate();
+                targetFiles?.Validate();
+                return (sourceFiles, targetFiles);
+            }, cancellationToken);
+
             // Report progress: Loading source schema
             progress?.Report(new SyncProgress(
                 "Loading source schema...",
                 10,
                 SyncProgressStage.LoadingSourceSchema));
 
-            var sourceSchema = await source.GetSchemaAsync(cancellationToken);
+            var sourceSchema = sourceSnapshot != null
+                ? await sourceSnapshot.GetSchemaAsync(cancellationToken)
+                : await source.GetSchemaAsync(cancellationToken);
 
             // Report progress: Loading target schema
             progress?.Report(new SyncProgress(
@@ -49,7 +62,9 @@ public class SchemaSyncService : ISchemaSyncService
                 50,
                 SyncProgressStage.LoadingTargetSchema));
 
-            var targetSchema = await target.GetSchemaAsync(cancellationToken);
+            var targetSchema = targetSnapshot != null
+                ? await targetSnapshot.GetSchemaAsync(cancellationToken)
+                : await target.GetSchemaAsync(cancellationToken);
 
             // Report progress: Comparing schemas
             progress?.Report(new SyncProgress(
@@ -65,13 +80,13 @@ public class SchemaSyncService : ISchemaSyncService
                 100,
                 SyncProgressStage.Complete));
 
-            return result;
+            return new ComparisonResult(result, sourceSchema, targetSchema);
         }
         catch (SchemaLoadException)
         {
             throw; // Re-throw schema-specific exceptions as-is
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             throw new SchemaLoadException("Failed to load and compare schemas", ex);
         }

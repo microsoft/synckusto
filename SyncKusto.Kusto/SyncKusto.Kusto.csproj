@@ -2,10 +2,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SyncKusto.Core\SyncKusto.Core.csproj" />
+    <InternalsVisibleTo Include="SyncKusto.Tests" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="14.1.0" />
+    <PackageReference Include="Microsoft.Azure.Kusto.Language" Version="12.4.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 

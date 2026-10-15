@@ -147,15 +147,32 @@ namespace SyncKusto
                 return;
             }
 
-            // Compare with progress reporting
+            try
+            {
+                await CompareSchemasAsync(sourceInfo, targetInfo);
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = _errorMessageResolver.ResolveErrorMessage(ex);
+                MessageBox.Show($@"Failed to compare schemas: {errorMessage}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        internal async System.Threading.Tasks.Task CompareSchemasAsync(SchemaSourceInfo sourceInfo, SchemaSourceInfo targetInfo)
+        {
+            ResetValueHoldersOnChange();
             var previousCursor = this.Cursor;
             this.Cursor = Cursors.WaitCursor;
             SetOperationInProgress(true);
+            bool comparing = true;
 
             try
             {
                 var progress = new Progress<SyncProgress>(p =>
                 {
+                    if (!comparing)
+                        return;
+
                     // Update both source and target progress displays
                     if (p.Stage == SyncProgressStage.LoadingSourceSchema ||
                         p.Stage == SyncProgressStage.ComparingSchemas)
@@ -188,16 +205,16 @@ namespace SyncKusto
                 _sourceAdapter.ReloadRecentValues();
                 _targetAdapter.ReloadRecentValues();
             }
-            catch (Exception ex)
+            catch
             {
                 ResetValueHoldersOnChange();
-                var errorMessage = _errorMessageResolver.ResolveErrorMessage(ex);
-                MessageBox.Show($@"Failed to compare schemas: {errorMessage}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                spcSource.ReportProgress(string.Empty);
-                spcTarget.ReportProgress(string.Empty);
+                throw;
             }
             finally
             {
+                comparing = false;
+                spcSource.ReportProgress(string.Empty);
+                spcTarget.ReportProgress(string.Empty);
                 this.Cursor = previousCursor;
                 SetOperationInProgress(false);
             }
@@ -401,20 +418,7 @@ namespace SyncKusto
                 return;
             }
 
-            // Check for drop operations and show warning if needed
             var targetInfo = _targetAdapter.GetSourceInfo();
-            if (_settingsProvider.GetSyncKustoSettings().KustoObjectDropWarning &&
-                targetInfo.SourceType == SourceSelection.Kusto() &&
-                selectedNodes.Any(n => n.Parent.Text == "Only In Target"))
-            {
-                using var warning = new DropWarningForm(_settingsProvider);
-                var dialogResult = warning.ShowDialog(this);
-                if (dialogResult != DialogResult.Yes)
-                {
-                    MessageBox.Show("Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-            }
 
             var previousCursor = this.Cursor;
             this.Cursor = Cursors.WaitCursor;
@@ -434,7 +438,18 @@ namespace SyncKusto
                     spcTarget.ReportProgress(p.Message);
                 });
 
-                var result = await _presenter.SynchronizeAsync(selectedDifferences, progress);
+                var result = await SynchronizeSelectionAsync(selectedDifferences, targetInfo,
+                    () =>
+                    {
+                        using var warning = new DropWarningForm(_settingsProvider);
+                        return warning.ShowDialog(this) == DialogResult.Yes;
+                    }, progress);
+
+                if (result == null)
+                {
+                    MessageBox.Show("Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
 
                 if (!result.Success)
                 {
@@ -466,6 +481,24 @@ namespace SyncKusto
                 this.Cursor = previousCursor;
                 SetOperationInProgress(false);
             }
+        }
+
+        internal async System.Threading.Tasks.Task<SyncResult?> SynchronizeSelectionAsync(
+            IEnumerable<SchemaDifference> selectedDifferences,
+            SchemaSourceInfo targetInfo,
+            Func<bool> confirmDrops,
+            IProgress<SyncProgress>? progress = null)
+        {
+            var differences = selectedDifferences.ToList();
+            if (_settingsProvider.GetSyncKustoSettings().KustoObjectDropWarning &&
+                targetInfo.SourceType == SourceSelection.Kusto() &&
+                differences.Any(difference => difference.Difference is OnlyInTarget) &&
+                !confirmDrops())
+            {
+                return null;
+            }
+
+            return await _presenter.SynchronizeAsync(differences, progress);
         }
 
         /// <summary>

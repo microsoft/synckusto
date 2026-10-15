@@ -71,6 +71,13 @@ public class FileSystemSchemaExtensionsTests
     }
 
     [Test]
+    public void HandleLongFileNames_AlreadyExtendedLongPath_DoesNotAddAnotherPrefix()
+    {
+        string path = @"\\?\C:\test\" + new string('a', 250) + @"\file.kql";
+        FileSystemSchemaExtensions.HandleLongFileNames(path).Should().Be(path);
+    }
+
+    [Test]
     public void HandleLongFileNames_PathWithPrefixButShort_RemovesPrefix()
     {
         // Arrange

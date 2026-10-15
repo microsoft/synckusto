@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using SyncKusto.Core.Abstractions;
+using SyncKusto.Core.Exceptions;
 using SyncKusto.FileSystem.Exceptions;
 
 namespace SyncKusto.FileSystem.Services;
@@ -13,10 +14,13 @@ public class FileSystemErrorMessageResolver : IErrorMessageResolver
 {
     public string? ResolveErrorMessage(Exception exception)
     {
+        if (SchemaInputException.Find(exception) is { } input)
+            return input.Message;
+
         return exception switch
         {
             SchemaParseException parseEx =>
-                $"Failed to parse the following schema objects:\n{string.Join("\n", parseEx.FailedObjects)}\n\nThese objects will be ignored.",
+                $"Failed to parse the following schema objects:\n{string.Join("\n", parseEx.FailedObjects)}\n\nCorrect the definitions and compare again.",
 
             FileSchemaException fileEx when fileEx.InnerException is UnauthorizedAccessException =>
                 $"Access denied to file system: {fileEx.Message}",
