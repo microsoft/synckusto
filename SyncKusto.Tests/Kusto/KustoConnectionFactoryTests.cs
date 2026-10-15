@@ -246,21 +246,47 @@ public class KustoConnectionFactoryTests
         act.Should().Throw<ArgumentException>();
     }
 
-    [Test]
-    public void CreateConnectionString_AadFederated_EmptyAuthority_ThrowsArgumentException()
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void CreateConnectionString_AadFederated_WithoutAuthority_UsesSdkDefault(string? authority)
     {
         // Arrange
         var options = new KustoConnectionOptions(
             "mycluster",
             "mydatabase",
             AuthenticationMode.AadFederated,
-            "");
+            authority!);
 
         // Act
-        var act = () => _factory.CreateConnectionString(options);
+        var connection = (global::Kusto.Data.KustoConnectionStringBuilder)_factory.CreateConnectionString(options);
 
         // Assert
-        act.Should().Throw<ArgumentException>();
+        connection.Authority.Should().Be(new global::Kusto.Data.KustoConnectionStringBuilder("https://mycluster.kusto.windows.net").Authority);
+    }
+
+    [Test]
+    public void CreateConnectionString_AadFederated_PreservesExplicitAuthority()
+    {
+        var options = new KustoConnectionOptions(
+            "mycluster", "mydatabase", AuthenticationMode.AadFederated, "contoso.com");
+
+        var connection = (global::Kusto.Data.KustoConnectionStringBuilder)_factory.CreateConnectionString(options);
+
+        connection.Authority.Should().Be("contoso.com");
+    }
+
+    [TestCase(AuthenticationMode.AadApplication)]
+    [TestCase(AuthenticationMode.AadApplicationSni)]
+    public void CreateConnectionString_ApplicationAuthentication_RequiresAuthority(AuthenticationMode authMode)
+    {
+        var options = new KustoConnectionOptions(
+            "mycluster", "mydatabase", authMode, "",
+            AppId: "test-app", AppKey: "test-key", CertificateThumbprint: "test-thumbprint");
+
+        var act = () => _factory.CreateConnectionString(options);
+
+        act.Should().Throw<ArgumentException>().WithParameterName("authority");
     }
 
     #endregion

@@ -87,7 +87,7 @@ public class FileSystemSchemaRepository : ISchemaRepository
 
             await Task.Run(() =>
             {
-                using (var queryEngine = new QueryEngine(_tempCluster, _tempDatabase, _authority))
+                using (var queryEngine = new QueryEngine(_tempCluster, _tempDatabase, _authority, _settings.LineEndingMode))
                 {
                     // Deploy all the tables and functions
                     var tableTasks = new List<Task>();

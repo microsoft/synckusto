@@ -40,7 +40,7 @@ public class KustoValidationService : IKustoValidationService
         {
             FederatedSecurity = true,
             InitialCatalog = databaseName,
-            Authority = authority ?? string.Empty
+            Authority = string.IsNullOrWhiteSpace(authority) ? string.Empty : authority
         };
 
         using var adminClient = KustoClientFactory.CreateCslAdminProvider(connString);
@@ -100,7 +100,7 @@ public class KustoValidationService : IKustoValidationService
         {
             FederatedSecurity = true,
             InitialCatalog = databaseName,
-            Authority = authority ?? string.Empty
+            Authority = string.IsNullOrWhiteSpace(authority) ? string.Empty : authority
         };
 
         using var adminClient = KustoClientFactory.CreateCslAdminProvider(connString);

@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using NUnit.Framework;
-using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Models;
 using SyncKusto.Core.Services;
 
@@ -12,7 +11,6 @@ namespace SyncKusto.Tests.Core.Services;
 public class SchemaValidationServiceTests
 {
     private InMemorySettingsProvider _settingsProvider = null!;
-    private SyncKustoSettings _settings = null!;
 
     [SetUp]
     public void SetUp()
@@ -21,7 +19,7 @@ public class SchemaValidationServiceTests
     }
 
     [Test]
-    public void Constructor_WithNullSettings_ThrowsArgumentNullException()
+    public void Constructor_WithNullSettingsProvider_ThrowsArgumentNullException()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new SchemaValidationService(null!));
@@ -31,8 +29,7 @@ public class SchemaValidationServiceTests
     public void ValidateSettings_WithNullSource_ThrowsArgumentNullException()
     {
         // Arrange
-        _settings = SyncKustoSettingsFactory.CreateFromProvider(_settingsProvider);
-        var service = new SchemaValidationService(_settings);
+        var service = new SchemaValidationService(_settingsProvider);
         var target = new SchemaSourceInfo(SourceSelection.Kusto());
 
         // Act & Assert
@@ -43,8 +40,7 @@ public class SchemaValidationServiceTests
     public void ValidateSettings_WithNullTarget_ThrowsArgumentNullException()
     {
         // Arrange
-        _settings = SyncKustoSettingsFactory.CreateFromProvider(_settingsProvider);
-        var service = new SchemaValidationService(_settings);
+        var service = new SchemaValidationService(_settingsProvider);
         var source = new SchemaSourceInfo(SourceSelection.Kusto());
 
         // Act & Assert
@@ -55,8 +51,7 @@ public class SchemaValidationServiceTests
     public void ValidateSettings_WithKustoToKusto_ReturnsSuccess()
     {
         // Arrange
-        _settings = SyncKustoSettingsFactory.CreateFromProvider(_settingsProvider);
-        var service = new SchemaValidationService(_settings);
+        var service = new SchemaValidationService(_settingsProvider);
         var source = new SchemaSourceInfo(SourceSelection.Kusto());
         var target = new SchemaSourceInfo(SourceSelection.Kusto());
 
@@ -72,8 +67,7 @@ public class SchemaValidationServiceTests
     public void ValidateSettings_WithFilePathSourceAndNoTempCluster_ReturnsFailure()
     {
         // Arrange
-        _settings = SyncKustoSettingsFactory.CreateFromProvider(_settingsProvider);
-        var service = new SchemaValidationService(_settings);
+        var service = new SchemaValidationService(_settingsProvider);
         var source = new SchemaSourceInfo(SourceSelection.FilePath(), FilePath: "/some/path");
         var target = new SchemaSourceInfo(SourceSelection.Kusto());
 
@@ -89,8 +83,7 @@ public class SchemaValidationServiceTests
     public void ValidateSettings_WithFilePathTargetAndNoTempCluster_ReturnsFailure()
     {
         // Arrange
-        _settings = SyncKustoSettingsFactory.CreateFromProvider(_settingsProvider);
-        var service = new SchemaValidationService(_settings);
+        var service = new SchemaValidationService(_settingsProvider);
         var source = new SchemaSourceInfo(SourceSelection.Kusto());
         var target = new SchemaSourceInfo(SourceSelection.FilePath(), FilePath: "/some/path");
 
@@ -107,8 +100,8 @@ public class SchemaValidationServiceTests
     {
         // Arrange
         _settingsProvider.SetSetting("TempCluster", "https://temp.kusto.windows.net");
-        _settings = SyncKustoSettingsFactory.CreateFromProvider(_settingsProvider);
-        var service = new SchemaValidationService(_settings);
+        _settingsProvider.SetSetting("TempDatabase", "TempDatabase");
+        var service = new SchemaValidationService(_settingsProvider);
         var source = new SchemaSourceInfo(SourceSelection.FilePath(), FilePath: "/some/path");
         var target = new SchemaSourceInfo(SourceSelection.Kusto());
 
@@ -125,8 +118,8 @@ public class SchemaValidationServiceTests
     {
         // Arrange
         _settingsProvider.SetSetting("TempCluster", "https://temp.kusto.windows.net");
-        _settings = SyncKustoSettingsFactory.CreateFromProvider(_settingsProvider);
-        var service = new SchemaValidationService(_settings);
+        _settingsProvider.SetSetting("TempDatabase", "TempDatabase");
+        var service = new SchemaValidationService(_settingsProvider);
         var source = new SchemaSourceInfo(SourceSelection.Kusto());
         var target = new SchemaSourceInfo(SourceSelection.FilePath(), FilePath: "/some/path");
 
@@ -143,8 +136,8 @@ public class SchemaValidationServiceTests
     {
         // Arrange
         _settingsProvider.SetSetting("TempCluster", "https://temp.kusto.windows.net");
-        _settings = SyncKustoSettingsFactory.CreateFromProvider(_settingsProvider);
-        var service = new SchemaValidationService(_settings);
+        _settingsProvider.SetSetting("TempDatabase", "TempDatabase");
+        var service = new SchemaValidationService(_settingsProvider);
         var source = new SchemaSourceInfo(SourceSelection.FilePath(), FilePath: "/source/path");
         var target = new SchemaSourceInfo(SourceSelection.FilePath(), FilePath: "/target/path");
 
@@ -161,8 +154,7 @@ public class SchemaValidationServiceTests
     {
         // Arrange
         _settingsProvider.SetSetting("TempCluster", "   ");
-        _settings = SyncKustoSettingsFactory.CreateFromProvider(_settingsProvider);
-        var service = new SchemaValidationService(_settings);
+        var service = new SchemaValidationService(_settingsProvider);
         var source = new SchemaSourceInfo(SourceSelection.FilePath(), FilePath: "/some/path");
         var target = new SchemaSourceInfo(SourceSelection.Kusto());
 
@@ -172,5 +164,42 @@ public class SchemaValidationServiceTests
         // Assert
         Assert.That(result.IsValid, Is.False);
         Assert.That(result.ErrorMessage, Does.Contain("temp cluster"));
+    }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void ValidateSettings_WithMissingTempDatabase_ReturnsFailure(string? database)
+    {
+        _settingsProvider.SetSetting("TempCluster", "https://temp.kusto.windows.net");
+        if (database != null)
+        {
+            _settingsProvider.SetSetting("TempDatabase", database);
+        }
+        var service = new SchemaValidationService(_settingsProvider);
+        var source = new SchemaSourceInfo(SourceSelection.FilePath(), FilePath: @"C:\schemas");
+
+        var result = service.ValidateSettings(source, source);
+
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.ErrorMessage, Does.Contain("temp database"));
+    }
+
+    [Test]
+    public void ValidateSettings_AfterSettingsChange_UsesCurrentValuesWithoutRecreatingService()
+    {
+        var service = new SchemaValidationService(_settingsProvider);
+        var source = new SchemaSourceInfo(SourceSelection.FilePath(), FilePath: @"C:\schemas");
+
+        Assert.That(service.ValidateSettings(source, source).IsValid, Is.False);
+
+        _settingsProvider.SetSetting("TempCluster", "https://temp.kusto.windows.net");
+        Assert.That(service.ValidateSettings(source, source).IsValid, Is.False);
+
+        _settingsProvider.SetSetting("TempDatabase", "TempDatabase");
+        Assert.That(service.ValidateSettings(source, source).IsValid, Is.True);
+
+        _settingsProvider.SetSetting("TempCluster", "");
+        Assert.That(service.ValidateSettings(source, source).IsValid, Is.False);
     }
 }
