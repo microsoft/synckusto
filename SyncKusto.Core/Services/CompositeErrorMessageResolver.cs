@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using SyncKusto.Core.Abstractions;
+using SyncKusto.Core.Exceptions;
 
 namespace SyncKusto.Core.Services;
 
@@ -19,6 +20,9 @@ public class CompositeErrorMessageResolver : IErrorMessageResolver
 
     public string? ResolveErrorMessage(Exception exception)
     {
+        if (SchemaInputException.Find(exception) is { } input)
+            return input.Message;
+
         foreach (var resolver in _resolvers)
         {
             var message = resolver.ResolveErrorMessage(exception);

@@ -15,7 +15,7 @@ namespace SyncKusto.Kusto.Services;
 /// <summary>
 /// Central service for interacting with a Kusto cluster
 /// </summary>
-public class QueryEngine : IDisposable
+public class QueryEngine : ISchemaQueryEngine
 {
     private readonly ICslAdminProvider _adminClient;
     private readonly ICslQueryProvider _queryClient;
@@ -23,6 +23,18 @@ public class QueryEngine : IDisposable
     private readonly string _cluster;
     private readonly bool _tempDatabaseUsed;
     private readonly LineEndingMode _lineEndingMode;
+
+    /// <summary>
+    /// Uses already configured clients without clearing a database; owns their lifetime.
+    /// </summary>
+    public QueryEngine(ICslAdminProvider adminClient, ICslQueryProvider queryClient, string databaseName)
+    {
+        _adminClient = adminClient ?? throw new ArgumentNullException(nameof(adminClient));
+        _queryClient = queryClient ?? throw new ArgumentNullException(nameof(queryClient));
+        _databaseName = databaseName ?? throw new ArgumentNullException(nameof(databaseName));
+        _cluster = "";
+        _lineEndingMode = LineEndingMode.LeaveAsIs;
+    }
 
     /// <summary>
     /// Constructor which gets ready to make queries to Kusto
@@ -157,21 +169,10 @@ public class QueryEngine : IDisposable
     /// <param name="functionName">The name of the function</param>
     public async Task CreateOrAlterFunctionAsync(string functionCommand, string functionName)
     {
+        string command = SchemaCommandValidator.Function(functionCommand);
         try
         {
-            // If the CSL files on disk were written with an older version of the tool and did not have the skipvalidation parameter, they will fail.
-            // This code will insert the parameter into the script.
-            string skipValidationRegEx = @"skipvalidation[\s]*[=]+[\s""@']*true";
-            if (!Regex.IsMatch(functionCommand, skipValidationRegEx))
-            {
-                string searchString = "(";
-                string replaceString = searchString + "skipvalidation = @'true',";
-                int firstIndexOf = functionCommand.IndexOf(searchString, StringComparison.Ordinal);
-                functionCommand = functionCommand.Substring(0, firstIndexOf) + replaceString +
-                    functionCommand.Substring(firstIndexOf + searchString.Length);
-            }
-
-            await _adminClient.ExecuteControlCommandAsync(_databaseName, functionCommand).ConfigureAwait(false);
+            await _adminClient.ExecuteControlCommandAsync(_databaseName, command).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -189,7 +190,7 @@ public class QueryEngine : IDisposable
     /// </param>
     public async Task CreateOrAlterTableAsync(string tableCommand, string tableName, bool createOnly = false)
     {
-        string createCommand = tableCommand;
+        string createCommand = createOnly ? SchemaCommandValidator.Table(tableCommand) : tableCommand;
         string alterCommand = tableCommand.Replace(".create", ".alter");
 
         try

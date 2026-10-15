@@ -3,12 +3,14 @@
 
 using FluentAssertions;
 using Kusto.Data.Common;
+using Moq;
 using NUnit.Framework;
 using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
 using SyncKusto.FileSystem.Repositories;
 using SyncKusto.Kusto.Models;
+using SyncKusto.Kusto.Services;
 
 namespace SyncKusto.Tests.FileSystem;
 
@@ -433,18 +435,10 @@ public class FileSystemSchemaRepositoryTests
             _testSettings.TempCluster,
             _testSettings.TempDatabase,
             _testSettings.AADAuthority ?? string.Empty,
-            _testSettings);
+            _testSettings, OfflineEngine);
 
         // Act
-        // Note: This will fail without a real QueryEngine, but should create the directory
-        try
-        {
-            await repository.GetSchemaAsync();
-        }
-        catch (SchemaLoadException)
-        {
-            // Expected to fail without real QueryEngine
-        }
+        await repository.GetSchemaAsync();
 
         // Assert
         Directory.Exists(nonExistentDir).Should().BeTrue();
@@ -458,14 +452,7 @@ public class FileSystemSchemaRepositoryTests
         var repository = CreateRepository();
 
         // Act
-        try
-        {
-            await repository.GetSchemaAsync();
-        }
-        catch (SchemaLoadException)
-        {
-            // Expected to fail without real QueryEngine
-        }
+        await repository.GetSchemaAsync();
 
         // Assert
         Directory.Exists(Path.Combine(_testDirectory, "Functions")).Should().BeTrue();
@@ -479,16 +466,8 @@ public class FileSystemSchemaRepositoryTests
         using var cts = new CancellationTokenSource();
 
         // Act & Assert
-        try
-        {
-            await repository.GetSchemaAsync(cts.Token);
-        }
-        catch (SchemaLoadException)
-        {
-            // Expected to fail without real QueryEngine
-        }
+        await repository.GetSchemaAsync(cts.Token);
 
-        // If we got here without OperationCanceledException, the token was accepted
         cts.Token.IsCancellationRequested.Should().BeFalse();
     }
 
@@ -539,7 +518,15 @@ public class FileSystemSchemaRepositoryTests
             _testSettings.TempCluster,
             _testSettings.TempDatabase,
             _testSettings.AADAuthority ?? string.Empty,
-            _testSettings);
+            _testSettings, OfflineEngine);
+    }
+
+    private static ISchemaQueryEngine OfflineEngine()
+    {
+        var engine = new Mock<ISchemaQueryEngine>(MockBehavior.Strict);
+        engine.Setup(q => q.GetDatabaseSchema()).Returns(new DatabaseSchema("test", ""));
+        engine.Setup(q => q.Dispose());
+        return engine.Object;
     }
 
     private TableSchema CreateTestTable(string name)

@@ -192,7 +192,9 @@ public static class FileSystemSchemaExtensions
         if (filename.Length > 248)
         {
             // The path is getting close to the limit so prepend the longPathPrefix.
-            return LongPathPrefix + filename;
+            return filename.StartsWith(LongPathPrefix, StringComparison.Ordinal)
+                ? filename
+                : LongPathPrefix + filename;
         }
         else if (filename.StartsWith(LongPathPrefix))
         {

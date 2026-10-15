@@ -28,7 +28,7 @@ public class SchemaRepositoryFactory
     /// <summary>
     /// Create a repository based on the source information
     /// </summary>
-    public ISchemaRepository CreateRepository(SchemaSourceInfo sourceInfo)
+    public virtual ISchemaRepository CreateRepository(SchemaSourceInfo sourceInfo)
     {
         ArgumentNullException.ThrowIfNull(sourceInfo);
 
