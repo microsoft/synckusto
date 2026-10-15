@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using SyncKusto.Core.Abstractions;
+using SyncKusto.Core.Exceptions;
 
 namespace SyncKusto.Core.Services;
 
@@ -19,10 +20,13 @@ public class AggregateExceptionResolver : IErrorMessageResolver
 
     public string? ResolveErrorMessage(Exception exception)
     {
-        if (exception is not AggregateException ae)
-            return null;
+        if (SchemaInputException.Find(exception) is { } input)
+            return input.Message;
 
-        foreach (var inner in ae.InnerExceptions)
+        if (exception is not AggregateException ae)
+            return _innerResolver.ResolveErrorMessage(exception);
+
+        foreach (var inner in ae.Flatten().InnerExceptions)
         {
             var message = _innerResolver.ResolveErrorMessage(inner);
             if (message != null)

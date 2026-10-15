@@ -97,6 +97,9 @@ namespace SyncKusto
             tvComparison.Nodes.Clear();
             rtbSourceText.Clear();
             _lastComparison = null;
+            _sourceSchema = null;
+            _targetSchema = null;
+            btnUpdate.Enabled = false;
         }
 
         /// <summary>
@@ -106,8 +109,7 @@ namespace SyncKusto
         /// <param name="e"></param>
         private async void btnCompare_Click(object sender, EventArgs e)
         {
-            rtbSourceText.Clear();
-            tvComparison.Nodes.Clear();
+            ResetValueHoldersOnChange();
 
             spcSource.ReportProgress($@"Validating...");
 
@@ -141,14 +143,35 @@ namespace SyncKusto
                 return;
             }
 
-            // Compare with progress reporting
+            try
+            {
+                await CompareSchemasAsync(sourceInfo, targetInfo);
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = _errorMessageResolver.ResolveErrorMessage(ex);
+                MessageBox.Show($@"Failed to compare schemas: {errorMessage}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        internal async System.Threading.Tasks.Task CompareSchemasAsync(SchemaSourceInfo sourceInfo, SchemaSourceInfo targetInfo)
+        {
+            ResetValueHoldersOnChange();
             var previousCursor = this.Cursor;
             this.Cursor = Cursors.WaitCursor;
+            btnCompare.Enabled = false;
+            btnSettings.Enabled = false;
+            spcSource.Enabled = false;
+            spcTarget.Enabled = false;
+            bool comparing = true;
 
             try
             {
                 var progress = new Progress<SyncProgress>(p =>
                 {
+                    if (!comparing)
+                        return;
+
                     // Update both source and target progress displays
                     if (p.Stage == SyncProgressStage.LoadingSourceSchema ||
                         p.Stage == SyncProgressStage.ComparingSchemas)
@@ -184,15 +207,20 @@ namespace SyncKusto
                 // Enable the update button now that a comparison has been generated.
                 btnUpdate.Enabled = true;
             }
-            catch (Exception ex)
+            catch
             {
-                var errorMessage = _errorMessageResolver.ResolveErrorMessage(ex);
-                MessageBox.Show($@"Failed to compare schemas: {errorMessage}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                spcSource.ReportProgress(string.Empty);
-                spcTarget.ReportProgress(string.Empty);
+                ResetValueHoldersOnChange();
+                throw;
             }
             finally
             {
+                comparing = false;
+                btnCompare.Enabled = true;
+                btnSettings.Enabled = true;
+                spcSource.Enabled = true;
+                spcTarget.Enabled = true;
+                spcSource.ReportProgress(string.Empty);
+                spcTarget.ReportProgress(string.Empty);
                 this.Cursor = previousCursor;
             }
         }
@@ -400,20 +428,7 @@ namespace SyncKusto
                 return;
             }
 
-            // Check for drop operations and show warning if needed
             var targetInfo = _targetAdapter.GetSourceInfo();
-            if (_settings.KustoObjectDropWarning &&
-                targetInfo.SourceType == SourceSelection.Kusto() &&
-                selectedNodes.Any(n => n.Parent.Text == "Only In Target"))
-            {
-                var dialogResult = new DropWarningForm(_settingsProvider).ShowDialog();
-                if (dialogResult != DialogResult.Yes)
-                {
-                    MessageBox.Show("Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    this.Cursor = previousCursor;
-                    return;
-                }
-            }
 
             try
             {
@@ -428,7 +443,14 @@ namespace SyncKusto
                     spcTarget.ReportProgress(p.Message);
                 });
 
-                var result = await _presenter.SynchronizeAsync(selectedDifferences, progress);
+                var result = await SynchronizeSelectionAsync(selectedDifferences, targetInfo,
+                    () => new DropWarningForm(_settingsProvider).ShowDialog() == DialogResult.Yes, progress);
+
+                if (result == null)
+                {
+                    MessageBox.Show("Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
 
                 if (!result.Success)
                 {
@@ -460,6 +482,24 @@ namespace SyncKusto
             {
                 this.Cursor = previousCursor;
             }
+        }
+
+        internal async System.Threading.Tasks.Task<SyncResult?> SynchronizeSelectionAsync(
+            IEnumerable<SchemaDifference> selectedDifferences,
+            SchemaSourceInfo targetInfo,
+            Func<bool> confirmDrops,
+            IProgress<SyncProgress>? progress = null)
+        {
+            var differences = selectedDifferences.ToList();
+            if (_settings.KustoObjectDropWarning &&
+                targetInfo.SourceType == SourceSelection.Kusto() &&
+                differences.Any(difference => difference.Difference is OnlyInTarget) &&
+                !confirmDrops())
+            {
+                return null;
+            }
+
+            return await _presenter.SynchronizeAsync(differences, progress);
         }
 
         /// <summary>

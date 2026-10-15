@@ -5,7 +5,6 @@ using Kusto.Data.Common;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Exceptions;
-using SyncKusto.FileSystem.Exceptions;
 using SyncKusto.FileSystem.Extensions;
 using SyncKusto.Kusto.Exceptions;
 using SyncKusto.Kusto.Models;
@@ -16,7 +15,7 @@ namespace SyncKusto.FileSystem.Repositories;
 /// <summary>
 /// Repository for accessing database schemas from the file system
 /// </summary>
-public class FileSystemSchemaRepository : ISchemaRepository
+public class FileSystemSchemaRepository : ISchemaRepository, ISchemaSnapshotSource
 {
     private readonly string _rootFolder;
     private readonly string _fileExtension;
@@ -24,6 +23,7 @@ public class FileSystemSchemaRepository : ISchemaRepository
     private readonly string _tempDatabase;
     private readonly string _authority;
     private readonly SyncKustoSettings _settings;
+    private readonly Func<ISchemaQueryEngine> _queryEngineFactory;
 
     /// <summary>
     /// Initializes a new instance of the FileSystemSchemaRepository
@@ -34,13 +34,15 @@ public class FileSystemSchemaRepository : ISchemaRepository
     /// <param name="tempDatabase">The temporary database for schema loading</param>
     /// <param name="authority">The AAD authority for authentication</param>
     /// <param name="settings">Application settings</param>
+    /// <param name="queryEngineFactory">Creates the normalization engine only after preflight succeeds</param>
     public FileSystemSchemaRepository(
         string rootFolder,
         string fileExtension,
         string tempCluster,
         string tempDatabase,
         string authority,
-        SyncKustoSettings settings)
+        SyncKustoSettings settings,
+        Func<ISchemaQueryEngine>? queryEngineFactory = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(rootFolder);
         ArgumentException.ThrowIfNullOrWhiteSpace(fileExtension);
@@ -54,6 +56,8 @@ public class FileSystemSchemaRepository : ISchemaRepository
         _tempDatabase = tempDatabase;
         _authority = authority;
         _settings = settings;
+        _queryEngineFactory = queryEngineFactory ??
+            (() => new QueryEngine(_tempCluster, _tempDatabase, _authority, _settings.LineEndingMode));
     }
 
     /// <summary>
@@ -61,71 +65,43 @@ public class FileSystemSchemaRepository : ISchemaRepository
     /// </summary>
     public async Task<DatabaseSchema> GetSchemaAsync(CancellationToken cancellationToken = default)
     {
+        var snapshot = CaptureSnapshot("Schema", cancellationToken);
+        snapshot.Validate();
+        return await snapshot.GetSchemaAsync(cancellationToken);
+    }
+
+    public ISchemaSnapshot CaptureSnapshot(string side, CancellationToken cancellationToken = default)
+    {
         try
         {
-            // Find all of the table and function CSL files
-            if (!Directory.Exists(_rootFolder))
+            cancellationToken.ThrowIfCancellationRequested();
+            Directory.CreateDirectory(_rootFolder);
+            Directory.CreateDirectory(Path.Combine(_rootFolder, "Functions"));
+
+            var files = new List<SnapshotFile>();
+            var paths = Directory.GetFiles(_rootFolder, $"*.{_fileExtension}", SearchOption.AllDirectories)
+                .OrderBy(path => Path.GetRelativePath(_rootFolder, path), StringComparer.Ordinal);
+            foreach (string path in paths)
             {
-                Directory.CreateDirectory(_rootFolder);
-            }
-
-            string functionFolder = Path.Combine(_rootFolder, "Functions");
-            if (!Directory.Exists(functionFolder))
-            {
-                Directory.CreateDirectory(functionFolder);
-            }
-
-            string[] functionFiles = Directory.GetFiles(functionFolder, $"*.{_fileExtension}", SearchOption.AllDirectories);
-            IEnumerable<string> tableFiles = Directory.GetFiles(_rootFolder, $"*.{_fileExtension}", SearchOption.AllDirectories)
-                .Where(f => !f.Contains("\\Functions\\"));
-
-            var failedObjects = new List<string>();
-
-            // Load Kusto Query Engine to parse and validate CSL files
-            // This makes it easier to deal with slightly malformed CSL files
-            DatabaseSchema? resultSchema = null;
-
-            await Task.Run(() =>
-            {
-                using (var queryEngine = new QueryEngine(_tempCluster, _tempDatabase, _authority))
+                cancellationToken.ThrowIfCancellationRequested();
+                string relativePath = Path.GetRelativePath(_rootFolder, path);
+                bool function = relativePath.StartsWith("Functions" + Path.DirectorySeparatorChar,
+                    StringComparison.OrdinalIgnoreCase);
+                try
                 {
-                    // Deploy all the tables and functions
-                    var tableTasks = new List<Task>();
-                    foreach (string table in tableFiles)
-                    {
-                        string tableContent = File.ReadAllText(FileSystemSchemaExtensions.HandleLongFileNames(table));
-                        tableTasks.Add(queryEngine.CreateOrAlterTableAsync(tableContent, Path.GetFileName(table), true));
-                    }
-                    failedObjects.AddRange(WaitAllAndGetFailedObjects(tableTasks));
-
-                    var functionTasks = new List<Task>();
-                    foreach (string function in functionFiles)
-                    {
-                        string csl = File.ReadAllText(FileSystemSchemaExtensions.HandleLongFileNames(function));
-                        functionTasks.Add(queryEngine.CreateOrAlterFunctionAsync(csl, Path.GetFileName(function)));
-                    }
-                    failedObjects.AddRange(WaitAllAndGetFailedObjects(functionTasks));
-
-                    if (failedObjects.Count > 0)
-                    {
-                        throw new SchemaParseException(
-                            $"Failed to parse {failedObjects.Count} schema object(s)",
-                            failedObjects);
-                    }
-
-                    // Read the functions and tables back from the locally hosted version of Kusto
-                    resultSchema = queryEngine.GetDatabaseSchema();
+                    files.Add(new SnapshotFile(relativePath, function,
+                        File.ReadAllText(FileSystemSchemaExtensions.HandleLongFileNames(path))));
                 }
-            }, cancellationToken);
-
-            if (resultSchema == null)
-            {
-                throw new SchemaLoadException("Failed to build database schema from files");
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    throw new SchemaInputException(side, relativePath, "could not be read",
+                        "Check that the file exists and is readable, then compare again.", ex);
+                }
             }
 
-            return resultSchema;
+            return new Snapshot(side, files.ToArray(), _queryEngineFactory);
         }
-        catch (Exception ex) when (ex is not SyncKustoException)
+        catch (Exception ex) when (ex is not SyncKustoException and not OperationCanceledException)
         {
             throw new SchemaLoadException($"Failed to load schema from file system at '{_rootFolder}'", ex);
         }
@@ -208,31 +184,63 @@ public class FileSystemSchemaRepository : ISchemaRepository
         }
     }
 
-    /// <summary>
-    /// Wait for all tasks and collect failed object names
-    /// </summary>
-    private static List<string> WaitAllAndGetFailedObjects(List<Task> createOrAlterTasks)
+    private sealed record SnapshotFile(string RelativePath, bool Function, string Content);
+
+    private sealed class Snapshot(
+        string side, SnapshotFile[] files, Func<ISchemaQueryEngine> queryEngineFactory) : ISchemaSnapshot
     {
-        var failedObjects = new List<string>();
-        try
+        private SnapshotFile[]? _validatedFiles;
+
+        public void Validate()
         {
-            Task.WaitAll(createOrAlterTasks.ToArray());
-        }
-        catch (AggregateException ex)
-        {
-            AggregateException flattenedException = ex.Flatten();
-            foreach (Exception exception in flattenedException.InnerExceptions)
+            _validatedFiles = null;
+            var validated = new List<SnapshotFile>();
+            foreach (var file in files)
             {
-                if (exception is CreateOrAlterException createOrAlterEx)
+                try
                 {
-                    failedObjects.Add(createOrAlterEx.FailedEntityName);
+                    string command = file.Function
+                        ? SchemaCommandValidator.Function(file.Content)
+                        : SchemaCommandValidator.Table(file.Content);
+                    validated.Add(file with { Content = command });
                 }
-                else
+                catch (SchemaCommandException ex)
                 {
-                    failedObjects.Add(exception.Message);
+                    throw new SchemaInputException(side, file.RelativePath, ex.Message, ex.Hint, ex,
+                        ex.Line, ex.Column);
                 }
             }
+            _validatedFiles = validated.ToArray();
         }
-        return failedObjects;
+
+        public Task<DatabaseSchema> GetSchemaAsync(CancellationToken cancellationToken = default)
+        {
+            var validated = _validatedFiles ??
+                throw new InvalidOperationException("Validate the schema snapshot before loading it.");
+            return Task.Run(async () =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                using var queryEngine = queryEngineFactory();
+                // Tables precede functions; skipvalidation permits function dependency order.
+                foreach (var file in validated.OrderBy(file => file.Function))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    try
+                    {
+                        if (file.Function)
+                            await queryEngine.CreateOrAlterFunctionAsync(file.Content, file.RelativePath);
+                        else
+                            await queryEngine.CreateOrAlterTableAsync(file.Content, file.RelativePath, true);
+                    }
+                    catch (CreateOrAlterException ex)
+                    {
+                        throw new SchemaInputException(side, file.RelativePath,
+                            "could not be loaded into the temporary database",
+                            "Check the definition and supported Kusto types, then compare again.", ex);
+                    }
+                }
+                return queryEngine.GetDatabaseSchema();
+            }, cancellationToken);
+        }
     }
 }

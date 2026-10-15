@@ -42,7 +42,8 @@ public class FileSystemErrorMessageResolverTests
         result.Should().Contain("Table1");
         result.Should().Contain("Function2");
         result.Should().Contain("Table3");
-        result.Should().Contain("will be ignored");
+        result.Should().Contain("compare again");
+        result.Should().NotContain("ignored");
     }
 
     [Test]

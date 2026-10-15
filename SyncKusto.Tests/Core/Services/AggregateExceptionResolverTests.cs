@@ -23,10 +23,10 @@ public class AggregateExceptionResolverTests
     }
 
     [Test]
-    public void ResolveErrorMessage_WithNonAggregateException_ReturnsNull()
+    public void ResolveErrorMessage_WithNonAggregateException_UsesInnerResolver()
     {
         // Arrange
-        var innerResolver = new TestErrorMessageResolver("Should not be used");
+        var innerResolver = new TestErrorMessageResolver("Resolved message");
         var resolver = new AggregateExceptionResolver(innerResolver);
         var exception = new InvalidOperationException("Test error");
 
@@ -34,7 +34,7 @@ public class AggregateExceptionResolverTests
         var result = resolver.ResolveErrorMessage(exception);
 
         // Assert
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.EqualTo("Resolved message"));
     }
 
     [Test]

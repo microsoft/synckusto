@@ -26,4 +26,7 @@ jobs:
 
     - name: Build Solution
       run: msbuild.exe SyncKusto.sln /p:Configuration=Release  
+
+    - name: Test schema imports offline
+      run: dotnet test SyncKusto.Tests\SyncKusto.Tests.csproj --configuration Release --no-build --no-restore --filter "TestCategory=SchemaImport"
       

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using SyncKusto.Core.Abstractions;
+using SyncKusto.Core.Exceptions;
 using SyncKusto.FileSystem.Exceptions;
 using System;
 using System.IO;
@@ -15,6 +16,9 @@ namespace SyncKusto.ErrorHandling
     {
         public string? ResolveErrorMessage(Exception exception)
         {
+            if (SchemaInputException.Find(exception) is { } input)
+                return input.Message;
+
             return exception switch
             {
                 FileSystemSchemaException => "Failed to load schema from file system.",
