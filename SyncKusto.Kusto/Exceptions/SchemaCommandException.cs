@@ -3,7 +3,7 @@
 
 namespace SyncKusto.Kusto.Exceptions;
 
-public sealed class SchemaCommandException : Exception
+public class SchemaCommandException : Exception
 {
     public string Hint { get; }
     public int? Line { get; }

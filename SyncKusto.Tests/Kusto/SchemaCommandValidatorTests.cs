@@ -25,14 +25,14 @@ public class SchemaCommandValidatorTests
     public void Function_PreservesDeclarationAndTarget(string input)
     {
         var original = Command(input, "CreateOrAlterFunction");
-        var originalDeclaration = (FunctionDeclaration)original.Custom.GetChild(4);
+        var originalDeclaration = Function(original);
         string canonical = SchemaCommandValidator.Function(input);
         var parsed = Command(canonical, "CreateOrAlterFunction");
-        var declaration = (FunctionDeclaration)parsed.Custom.GetChild(4);
+        var declaration = Function(parsed);
 
         Assert.That(Text(canonical, declaration), Is.EqualTo(Text(input, originalDeclaration)));
-        Assert.That(((NameDeclaration)parsed.Custom.GetChild(3)).SimpleName,
-            Is.EqualTo(((NameDeclaration)original.Custom.GetChild(3)).SimpleName));
+        Assert.That(NamedChild<NameDeclaration>(parsed.Custom, "FunctionName").SimpleName,
+            Is.EqualTo(NamedChild<NameDeclaration>(original.Custom, "FunctionName").SimpleName));
         Assert.That(canonical, Does.Contain("skipvalidation = true"));
         Assert.That(SchemaCommandValidator.Function(canonical), Is.EqualTo(canonical));
     }
@@ -46,9 +46,9 @@ public class SchemaCommandValidatorTests
         var original = Command(input, kind);
         string canonical = SchemaCommandValidator.Table(input);
         var parsed = Command(canonical, kind);
-        Assert.That(Text(canonical, parsed.Custom.GetChild(3)), Is.EqualTo(Text(input, original.Custom.GetChild(3))));
-        Assert.That(((NameDeclaration)parsed.Custom.GetChild(2)).SimpleName,
-            Is.EqualTo(((NameDeclaration)original.Custom.GetChild(2)).SimpleName));
+        Assert.That(Text(canonical, Columns(parsed)), Is.EqualTo(Text(input, Columns(original))));
+        Assert.That(NamedChild<NameDeclaration>(parsed.Custom, "TableName").SimpleName,
+            Is.EqualTo(NamedChild<NameDeclaration>(original.Custom, "TableName").SimpleName));
         Assert.That(SchemaCommandValidator.Table(canonical), Is.EqualTo(canonical));
     }
 
@@ -71,10 +71,10 @@ public class SchemaCommandValidatorTests
         string exported = CslCommandGenerator.GenerateCreateOrAlterFunctionCommand(schema, skipValidation);
         string canonical = SchemaCommandValidator.Function(exported);
         var command = Command(canonical, "CreateOrAlterFunction");
-        Assert.That(((NameDeclaration)command.Custom.GetChild(3)).SimpleName, Is.EqualTo(schema.Name));
+        Assert.That(NamedChild<NameDeclaration>(command.Custom, "FunctionName").SimpleName, Is.EqualTo(schema.Name));
         Assert.That(canonical, Does.Contain("view = true"));
         Assert.That(canonical, Does.Contain("skipvalidation = true"));
-        Assert.That(((FunctionDeclaration)command.Custom.GetChild(4)).Parameters.Parameters.Count, Is.EqualTo(1));
+        Assert.That(Function(command).Parameters.Parameters.Count, Is.EqualTo(1));
         Assert.That(canonical, Does.Contain(schema.Body));
         Assert.That(canonical, Does.Contain("default"));
     }
@@ -88,7 +88,7 @@ public class SchemaCommandValidatorTests
         string exported = FormattedCslCommandGenerator.GenerateTableCreateCommand(
             schema, true, merge, true);
         var command = Command(SchemaCommandValidator.Table(exported), merge ? "CreateMergeTable" : "CreateTable");
-        Assert.That(((NameDeclaration)command.Custom.GetChild(2)).SimpleName, Is.EqualTo(schema.Name));
+        Assert.That(NamedChild<NameDeclaration>(command.Custom, "TableName").SimpleName, Is.EqualTo(schema.Name));
     }
 
     [Test]
@@ -97,7 +97,7 @@ public class SchemaCommandValidatorTests
         string name = new string('a', 350) + " '; }";
         string input = $".create-or-alter function {CslSyntaxGenerator.NormalizeName(name)}() {{ T }}";
         var command = Command(SchemaCommandValidator.Function(input), "CreateOrAlterFunction");
-        Assert.That(((NameDeclaration)command.Custom.GetChild(3)).SimpleName, Is.EqualTo(name));
+        Assert.That(NamedChild<NameDeclaration>(command.Custom, "FunctionName").SimpleName, Is.EqualTo(name));
     }
 
     [Test]
@@ -106,21 +106,38 @@ public class SchemaCommandValidatorTests
         string input = ".create-or-alter function with(docstring=@'skipvalidation=true; {()}',folder='a' 'b',view='false') f() {T}";
         string canonical = SchemaCommandValidator.Function(input);
         var command = Command(canonical, "CreateOrAlterFunction");
-        var properties = (SyntaxList<SeparatedElement<SyntaxElement>>)command.Custom.GetChild(2).GetChild(2);
-        var values = properties.Select(item => (CustomNode)item.Element).ToDictionary(
-            item => item.GetChild(0) switch
+        var clause = Children(command.Custom).OfType<CustomNode>().Single();
+        var properties = Children(clause).OfType<SyntaxList<SeparatedElement<SyntaxElement>>>().Single();
+        var values = properties.Select(item => item.Element).ToDictionary(
+            item => NamedChild<SyntaxElement>(item, "PropertyName") switch
             {
                 NameDeclaration name => name.SimpleName,
                 SyntaxToken token => token.Text,
                 _ => throw new AssertionException("Unexpected property shape")
             },
-            item => ((Expression)item.GetChild(2)).LiteralValue);
+            item => NamedChild<Expression>(item, "PropertyValue").LiteralValue);
         Assert.That(values.Count, Is.EqualTo(4));
         Assert.That(values["docstring"], Is.EqualTo("skipvalidation=true; {()}"));
         Assert.That(values["folder"], Is.EqualTo("ab"));
         Assert.That(values["view"], Is.EqualTo(false));
         Assert.That(values["skipvalidation"], Is.EqualTo(true));
         Assert.That(canonical, Does.Contain("docstring = @'skipvalidation=true; {()}'"));
+    }
+
+    [Test]
+    public void Function_CanonicalCommandRemainsUnchangedByAdapterExtraction()
+    {
+        string input = ".create-or-alter function with(folder='one',view='false',skipvalidation=false) ['a function'](x:long=1) {print x}";
+        Assert.That(SchemaCommandValidator.Function(input), Is.EqualTo(
+            ".create-or-alter function with (folder = 'one', view = false, skipvalidation = true) ['a function'] (x:long=1) {print x}"));
+    }
+
+    [Test]
+    public void Table_CanonicalCommandRemainsUnchangedByAdapterExtraction()
+    {
+        string input = ".create-merge table ['a table'](x:long,y:string) with(folder='one',docstring='help')";
+        Assert.That(SchemaCommandValidator.Table(input), Is.EqualTo(
+            ".create-merge table ['a table'] (x:long,y:string) with (folder = 'one', docstring = 'help')"));
     }
 
     private static IEnumerable<string> InvalidFunctions()
@@ -223,4 +240,17 @@ public class SchemaCommandValidatorTests
 
     private static string Text(string text, SyntaxElement syntax) =>
         text.Substring(syntax.TextStart, syntax.Width);
+
+    private static IEnumerable<SyntaxElement> Children(SyntaxElement parent) =>
+        Enumerable.Range(0, parent.ChildCount).Select(parent.GetChild).Where(child => child != null);
+
+    private static T NamedChild<T>(SyntaxElement parent, string name) where T : SyntaxElement =>
+        (T)Children(parent).Single(child => child.NameInParent == name);
+
+    private static FunctionDeclaration Function(CustomCommand command) =>
+        Children(command.Custom).OfType<FunctionDeclaration>().Single();
+
+    private static CustomNode Columns(CustomCommand command) =>
+        Children(command.Custom).OfType<CustomNode>()
+            .Single(node => node.GetFirstToken().Kind == SyntaxKind.OpenParenToken);
 }

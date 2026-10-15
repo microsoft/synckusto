@@ -45,29 +45,20 @@ public static class SchemaCommandValidator
             block.SkippedTokens != null ||
             block.Statements[0].Element is not ExpressionStatement statement ||
             statement.Expression is not CustomCommand command ||
-            command.Custom is not CustomNode parts ||
             (function
                 ? command.CommandKind != "CreateOrAlterFunction"
                 : command.CommandKind is not ("CreateTable" or "CreateMergeTable")) ||
-            parts.ChildCount != 5 ||
             command.GetDescendants<SkippedTokens>().Count != 0)
         {
             throw new SchemaCommandException($"must contain a single {supported} definition",
                 "Keep one supported definition, remove other commands, and compare again.");
         }
 
-        int nameIndex = function ? 3 : 2;
-        if (parts.GetChild(nameIndex) is not NameDeclaration name ||
-            name.Name is not (TokenName or BracketedName))
-        {
-            throw new SchemaCommandException("must declare an unqualified object name",
-                "Remove the database or cluster qualifier and compare again.");
-        }
-
-        var properties = ReadProperties(parts.GetChild(function ? 2 : 4), text, function);
         if (function)
         {
-            if (parts.GetChild(4) is not FunctionDeclaration declaration || declaration.ViewKeyword != null)
+            var parsed = SchemaCommandSyntaxAdapter.ReadFunction(command.Custom);
+            string name = ObjectName(parsed.Name);
+            if (parsed.Definition.ViewKeyword != null)
             {
                 throw new SchemaCommandException($"must contain a single {supported} definition",
                     "Use a parameter list followed by a braced function body and compare again.");
@@ -75,54 +66,43 @@ public static class SchemaCommandValidator
 
             // Preserve the parsed parameter list and body verbatim, including defaults, comments,
             // quoted identifiers, multiline strings, and references to other databases.
+            var properties = ReadProperties(parsed.Properties, text, function: true);
             properties.Add("skipvalidation = true");
             return $".create-or-alter function with ({string.Join(", ", properties)}) " +
-                CslSyntaxGenerator.NormalizeName(name.SimpleName) + " " +
-                text.Substring(declaration.TextStart, declaration.Width);
+                name + " " + text.Substring(parsed.Definition.TextStart, parsed.Definition.Width);
         }
 
-        if (parts.GetChild(3) is not CustomNode columns ||
-            columns.GetChild(0) is not SyntaxToken { Kind: SyntaxKind.OpenParenToken } ||
-            columns.GetChild(1) is not SyntaxList<SeparatedElement<SyntaxElement>>)
-        {
-            throw new SchemaCommandException($"must contain a single {supported} definition",
-                "Use an explicit column list and compare again.");
-        }
-
-        string verb = command.CommandKind == "CreateMergeTable" ? ".create-merge" : ".create";
-        string metadata = properties.Count == 0 ? "" : $" with ({string.Join(", ", properties)})";
-        return $"{verb} table {CslSyntaxGenerator.NormalizeName(name.SimpleName)} " +
-            text.Substring(columns.TextStart, columns.Width) + metadata;
+        bool merge = command.CommandKind == "CreateMergeTable";
+        var table = SchemaCommandSyntaxAdapter.ReadTable(command.Custom, merge);
+        string tableName = ObjectName(table.Name);
+        var tableProperties = ReadProperties(table.Properties, text, function: false);
+        string verb = merge ? ".create-merge" : ".create";
+        string metadata = tableProperties.Count == 0 ? "" : $" with ({string.Join(", ", tableProperties)})";
+        return $"{verb} table {tableName} " +
+            text.Substring(table.Columns.TextStart, table.Columns.Width) + metadata;
     }
 
-    private static List<string> ReadProperties(SyntaxElement? clause, string text, bool function)
+    private static string ObjectName(NameDeclaration name)
     {
-        var result = new List<string>();
-        if (clause == null)
-            return result;
-
-        if (clause is not CustomNode properties ||
-            properties.ChildCount != 4 ||
-            properties.GetChild(0) is not SyntaxToken { Kind: SyntaxKind.WithKeyword } ||
-            properties.GetChild(2) is not SyntaxList<SeparatedElement<SyntaxElement>> list)
+        if (name.Name is not (TokenName or BracketedName))
         {
-            throw PropertyError(function);
+            throw new SchemaCommandException("must declare an unqualified object name",
+                "Remove the database or cluster qualifier and compare again.");
         }
 
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var item in list)
-        {
-            if (item.Element is not CustomNode { ChildCount: 3 } property)
-                throw PropertyError(function);
-            string? name = property.GetChild(0) switch
-            {
-                NameDeclaration declaration => declaration.SimpleName,
-                SyntaxToken token => token.Text,
-                _ => null
-            };
+        return CslSyntaxGenerator.NormalizeName(name.SimpleName);
+    }
 
-            if (name == null || !seen.Add(name) ||
-                property.GetChild(2) is not Expression value)
+    private static List<string> ReadProperties(
+        IReadOnlyList<SchemaCommandSyntaxAdapter.Property> properties, string text, bool function)
+    {
+        var result = new List<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var property in properties)
+        {
+            string name = property.Name;
+            var value = property.Value;
+            if (!seen.Add(name))
                 throw PropertyError(function);
 
             if (name is "folder" or "docstring")

@@ -29,6 +29,8 @@ If Compare stops, its ordinary error dialog identifies **Source** or **Target**,
 
 Review imported definitions before comparing, especially function bodies. Syntax checks restrict declaration commands; they are not a guarantee that arbitrary function logic is safe. Kusto-backed normalization still submits accepted definitions using the runner's identity and Kusto permissions. Use least-privilege credentials for both the scratch database and any target database, and keep the existing drop confirmation enabled when appropriate.
 
+If a message instead identifies a **parser compatibility issue**, update Sync Kusto or report the issue rather than rewriting an otherwise valid definition. Unrecognized parser layouts still stop the comparison before the temporary database is changed.
+
 ### AAD Authority
 If your username is in the form of UPN (user@contoso.com), you can hit the common AAD endpoint and your home tenant will be resolved automatically. If your tenant's automatic resolution does not work, you need to specify the AAD authority in the settings. Note that if you're planning to connect via an AAD application id and key then this setting is required regardless of tenant configuration.
 

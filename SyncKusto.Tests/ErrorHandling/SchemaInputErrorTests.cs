@@ -84,4 +84,31 @@ public class SchemaInputErrorTests
         Assert.That(ErrorMessageResolverFactory.CreateDefault().ResolveErrorMessage(new DirectoryNotFoundException()),
             Is.EqualTo("The folder path provided could not be found."));
     }
+
+    [Test]
+    public void ParserCompatibilityFailure_IdentifiesFileWithoutBlamingItsDefinition()
+    {
+        var cause = new SchemaParserCompatibilityException();
+        var input = new SchemaInputException("Target", @"Functions\a file.kql",
+            cause.Message, cause.Hint, cause);
+        var wrapped = new AggregateException(new SchemaLoadException("private_payload", input));
+        IErrorMessageResolver[] resolvers =
+        {
+            ErrorMessageResolverFactory.CreateDefault(),
+            new SyncKusto.FileSystem.Services.FileSystemErrorMessageResolver(),
+            new SyncKusto.ErrorHandling.FileSystemErrorMessageResolver()
+        };
+
+        foreach (var resolver in resolvers)
+        {
+            string message = resolver.ResolveErrorMessage(wrapped)!;
+            Assert.That(message, Is.EqualTo(input.Message));
+            Assert.That(message, Does.StartWith(@"Target file 'Functions\a file.kql'"));
+            Assert.That(message, Does.Contain("Update Sync Kusto"));
+            Assert.That(message, Does.Contain("compatibility issue"));
+            Assert.That(message, Does.Contain("definition may already be valid"));
+            foreach (string forbidden in new[] { "private_payload", "Remove", "Correct", "ignored", "line ", "column " })
+                Assert.That(message, Does.Not.Contain(forbidden));
+        }
+    }
 }

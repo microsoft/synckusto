@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SyncKusto.Core\SyncKusto.Core.csproj" />
+    <InternalsVisibleTo Include="SyncKusto.Tests" />
   </ItemGroup>
 
   <ItemGroup>
