@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using SyncKusto.Core.Abstractions;
-using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Models;
 
 namespace SyncKusto.Core.Services;
@@ -12,11 +11,11 @@ namespace SyncKusto.Core.Services;
 /// </summary>
 public class SchemaValidationService : ISchemaValidationService
 {
-    private readonly SyncKustoSettings _settings;
+    private readonly ISettingsProvider _settingsProvider;
 
-    public SchemaValidationService(SyncKustoSettings settings)
+    public SchemaValidationService(ISettingsProvider settingsProvider)
     {
-        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _settingsProvider = settingsProvider ?? throw new ArgumentNullException(nameof(settingsProvider));
     }
 
     /// <summary>
@@ -27,13 +26,21 @@ public class SchemaValidationService : ISchemaValidationService
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(target);
 
-        // Using the local file system for either the source or the target requires access to a temp cluster
-        if ((source.SourceType == SourceSelection.FilePath() ||
-             target.SourceType == SourceSelection.FilePath()) &&
-            string.IsNullOrWhiteSpace(_settings.TempCluster))
+        if (source.SourceType == SourceSelection.FilePath() ||
+            target.SourceType == SourceSelection.FilePath())
         {
-            return ValidationResult.Failure(
-                "File system sources require temp cluster configuration. Please configure in Settings.");
+            var settings = _settingsProvider.GetSyncKustoSettings();
+            if (string.IsNullOrWhiteSpace(settings.TempCluster))
+            {
+                return ValidationResult.Failure(
+                    "File system sources require temp cluster configuration. Please configure in Settings.");
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.TempDatabase))
+            {
+                return ValidationResult.Failure(
+                    "File system sources require temp database configuration. Please configure in Settings.");
+            }
         }
 
         return ValidationResult.Success();

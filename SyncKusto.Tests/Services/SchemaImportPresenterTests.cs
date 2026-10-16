@@ -5,7 +5,6 @@ using Kusto.Data.Common;
 using Moq;
 using NUnit.Framework;
 using SyncKusto.Core.Abstractions;
-using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
 using SyncKusto.Services;
@@ -19,12 +18,12 @@ public class SchemaImportPresenterTests
     [Test]
     public async Task FailureInvalidatesPreviousSynchronizationAndCorrectionAllowsRetry()
     {
-        var settings = new SyncKustoSettings { TempCluster = "unused", TempDatabase = "scratch" };
         var sourceInfo = new SchemaSourceInfo(SourceSelection.FilePath(), "source");
         var targetInfo = new SchemaSourceInfo(SourceSelection.FilePath(), "target");
         var source = new Mock<ISchemaRepository>(MockBehavior.Strict);
         var target = new Mock<ISchemaRepository>(MockBehavior.Strict);
-        var factory = new Mock<SchemaRepositoryFactory>(settings);
+        var factory = new Mock<SchemaRepositoryFactory>(
+            Mock.Of<ISettingsProvider>(), Mock.Of<IKustoConnectionFactory>());
         factory.Setup(f => f.CreateRepository(sourceInfo)).Returns(source.Object);
         factory.Setup(f => f.CreateRepository(targetInfo)).Returns(target.Object);
         var sync = new Mock<ISchemaSyncService>(MockBehavior.Strict);
@@ -37,7 +36,7 @@ public class SchemaImportPresenterTests
             .ReturnsAsync(result).ThrowsAsync(error).ReturnsAsync(result);
         sync.Setup(s => s.SynchronizeAsync(source.Object, target.Object,
             It.IsAny<IEnumerable<SchemaDifference>>(), null, default)).ReturnsAsync(SyncResult.Successful(0));
-        var presenter = new MainFormPresenter(sync.Object, Mock.Of<ISchemaValidationService>(), factory.Object, settings);
+        var presenter = new MainFormPresenter(sync.Object, Mock.Of<ISchemaValidationService>(), factory.Object);
 
         Assert.That(await presenter.CompareAsync(sourceInfo, targetInfo), Is.SameAs(result));
         Assert.ThrowsAsync<SchemaInputException>(() => presenter.CompareAsync(sourceInfo, targetInfo));

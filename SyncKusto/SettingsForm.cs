@@ -18,6 +18,7 @@ namespace SyncKusto
         private RadioButton[] lineEndingRadioButtons;
         private readonly ISettingsProvider _settingsProvider;
         private readonly IKustoValidationService _kustoValidationService;
+        private bool _isSaving;
 
         /// <summary>
         /// Default constructor for designer support
@@ -104,59 +105,48 @@ namespace SyncKusto
         {
             Cursor? lastCursor = Cursor.Current;
             Cursor.Current = Cursors.WaitCursor;
+            _isSaving = true;
+            btnOk.Enabled = false;
+            btnCancel.Enabled = false;
+            tabControl.Enabled = false;
 
             try
             {
-                // Save non-Kusto settings immediately
-                _settingsProvider.SetSetting("TableFieldsOnNewLine", cbTableFieldsOnNewLine.Checked.ToString());
-                _settingsProvider.SetSetting("CreateMergeEnabled", cbCreateMerge.Checked.ToString());
-                _settingsProvider.SetSetting("KustoObjectDropWarning", chkTableDropWarning.Checked.ToString());
-                _settingsProvider.SetSetting("AADAuthority", txtAuthority.Text);
-                _settingsProvider.SetSetting("UseLegacyCslExtension", cbUseLegacyCslExtension.Checked.ToString());
-
-                var checkedButton = lineEndingRadioButtons.Where(b => b.Checked).FirstOrDefault();
-                if (checkedButton?.Tag != null)
-                {
-                    _settingsProvider.SetSetting("LineEndingMode", ((int)(LineEndingMode)checkedButton.Tag).ToString());
-                }
-
-                _settingsProvider.SetSetting("CertificateLocation", cbCertLocation.SelectedItem!.ToString()!);
-
+                var cluster = txtKustoCluster.Text;
+                var database = txtKustoDatabase.Text;
+                var authority = txtAuthority.Text;
                 var currentCluster = _settingsProvider.GetSetting("TempCluster") ?? string.Empty;
                 var currentDatabase = _settingsProvider.GetSetting("TempDatabase") ?? string.Empty;
+                var currentAuthority = _settingsProvider.GetSetting("AADAuthority") ?? string.Empty;
 
-                // Only check the Kusto settings if they changed
-                if (currentCluster != txtKustoCluster.Text || currentDatabase != txtKustoDatabase.Text)
+                if (currentCluster != cluster || currentDatabase != database ||
+                    (!string.IsNullOrWhiteSpace(cluster) && !string.IsNullOrWhiteSpace(database) &&
+                     currentAuthority != authority))
                 {
                     // Validate Kusto settings - this will throw exceptions on validation failure
                     // and return the normalized cluster name
-                    txtKustoCluster.Text = await _kustoValidationService.ValidateKustoSettingsAsync(
-                        txtKustoCluster.Text,
-                        txtKustoDatabase.Text,
-                        txtAuthority.Text);
+                    cluster = await _kustoValidationService.ValidateKustoSettingsAsync(cluster, database, authority);
 
                     // Check if database is empty and get confirmation if not
                     try
                     {
                         await _kustoValidationService.CheckDatabaseEmptyAsync(
-                            txtKustoCluster.Text,
-                            txtKustoDatabase.Text,
-                            txtAuthority.Text);
+                            cluster, database, authority);
                     }
                     catch (KustoDatabaseValidationException)
                     {
                         // Database is not empty - ask user for confirmation
                         var wipeDialogResult = MessageBox.Show(
-                            $"WARNING! There are existing functions and tables in the {txtKustoDatabase.Text} database" +
-                            $" on the {txtKustoCluster.Text} cluster. If you proceed, everything will be dropped from that database every time a comparison " +
-                            $"is run. Do you wish to DROP EVERYTHING in the '{txtKustoDatabase.Text}' database?",
+                            this,
+                            $"WARNING! There are existing functions and tables in the {database} database" +
+                            $" on the {cluster} cluster. If you proceed, everything will be dropped from that database every time a comparison " +
+                            $"is run. Do you wish to DROP EVERYTHING in the '{database}' database?",
                             "Non-Empty Database",
                             MessageBoxButtons.YesNo,
                             MessageBoxIcon.Warning);
 
                         if (wipeDialogResult != DialogResult.Yes)
                         {
-                            Cursor.Current = lastCursor;
                             return;
                         }
 
@@ -164,12 +154,28 @@ namespace SyncKusto
                         // permission to do so and it will happen automatically as needed during
                         // schema comparison operations.
                     }
-
-                    // Store the settings now that we know they work
-                    _settingsProvider.SetSetting("TempCluster", txtKustoCluster.Text);
-                    _settingsProvider.SetSetting("TempDatabase", txtKustoDatabase.Text);
                 }
 
+                _settingsProvider.SetSetting("TempCluster", cluster);
+                _settingsProvider.SetSetting("TempDatabase", database);
+                _settingsProvider.SetSetting("TableFieldsOnNewLine", cbTableFieldsOnNewLine.Checked.ToString());
+                _settingsProvider.SetSetting("CreateMergeEnabled", cbCreateMerge.Checked.ToString());
+                _settingsProvider.SetSetting("KustoObjectDropWarning", chkTableDropWarning.Checked.ToString());
+                if (currentAuthority != authority)
+                {
+                    _settingsProvider.SetSetting("AADAuthority", authority);
+                }
+                _settingsProvider.SetSetting("UseLegacyCslExtension", cbUseLegacyCslExtension.Checked.ToString());
+
+                var checkedButton = lineEndingRadioButtons.FirstOrDefault(b => b.Checked);
+                if (checkedButton?.Tag != null)
+                {
+                    _settingsProvider.SetSetting("LineEndingMode", ((int)(LineEndingMode)checkedButton.Tag).ToString());
+                }
+
+                _settingsProvider.SetSetting("CertificateLocation", cbCertLocation.SelectedItem!.ToString()!);
+
+                this.DialogResult = DialogResult.OK;
                 this.Close();
             }
             catch (Core.Exceptions.KustoSettingsException ex)
@@ -194,8 +200,25 @@ namespace SyncKusto
             }
             finally
             {
+                _isSaving = false;
+                if (!IsDisposed)
+                {
+                    btnOk.Enabled = true;
+                    btnCancel.Enabled = true;
+                    tabControl.Enabled = true;
+                }
                 Cursor.Current = lastCursor;
             }
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            if (_isSaving && e.CloseReason == CloseReason.UserClosing && DialogResult != DialogResult.OK)
+            {
+                e.Cancel = true;
+            }
+
+            base.OnFormClosing(e);
         }
 
         /// <summary>
@@ -205,6 +228,7 @@ namespace SyncKusto
         /// <param name="e"></param>
         private void btnCancel_Click(object sender, EventArgs e)
         {
+            this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
     }

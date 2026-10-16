@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
     <OutputType>Library</OutputType>
     <AssemblyTitle>SyncKusto.Tests</AssemblyTitle>
     <Product>SyncKusto.Tests</Product>

@@ -7,7 +7,6 @@ using Kusto.Data.Common;
 using SyncKusto.Abstractions;
 using SyncKusto.Adapters;
 using SyncKusto.Core.Abstractions;
-using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Models;
 using SyncKusto.ErrorHandling;
 using System;
@@ -28,7 +27,6 @@ namespace SyncKusto
         private readonly IErrorMessageResolver _errorMessageResolver;
         private readonly IMainFormPresenter _presenter;
         private readonly ISettingsProvider _settingsProvider;
-        private readonly SyncKustoSettings _settings;
         private readonly ISchemaValidationService _validationService;
         private readonly IKustoValidationService _kustoValidationService;
         private readonly SchemaSourceSelectorAdapter _sourceAdapter;
@@ -46,7 +44,6 @@ namespace SyncKusto
             // Create temporary instances - will be replaced by DI constructor
             _presenter = null!; // Set by DI
             _settingsProvider = null!; // Set by DI
-            _settings = null!; // Set by DI
             _validationService = null!; // Set by DI
             _kustoValidationService = null!; // Set by DI
             _sourceAdapter = new SchemaSourceSelectorAdapter(spcSource);
@@ -60,14 +57,12 @@ namespace SyncKusto
             IMainFormPresenter presenter,
             IErrorMessageResolver errorMessageResolver,
             ISettingsProvider settingsProvider,
-            SyncKustoSettings settings,
             ISchemaValidationService validationService,
             IKustoValidationService kustoValidationService) : this()
         {
             _presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
             _errorMessageResolver = errorMessageResolver ?? throw new ArgumentNullException(nameof(errorMessageResolver));
             _settingsProvider = settingsProvider ?? throw new ArgumentNullException(nameof(settingsProvider));
-            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _validationService = validationService ?? throw new ArgumentNullException(nameof(validationService));
             _kustoValidationService = kustoValidationService ?? throw new ArgumentNullException(nameof(kustoValidationService));
 
@@ -96,10 +91,19 @@ namespace SyncKusto
         {
             tvComparison.Nodes.Clear();
             rtbSourceText.Clear();
-            _lastComparison = null;
             _sourceSchema = null;
             _targetSchema = null;
+            _lastComparison = null;
             btnUpdate.Enabled = false;
+        }
+
+        private void SetOperationInProgress(bool inProgress)
+        {
+            btnCompare.Enabled = !inProgress;
+            btnSettings.Enabled = !inProgress;
+            btnUpdate.Enabled = !inProgress && _lastComparison != null;
+            spcSource.Enabled = !inProgress;
+            spcTarget.Enabled = !inProgress;
         }
 
         /// <summary>
@@ -159,10 +163,7 @@ namespace SyncKusto
             ResetValueHoldersOnChange();
             var previousCursor = this.Cursor;
             this.Cursor = Cursors.WaitCursor;
-            btnCompare.Enabled = false;
-            btnSettings.Enabled = false;
-            spcSource.Enabled = false;
-            spcTarget.Enabled = false;
+            SetOperationInProgress(true);
             bool comparing = true;
 
             try
@@ -203,9 +204,6 @@ namespace SyncKusto
                 _targetAdapter.SaveRecentValues();
                 _sourceAdapter.ReloadRecentValues();
                 _targetAdapter.ReloadRecentValues();
-
-                // Enable the update button now that a comparison has been generated.
-                btnUpdate.Enabled = true;
             }
             catch
             {
@@ -215,13 +213,10 @@ namespace SyncKusto
             finally
             {
                 comparing = false;
-                btnCompare.Enabled = true;
-                btnSettings.Enabled = true;
-                spcSource.Enabled = true;
-                spcTarget.Enabled = true;
                 spcSource.ReportProgress(string.Empty);
                 spcTarget.ReportProgress(string.Empty);
                 this.Cursor = previousCursor;
+                SetOperationInProgress(false);
             }
         }
 
@@ -328,6 +323,7 @@ namespace SyncKusto
             string objectName = e.Node.Text;
             string sourceText = "";
             string targetText = "";
+            var settings = _settingsProvider.GetSyncKustoSettings();
 
             if (_sourceSchema.Functions.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_functionTreeNodeText))
             {
@@ -339,9 +335,9 @@ namespace SyncKusto
                 sourceText = SyncKusto.Kusto.Services.FormattedCslCommandGenerator.GenerateTableCreateCommand(
                     _sourceSchema.Tables[objectName],
                     true,
-                    _settings.CreateMergeEnabled,
-                    _settings.TableFieldsOnNewLine,
-                    _settings.LineEndingMode);
+                    settings.CreateMergeEnabled,
+                    settings.TableFieldsOnNewLine,
+                    settings.LineEndingMode);
             }
 
             if (_targetSchema.Functions.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_functionTreeNodeText))
@@ -354,9 +350,9 @@ namespace SyncKusto
                 targetText = SyncKusto.Kusto.Services.FormattedCslCommandGenerator.GenerateTableCreateCommand(
                     _targetSchema.Tables[objectName],
                     true,
-                    _settings.CreateMergeEnabled,
-                    _settings.TableFieldsOnNewLine,
-                    _settings.LineEndingMode);
+                    settings.CreateMergeEnabled,
+                    settings.TableFieldsOnNewLine,
+                    settings.LineEndingMode);
             }
 
             var diffBuilder = new InlineDiffBuilder(new Differ());
@@ -409,11 +405,6 @@ namespace SyncKusto
                 return;
             }
 
-            var previousCursor = this.Cursor;
-            this.Cursor = Cursors.WaitCursor;
-
-            rtbSourceText.Text = "";
-
             // Figure out which differences were selected in the tree control
             var selectedNodes = new List<TreeNode>();
             foreach (TreeNode n in tvComparison.Nodes)
@@ -424,11 +415,15 @@ namespace SyncKusto
             if (!selectedNodes.Any())
             {
                 MessageBox.Show(@"No differences were selected. Nothing to update in the target.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                this.Cursor = previousCursor;
                 return;
             }
 
             var targetInfo = _targetAdapter.GetSourceInfo();
+
+            var previousCursor = this.Cursor;
+            this.Cursor = Cursors.WaitCursor;
+            rtbSourceText.Clear();
+            SetOperationInProgress(true);
 
             try
             {
@@ -444,7 +439,11 @@ namespace SyncKusto
                 });
 
                 var result = await SynchronizeSelectionAsync(selectedDifferences, targetInfo,
-                    () => new DropWarningForm(_settingsProvider).ShowDialog() == DialogResult.Yes, progress);
+                    () =>
+                    {
+                        using var warning = new DropWarningForm(_settingsProvider);
+                        return warning.ShowDialog(this) == DialogResult.Yes;
+                    }, progress);
 
                 if (result == null)
                 {
@@ -464,15 +463,14 @@ namespace SyncKusto
                 }
 
                 // Clear the comparison
-                tvComparison.Nodes.Clear();
-                btnUpdate.Enabled = false;
-                _lastComparison = null;
+                ResetValueHoldersOnChange();
 
                 spcSource.ReportProgress(string.Empty);
                 spcTarget.ReportProgress(string.Empty);
             }
             catch (Exception ex)
             {
+                ResetValueHoldersOnChange();
                 var errorMessage = _errorMessageResolver.ResolveErrorMessage(ex);
                 MessageBox.Show($@"Failed to synchronize schemas: {errorMessage}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 spcSource.ReportProgress(string.Empty);
@@ -481,6 +479,7 @@ namespace SyncKusto
             finally
             {
                 this.Cursor = previousCursor;
+                SetOperationInProgress(false);
             }
         }
 
@@ -491,7 +490,7 @@ namespace SyncKusto
             IProgress<SyncProgress>? progress = null)
         {
             var differences = selectedDifferences.ToList();
-            if (_settings.KustoObjectDropWarning &&
+            if (_settingsProvider.GetSyncKustoSettings().KustoObjectDropWarning &&
                 targetInfo.SourceType == SourceSelection.Kusto() &&
                 differences.Any(difference => difference.Difference is OnlyInTarget) &&
                 !confirmDrops())
@@ -562,8 +561,13 @@ namespace SyncKusto
         /// <param name="e"></param>
         private void btnSettings_Click(object sender, EventArgs e)
         {
-            var frm = new SettingsForm(_settingsProvider, _kustoValidationService);
-            frm.ShowDialog();
+            var previousSettings = _settingsProvider.GetSyncKustoSettings();
+            using var frm = new SettingsForm(_settingsProvider, _kustoValidationService);
+            if (frm.ShowDialog(this) == DialogResult.OK &&
+                previousSettings != _settingsProvider.GetSyncKustoSettings())
+            {
+                ResetValueHoldersOnChange();
+            }
         }
     }
 }
