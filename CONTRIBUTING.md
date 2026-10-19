@@ -31,6 +31,8 @@ if ($LASTEXITCODE -ne 0) { throw "Regression tests failed" }
 
 The CI regression tests run offline; they do not validate live Kusto authentication or sync operations.
 
+The main window shows a date-based build version in `Build YYYYMMDD` format (currently `Build 20261020`, for October 20, 2026). To update the displayed date, change `label2.Text` in `SyncKusto\MainForm.Designer.cs`.
+
 ### Dependency restore policy
 
 `NuGet.Config` approves only the HTTPS NuGet.org v3 feed and clears inherited package sources and fallback package folders. `Directory.Build.props` also disables the SDK's implicit fallback and workload `library-packs` feeds. Do not add user/runner feeds, fallback folders, or source overrides to work around restore failures. NuGet's existing signature verification remains enabled; this policy does not introduce trusted-signer certificate pinning or require all packages to be signed.
