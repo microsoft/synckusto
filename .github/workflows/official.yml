@@ -20,13 +20,10 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3.0.0
-
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 # v4.0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
       with:
-        nuget-version: '7.9.0'
+        global-json-file: global.json
 
     - name: Verify dependency lock files
       shell: pwsh
@@ -45,13 +42,13 @@ jobs:
         }
 
     - name: Restore Packages
-      run: nuget restore SyncKusto.sln -LockedMode -ConfigFile NuGet.Config -NonInteractive
+      run: dotnet restore SyncKusto.sln --locked-mode --configfile NuGet.Config -p:NuGetInteractive=false
 
     - name: Build Solution
-      run: msbuild.exe SyncKusto.sln /t:Build /p:Configuration=Release
+      run: dotnet build SyncKusto.sln --configuration Release --no-restore
 
-    - name: Test schema imports offline
-      run: dotnet test SyncKusto.Tests\SyncKusto.Tests.csproj --configuration Release --no-build --no-restore --filter "TestCategory=SchemaImport"
+    - name: Test offline regressions
+      run: dotnet test SyncKusto.Tests\SyncKusto.Tests.csproj --configuration Release --no-build --no-restore --filter "TestCategory=SchemaImport|TestCategory=Kusto|FullyQualifiedName~SyncKusto.Tests.Forms" -- RunConfiguration.TreatNoTestsAsError=true
         
     - name: Upload Artifact
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

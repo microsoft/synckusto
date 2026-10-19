@@ -10,14 +10,13 @@ or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any addi
 
 ## Building the project
 Dependencies:
-- [Visual Studio 2017](https://visualstudio.microsoft.com/vs/)
-  - .NET 4.7.2 - Visual Studio will suggest the download if you need it.
-  - C# 7.3 - If you get an error saying you don't have this, upgrade to the latest version of VS2017
+- Windows and the .NET SDK version pinned in `global.json` (currently `10.0.402`).
+- For IDE development and the WinForms designer, a supported [Visual Studio 2026](https://visualstudio.microsoft.com/vs/) installation with the .NET desktop development workload.
 
 Local development:
 1. Clone the Sync Kusto repo to your local machine
-2. Open the project in Visual Studio 2017
-3. Build and run the project
+2. Follow the locked restore, build, and offline test commands in [README.md](README.md#dependency-restore-and-build).
+3. Open `SyncKusto.sln` in Visual Studio to run the WinForms application or use its designer.
 
 ## Maintainers
 Sync Kusto is lovingly maintained by:

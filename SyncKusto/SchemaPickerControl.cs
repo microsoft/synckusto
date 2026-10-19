@@ -7,6 +7,7 @@ using SyncKusto.FileSystem.Extensions;
 using SyncKusto.Utilities;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Windows.Forms;
@@ -80,8 +81,12 @@ namespace SyncKusto
 
         public SourceSelection SourceSelection { get; private set; }
         private Stack<(string message, SourceSelection source)> ProgressMessageState { get; }
+
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Action? ResetMainFormValueHolders { private get; set; }
 
+        [DefaultValue("Source Schema")]
         public string Title
         {
             get => grpSourceSchema.Text;
