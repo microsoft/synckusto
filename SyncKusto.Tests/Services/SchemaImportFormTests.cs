@@ -9,7 +9,6 @@ using Moq;
 using NUnit.Framework;
 using SyncKusto.Abstractions;
 using SyncKusto.Core.Abstractions;
-using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
 using SyncKusto.Core.Services;
@@ -29,7 +28,6 @@ public class SchemaImportFormTests
         var presenter = new Mock<IMainFormPresenter>(MockBehavior.Strict);
         var source = new SchemaSourceInfo(SourceSelection.FilePath(), "source");
         var target = new SchemaSourceInfo(SourceSelection.FilePath(), "target");
-        var settings = new SyncKustoSettings { TempCluster = "unused", TempDatabase = "scratch" };
         var result = new ComparisonResult(
             new SchemaDifferenceResult(Array.Empty<SchemaDifference>(), Array.Empty<SchemaDifference>()),
             new DatabaseSchema("source", ""), new DatabaseSchema("target", ""));
@@ -38,7 +36,7 @@ public class SchemaImportFormTests
         presenter.SetupSequence(p => p.CompareAsync(source, target, It.IsAny<IProgress<SyncProgress>>(), default))
             .ReturnsAsync(result).ThrowsAsync(error).ReturnsAsync(result);
         using var form = new MainForm(presenter.Object, ErrorMessageResolverFactory.CreateDefault(),
-            new InMemorySettingsProvider(), settings, Mock.Of<ISchemaValidationService>(), Mock.Of<IKustoValidationService>());
+            new InMemorySettingsProvider(), Mock.Of<ISchemaValidationService>(), Mock.Of<IKustoValidationService>());
         var originalCursor = form.Cursor;
         var update = Field<ToolStripButton>(form, "btnUpdate");
         var compare = Field<ToolStripButton>(form, "btnCompare");
@@ -75,13 +73,12 @@ public class SchemaImportFormTests
     public void KustoDrops_RequireConfirmationBeforeSynchronizing(bool confirmed)
     {
         var presenter = new Mock<IMainFormPresenter>(MockBehavior.Strict);
-        var settings = new SyncKustoSettings { TempCluster = "unused", TempDatabase = "scratch", KustoObjectDropWarning = true };
         var drop = new TableSchemaDifference(new OnlyInTarget(),
             new KustoTableSchema(new TableSchema("t", new[] { new ColumnSchema("x", "System.Int64") }, "", "")));
         presenter.Setup(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(), null, default))
             .ReturnsAsync(SyncResult.Successful(1));
         using var form = new MainForm(presenter.Object, ErrorMessageResolverFactory.CreateDefault(),
-            new InMemorySettingsProvider(), settings, Mock.Of<ISchemaValidationService>(), Mock.Of<IKustoValidationService>());
+            new InMemorySettingsProvider(), Mock.Of<ISchemaValidationService>(), Mock.Of<IKustoValidationService>());
         int prompts = 0;
 
         var result = form.SynchronizeSelectionAsync(new[] { drop },
@@ -98,13 +95,12 @@ public class SchemaImportFormTests
     public void GeneratedUpdates_DoNotAddANewDropConfirmation()
     {
         var presenter = new Mock<IMainFormPresenter>(MockBehavior.Strict);
-        var settings = new SyncKustoSettings { TempCluster = "unused", TempDatabase = "scratch", KustoObjectDropWarning = true };
         var update = new TableSchemaDifference(new Modified(),
             new KustoTableSchema(new TableSchema("t", new[] { new ColumnSchema("x", "System.Int64") }, "", "")));
         presenter.Setup(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(), null, default))
             .ReturnsAsync(SyncResult.Successful(1));
         using var form = new MainForm(presenter.Object, ErrorMessageResolverFactory.CreateDefault(),
-            new InMemorySettingsProvider(), settings, Mock.Of<ISchemaValidationService>(), Mock.Of<IKustoValidationService>());
+            new InMemorySettingsProvider(), Mock.Of<ISchemaValidationService>(), Mock.Of<IKustoValidationService>());
 
         var result = form.SynchronizeSelectionAsync(new[] { update },
             new SchemaSourceInfo(SourceSelection.Kusto()),

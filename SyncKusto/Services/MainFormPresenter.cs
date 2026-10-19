@@ -3,7 +3,6 @@
 
 using SyncKusto.Abstractions;
 using SyncKusto.Core.Abstractions;
-using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -20,7 +19,6 @@ public class MainFormPresenter : IMainFormPresenter
     private readonly ISchemaSyncService _syncService;
     private readonly ISchemaValidationService _validationService;
     private readonly SchemaRepositoryFactory _repositoryFactory;
-    private readonly SyncKustoSettings _settings;
 
     // Cached for synchronization - need to use the same repository instances
     private ISchemaRepository? _lastSourceRepository;
@@ -29,13 +27,11 @@ public class MainFormPresenter : IMainFormPresenter
     public MainFormPresenter(
         ISchemaSyncService syncService,
         ISchemaValidationService validationService,
-        SchemaRepositoryFactory repositoryFactory,
-        SyncKustoSettings settings)
+        SchemaRepositoryFactory repositoryFactory)
     {
         _syncService = syncService ?? throw new ArgumentNullException(nameof(syncService));
         _validationService = validationService ?? throw new ArgumentNullException(nameof(validationService));
         _repositoryFactory = repositoryFactory ?? throw new ArgumentNullException(nameof(repositoryFactory));
-        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
     }
 
     /// <summary>

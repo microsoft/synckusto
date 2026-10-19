@@ -4,7 +4,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using SyncKusto.Abstractions;
 using SyncKusto.Core.Abstractions;
-using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Services;
 using SyncKusto.ErrorHandling;
 using SyncKusto.Kusto.Services;
@@ -28,17 +27,13 @@ namespace SyncKusto
             services.AddSingleton<ISchemaSyncService, SchemaSyncService>();
             services.AddSingleton<ISchemaValidationService, SchemaValidationService>();
             services.AddSingleton<IKustoValidationService, KustoValidationService>();
+            services.AddSingleton<IKustoConnectionFactory, KustoConnectionFactory>();
 
             // Error resolvers
             services.AddSingleton<IErrorMessageResolver>(provider => ErrorMessageResolverFactory.CreateDefault());
 
-            // Settings - Register provider and load settings
+            // Settings
             services.AddSingleton<ISettingsProvider, JsonFileSettingsProvider>();
-            services.AddSingleton(provider =>
-            {
-                var settingsProvider = provider.GetRequiredService<ISettingsProvider>();
-                return SyncKustoSettingsFactory.CreateFromProvider(settingsProvider);
-            });
 
             // Repository factory
             services.AddSingleton<SchemaRepositoryFactory>();
@@ -61,7 +56,6 @@ namespace SyncKusto
                 serviceProvider.GetRequiredService<IMainFormPresenter>(),
                 serviceProvider.GetRequiredService<IErrorMessageResolver>(),
                 serviceProvider.GetRequiredService<ISettingsProvider>(),
-                serviceProvider.GetRequiredService<SyncKustoSettings>(),
                 serviceProvider.GetRequiredService<ISchemaValidationService>(),
                 serviceProvider.GetRequiredService<IKustoValidationService>());
 

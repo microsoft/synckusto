@@ -2,11 +2,9 @@
 // Licensed under the MIT License.
 
 using SyncKusto.Core.Abstractions;
-using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Models;
 using SyncKusto.FileSystem.Repositories;
 using SyncKusto.Kusto.Repositories;
-using SyncKusto.Kusto.Services;
 using System;
 
 namespace SyncKusto.Services;
@@ -16,13 +14,13 @@ namespace SyncKusto.Services;
 /// </summary>
 public class SchemaRepositoryFactory
 {
-    private readonly SyncKustoSettings _settings;
-    private readonly KustoConnectionFactory _kustoConnectionFactory;
+    private readonly ISettingsProvider _settingsProvider;
+    private readonly IKustoConnectionFactory _kustoConnectionFactory;
 
-    public SchemaRepositoryFactory(SyncKustoSettings settings)
+    public SchemaRepositoryFactory(ISettingsProvider settingsProvider, IKustoConnectionFactory kustoConnectionFactory)
     {
-        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        _kustoConnectionFactory = new KustoConnectionFactory();
+        _settingsProvider = settingsProvider ?? throw new ArgumentNullException(nameof(settingsProvider));
+        _kustoConnectionFactory = kustoConnectionFactory ?? throw new ArgumentNullException(nameof(kustoConnectionFactory));
     }
 
     /// <summary>
@@ -31,6 +29,7 @@ public class SchemaRepositoryFactory
     public virtual ISchemaRepository CreateRepository(SchemaSourceInfo sourceInfo)
     {
         ArgumentNullException.ThrowIfNull(sourceInfo);
+        var settings = _settingsProvider.GetSyncKustoSettings();
 
         if (sourceInfo.SourceType == SourceSelection.FilePath())
         {
@@ -38,11 +37,11 @@ public class SchemaRepositoryFactory
 
             return new FileSystemSchemaRepository(
                 sourceInfo.FilePath,
-                _settings.FileExtension,
-                _settings.TempCluster,
-                _settings.TempDatabase,
-                _settings.AADAuthority ?? "",
-                _settings);
+                settings.FileExtension,
+                settings.TempCluster,
+                settings.TempDatabase,
+                settings.AADAuthority ?? "",
+                settings);
         }
         else if (sourceInfo.SourceType == SourceSelection.Kusto())
         {
@@ -56,11 +55,11 @@ public class SchemaRepositoryFactory
                 AppId: sourceInfo.KustoInfo.AppId,
                 AppKey: sourceInfo.KustoInfo.AppKey,
                 CertificateThumbprint: sourceInfo.KustoInfo.CertificateThumbprint,
-                CertificateLocation: _settings.CertificateLocation);
+                CertificateLocation: settings.CertificateLocation);
 
             var connectionString = (global::Kusto.Data.KustoConnectionStringBuilder)_kustoConnectionFactory.CreateConnectionString(options);
 
-            return new KustoSchemaRepository(connectionString, _settings.LineEndingMode);
+            return new KustoSchemaRepository(connectionString, settings.LineEndingMode);
         }
         else
         {

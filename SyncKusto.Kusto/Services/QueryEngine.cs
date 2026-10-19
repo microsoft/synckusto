@@ -65,12 +65,11 @@ public class QueryEngine : ISchemaQueryEngine
     public QueryEngine(
         string tempCluster,
         string tempDatabase,
-        string authority,
+        string? authority,
         LineEndingMode lineEndingMode = LineEndingMode.LeaveAsIs)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tempCluster);
         ArgumentException.ThrowIfNullOrWhiteSpace(tempDatabase);
-        ArgumentException.ThrowIfNullOrWhiteSpace(authority);
 
         _databaseName = tempDatabase;
 
@@ -78,7 +77,7 @@ public class QueryEngine : ISchemaQueryEngine
         {
             FederatedSecurity = true,
             InitialCatalog = _databaseName,
-            Authority = authority
+            Authority = string.IsNullOrWhiteSpace(authority) ? string.Empty : authority
         };
 
         _adminClient = KustoClientFactory.CreateCslAdminProvider(connString);

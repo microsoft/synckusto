@@ -21,7 +21,6 @@ public class KustoConnectionFactory : IKustoConnectionFactory
         ArgumentNullException.ThrowIfNull(options);
         ArgumentException.ThrowIfNullOrWhiteSpace(options.Cluster);
         ArgumentException.ThrowIfNullOrWhiteSpace(options.Database);
-        ArgumentException.ThrowIfNullOrWhiteSpace(options.Authority);
 
         var cluster = NormalizeClusterName(options.Cluster);
 
@@ -42,13 +41,13 @@ public class KustoConnectionFactory : IKustoConnectionFactory
     private static KustoConnectionStringBuilder CreateUserAuthConnection(
         string cluster,
         string database,
-        string authority)
+        string? authority)
     {
         return new KustoConnectionStringBuilder(cluster)
         {
             FederatedSecurity = true,
             InitialCatalog = database,
-            Authority = authority
+            Authority = string.IsNullOrWhiteSpace(authority) ? string.Empty : authority
         };
     }
 
@@ -62,6 +61,7 @@ public class KustoConnectionFactory : IKustoConnectionFactory
         string appId,
         string appKey)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(authority);
         ArgumentException.ThrowIfNullOrWhiteSpace(appId);
         ArgumentException.ThrowIfNullOrWhiteSpace(appKey);
 
@@ -86,6 +86,7 @@ public class KustoConnectionFactory : IKustoConnectionFactory
         string certificateThumbprint,
         StoreLocation certificateLocation)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(authority);
         ArgumentException.ThrowIfNullOrWhiteSpace(appId);
         ArgumentException.ThrowIfNullOrWhiteSpace(certificateThumbprint);
 

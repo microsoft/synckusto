@@ -131,13 +131,14 @@ public class SchemaImportComparisonTests
         comparison.Setup(c => c.CompareSchemas(It.IsAny<DatabaseSchema>(), It.IsAny<DatabaseSchema>()))
             .Callback<DatabaseSchema, DatabaseSchema>((s, t) => (comparedSource, comparedTarget) = (s, t))
             .Returns(new SchemaDifferenceResult(Array.Empty<SchemaDifference>(), Array.Empty<SchemaDifference>()));
-        var factory = new Mock<SchemaRepositoryFactory>(_settings);
+        var factory = new Mock<SchemaRepositoryFactory>(
+            Mock.Of<ISettingsProvider>(), Mock.Of<IKustoConnectionFactory>());
         var sourceInfo = new SchemaSourceInfo(SourceSelection.FilePath(), _source);
         var targetInfo = new SchemaSourceInfo(SourceSelection.FilePath(), _target);
         factory.Setup(f => f.CreateRepository(sourceInfo)).Returns(Repository(_source, extension));
         factory.Setup(f => f.CreateRepository(targetInfo)).Returns(Repository(_target, extension));
         var presenter = new MainFormPresenter(new SchemaSyncService(comparison.Object),
-            Mock.Of<ISchemaValidationService>(), factory.Object, _settings);
+            Mock.Of<ISchemaValidationService>(), factory.Object);
 
         var result = await presenter.CompareAsync(sourceInfo, targetInfo);
 
