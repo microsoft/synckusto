@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Kusto.Data.Common;
+using SyncKusto.Core.Models;
 
 namespace SyncKusto.Core.Abstractions;
 
@@ -15,6 +16,7 @@ public interface ISchemaSnapshotSource
 /// </summary>
 public interface ISchemaSnapshot
 {
+    IReadOnlyList<SkippedSchemaFile> SkippedFiles { get; }
     void Validate();
     Task<DatabaseSchema> GetSchemaAsync(CancellationToken cancellationToken = default);
 }

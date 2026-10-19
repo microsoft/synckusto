@@ -4,6 +4,7 @@
 using NUnit.Framework;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Exceptions;
+using SyncKusto.Core.Models;
 using SyncKusto.Core.Services;
 using SyncKusto.ErrorHandling;
 using SyncKusto.Kusto.Exceptions;
@@ -15,6 +16,32 @@ namespace SyncKusto.Tests.ErrorHandling;
 [Category("SchemaImport")]
 public class SchemaInputErrorTests
 {
+    [TestCase(false)]
+    [TestCase(true)]
+    public void SkippedFileDiagnostic_PreservesSafeReasonHintAndParserLocation(bool compatibilityFailure)
+    {
+        var cause = compatibilityFailure
+            ? new SchemaParserCompatibilityException()
+            : Assert.Throws<SchemaCommandException>(() => SchemaCommandValidator.Function(
+                ".create-or-alter function f() {\nprint private_payload =\n}"))!;
+        var skipped = new SkippedSchemaFile("Target", @"Functions\a file.kql",
+            cause.Message, cause.Hint, cause.Line, cause.Column);
+
+        Assert.That(skipped.Message, Does.StartWith(@"Target file 'Functions\a file.kql'"));
+        Assert.That(skipped.Message, Does.Contain(cause.Hint).And.Not.Contain("private_payload"));
+        if (compatibilityFailure)
+        {
+            Assert.That(skipped.Message, Does.Contain("compatibility issue"));
+            Assert.That(skipped.Message, Does.Not.Contain("Correct").And.Not.Contain("line "));
+        }
+        else
+        {
+            Assert.That(skipped.Line, Is.GreaterThan(0));
+            Assert.That(skipped.Column, Is.GreaterThan(0));
+            Assert.That(skipped.Message, Does.Contain($"line {cause.Line}, column {cause.Column}"));
+        }
+    }
+
     [TestCase("Source", "Functions\\Folder with spaces\\DailySummary.kql", false)]
     [TestCase("Target", "Functions\\Folder with spaces\\DailySummary.kql", false)]
     [TestCase("Target", "Tables\\a 'quoted' name.csl", true)]

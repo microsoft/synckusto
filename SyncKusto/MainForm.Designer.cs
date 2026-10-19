@@ -36,6 +36,7 @@ namespace SyncKusto
             this.btnCompare = new System.Windows.Forms.ToolStripButton();
             this.btnUpdate = new System.Windows.Forms.ToolStripButton();
             this.btnSettings = new System.Windows.Forms.ToolStripButton();
+            this.btnSkippedFiles = new System.Windows.Forms.ToolStripButton();
             this.grpComparison = new System.Windows.Forms.GroupBox();
             this.rtbSourceText = new System.Windows.Forms.RichTextBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -58,7 +59,8 @@ namespace SyncKusto
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.btnCompare,
             this.btnUpdate,
-            this.btnSettings});
+            this.btnSettings,
+            this.btnSkippedFiles});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(639, 25);
@@ -93,6 +95,15 @@ namespace SyncKusto
             this.btnSettings.Size = new System.Drawing.Size(69, 22);
             this.btnSettings.Text = "Settings";
             this.btnSettings.Click += new System.EventHandler(this.btnSettings_Click);
+            //
+            // btnSkippedFiles
+            //
+            this.btnSkippedFiles.Enabled = false;
+            this.btnSkippedFiles.Name = "btnSkippedFiles";
+            this.btnSkippedFiles.Text = "Skipped files";
+            this.btnSkippedFiles.ToolTipText = "This comparison is incomplete. Review skipped files before Update.";
+            this.btnSkippedFiles.Visible = false;
+            this.btnSkippedFiles.Click += new System.EventHandler(this.btnSkippedFiles_Click);
             // 
             // grpComparison
             // 
@@ -227,6 +238,7 @@ namespace SyncKusto
         private System.Windows.Forms.RichTextBox rtbSourceText;
         private System.Windows.Forms.ToolStripButton btnUpdate;
         private System.Windows.Forms.ToolStripButton btnSettings;
+        private System.Windows.Forms.ToolStripButton btnSkippedFiles;
         private SchemaPickerControl spcSourceHolder;
         private SchemaPickerControl spcTargetHolder;
         private SchemaPickerControl spcSource;

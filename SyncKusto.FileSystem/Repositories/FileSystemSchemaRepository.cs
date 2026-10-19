@@ -5,6 +5,7 @@ using Kusto.Data.Common;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Configuration;
 using SyncKusto.Core.Exceptions;
+using SyncKusto.Core.Models;
 using SyncKusto.FileSystem.Extensions;
 using SyncKusto.Kusto.Exceptions;
 using SyncKusto.Kusto.Models;
@@ -24,6 +25,13 @@ public class FileSystemSchemaRepository : ISchemaRepository, ISchemaSnapshotSour
     private readonly string _authority;
     private readonly SyncKustoSettings _settings;
     private readonly Func<ISchemaQueryEngine> _queryEngineFactory;
+    private Snapshot? _lastSnapshot;
+
+    /// <summary>
+    /// Files rejected by validation of the most recently captured snapshot.
+    /// </summary>
+    public IReadOnlyList<SkippedSchemaFile> SkippedFiles =>
+        _lastSnapshot?.SkippedFiles ?? Array.Empty<SkippedSchemaFile>();
 
     /// <summary>
     /// Initializes a new instance of the FileSystemSchemaRepository
@@ -72,6 +80,7 @@ public class FileSystemSchemaRepository : ISchemaRepository, ISchemaSnapshotSour
 
     public ISchemaSnapshot CaptureSnapshot(string side, CancellationToken cancellationToken = default)
     {
+        _lastSnapshot = null;
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -99,7 +108,7 @@ public class FileSystemSchemaRepository : ISchemaRepository, ISchemaSnapshotSour
                 }
             }
 
-            return new Snapshot(side, files.ToArray(), _queryEngineFactory);
+            return _lastSnapshot = new Snapshot(side, files.ToArray(), _queryEngineFactory);
         }
         catch (Exception ex) when (ex is not SyncKustoException and not OperationCanceledException)
         {
@@ -190,11 +199,14 @@ public class FileSystemSchemaRepository : ISchemaRepository, ISchemaSnapshotSour
         string side, SnapshotFile[] files, Func<ISchemaQueryEngine> queryEngineFactory) : ISchemaSnapshot
     {
         private SnapshotFile[]? _validatedFiles;
+        public IReadOnlyList<SkippedSchemaFile> SkippedFiles { get; private set; } = Array.Empty<SkippedSchemaFile>();
 
         public void Validate()
         {
             _validatedFiles = null;
+            SkippedFiles = Array.Empty<SkippedSchemaFile>();
             var validated = new List<SnapshotFile>();
+            var skipped = new List<SkippedSchemaFile>();
             foreach (var file in files)
             {
                 try
@@ -206,10 +218,11 @@ public class FileSystemSchemaRepository : ISchemaRepository, ISchemaSnapshotSour
                 }
                 catch (SchemaCommandException ex)
                 {
-                    throw new SchemaInputException(side, file.RelativePath, ex.Message, ex.Hint, ex,
-                        ex.Line, ex.Column);
+                    skipped.Add(new SkippedSchemaFile(side, file.RelativePath, ex.Message, ex.Hint,
+                        ex.Line, ex.Column));
                 }
             }
+            SkippedFiles = skipped.AsReadOnly();
             _validatedFiles = validated.ToArray();
         }
 

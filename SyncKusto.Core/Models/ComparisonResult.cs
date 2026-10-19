@@ -12,4 +12,7 @@ namespace SyncKusto.Core.Models;
 public record ComparisonResult(
     SchemaDifferenceResult Differences,
     DatabaseSchema SourceSchema,
-    DatabaseSchema TargetSchema);
+    DatabaseSchema TargetSchema)
+{
+    public IReadOnlyList<SkippedSchemaFile> SkippedFiles { get; init; } = Array.Empty<SkippedSchemaFile>();
+}

@@ -95,6 +95,10 @@ namespace SyncKusto
             _targetSchema = null;
             _lastComparison = null;
             btnUpdate.Enabled = false;
+            btnSkippedFiles.Enabled = false;
+            btnSkippedFiles.Visible = false;
+            btnSkippedFiles.Text = "Skipped files";
+            grpComparison.Text = "Comparison";
         }
 
         private void SetOperationInProgress(bool inProgress)
@@ -102,6 +106,7 @@ namespace SyncKusto
             btnCompare.Enabled = !inProgress;
             btnSettings.Enabled = !inProgress;
             btnUpdate.Enabled = !inProgress && _lastComparison != null;
+            btnSkippedFiles.Enabled = !inProgress && _lastComparison?.SkippedFiles.Count > 0;
             spcSource.Enabled = !inProgress;
             spcTarget.Enabled = !inProgress;
         }
@@ -150,6 +155,7 @@ namespace SyncKusto
             try
             {
                 await CompareSchemasAsync(sourceInfo, targetInfo);
+                ShowSkippedFilesWarning();
             }
             catch (Exception ex)
             {
@@ -195,6 +201,10 @@ namespace SyncKusto
 
                 // Populate tree with differences
                 PopulateTree(_lastComparison.Differences.AllDifferences, tvComparison);
+                int skippedCount = _lastComparison.SkippedFiles.Count;
+                btnSkippedFiles.Visible = skippedCount > 0;
+                btnSkippedFiles.Text = $"Skipped files ({skippedCount})";
+                grpComparison.Text = skippedCount > 0 ? "Comparison (incomplete)" : "Comparison";
 
                 spcSource.ReportProgress(string.Empty);
                 spcTarget.ReportProgress(string.Empty);
@@ -217,6 +227,17 @@ namespace SyncKusto
                 spcTarget.ReportProgress(string.Empty);
                 this.Cursor = previousCursor;
                 SetOperationInProgress(false);
+            }
+        }
+
+        private void btnSkippedFiles_Click(object sender, EventArgs e) => ShowSkippedFilesWarning();
+
+        private void ShowSkippedFilesWarning()
+        {
+            if (_lastComparison?.SkippedFiles.Count > 0)
+            {
+                using var warning = new SkippedFilesForm(_lastComparison.SkippedFiles);
+                warning.ShowDialog(this);
             }
         }
 
