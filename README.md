@@ -47,4 +47,4 @@ For Microsoft Entra ID user authentication, this field is optional. Leave it bla
 - Use legacy `.csl` file extensions - Kusto originally used files with `.csl` file extensions. This extension has since been deprecated and replaced with the `.kql` file extension. This setting tells synckusto which file extension should be used for reading _and_ writing all files. The default state is checked, which means synckusto will consume and emit files with the `.csl` file extension.
 
 ## Contributing
-Issues, additional features, and tests are all welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+Issues, additional features, and tests are all welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and contribution guidelines.
