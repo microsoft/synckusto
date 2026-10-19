@@ -127,6 +127,38 @@ public class MainFormSettingsTests
     }
 
     [Test]
+    public void DiffRendering_WithNoNode_LeavesExistingTextUnchanged()
+    {
+        ConfigureTemporaryDatabase();
+        Field<ToolStripButton>(_form, "btnCompare").PerformClick();
+        Field<RichTextBox>(_form, "rtbSourceText").Text = "Previous comparison";
+
+        typeof(MainForm).GetMethod("tvComparison_NodeMouseClick", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .Invoke(_form, new object[] { Field<TreeView>(_form, "tvComparison"),
+                new TreeNodeMouseClickEventArgs(null, MouseButtons.Left, 1, 0, 0) });
+
+        Assert.That(Field<RichTextBox>(_form, "rtbSourceText").Text, Is.EqualTo("Previous comparison"));
+    }
+
+    [Test]
+    public void Update_WithMissingDifference_ShowsErrorAndInvalidatesComparison()
+    {
+        ConfigureTemporaryDatabase();
+        Field<ToolStripButton>(_form, "btnCompare").PerformClick();
+        var node = DifferenceNode();
+        node.Checked = true;
+        node.Tag = null;
+
+        WithMessageBox(() => Field<ToolStripButton>(_form, "btnUpdate").PerformClick(),
+            "Error", DialogResult.OK, "Selected comparison node does not contain a schema difference.");
+
+        Assert.That(Field<ComparisonResult?>(_form, "_lastComparison"), Is.Null);
+        Assert.That(Field<ToolStripButton>(_form, "btnUpdate").Enabled, Is.False);
+        _presenter.Verify(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(),
+            It.IsAny<IProgress<SyncProgress>>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
     public void KustoPicker_ReadsCurrentAuthorityAndCertificateLocation()
     {
         var picker = Field<SchemaPickerControl>(_form, "spcSource");

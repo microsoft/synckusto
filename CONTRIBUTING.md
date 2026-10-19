@@ -10,14 +10,44 @@ or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any addi
 
 ## Building the project
 Dependencies:
-- [Visual Studio 2017](https://visualstudio.microsoft.com/vs/)
-  - .NET 4.7.2 - Visual Studio will suggest the download if you need it.
-  - C# 7.3 - If you get an error saying you don't have this, upgrade to the latest version of VS2017
+- Windows and the .NET SDK version pinned in `global.json` (currently `10.0.402`).
+- For IDE development and the WinForms designer, a supported [Visual Studio 2026](https://visualstudio.microsoft.com/vs/) installation with the .NET desktop development workload.
+
+Both build workflows install the pinned SDK and use its bundled NuGet client. SDK roll-forward and prerelease selection are disabled to keep local and CI dependency resolution aligned.
 
 Local development:
 1. Clone the Sync Kusto repo to your local machine
-2. Open the project in Visual Studio 2017
-3. Build and run the project
+2. Run the following locked restore, build, and offline test commands from PowerShell at the repository root.
+3. Open `SyncKusto.sln` in Visual Studio to run the WinForms application or use its designer.
+
+```powershell
+dotnet restore SyncKusto.sln --locked-mode --configfile NuGet.Config -p:NuGetInteractive=false
+if ($LASTEXITCODE -ne 0) { throw "Dependency restore failed" }
+dotnet build SyncKusto.sln --configuration Release --no-restore
+if ($LASTEXITCODE -ne 0) { throw "Build failed" }
+dotnet test SyncKusto.Tests\SyncKusto.Tests.csproj --configuration Release --no-build --no-restore --filter "TestCategory=SchemaImport|TestCategory=Kusto|FullyQualifiedName~SyncKusto.Tests.Forms" -- RunConfiguration.TreatNoTestsAsError=true
+if ($LASTEXITCODE -ne 0) { throw "Regression tests failed" }
+```
+
+The CI regression tests run offline; they do not validate live Kusto authentication or sync operations.
+
+### Dependency restore policy
+
+`NuGet.Config` approves only the HTTPS NuGet.org v3 feed and clears inherited package sources and fallback package folders. `Directory.Build.props` also disables the SDK's implicit fallback and workload `library-packs` feeds. Do not add user/runner feeds, fallback folders, or source overrides to work around restore failures. NuGet's existing signature verification remains enabled; this policy does not introduce trusted-signer certificate pinning or require all packages to be signed.
+
+All five solution projects have a reviewed `packages.lock.json` containing resolved direct/transitive versions and package content hashes. CI checks that every lock file exists before restoring, fails on dependency or content-hash drift, and builds only after a successful locked restore. Subsequent `dotnet build` and `dotnet test` commands must use `--no-restore` (and `--no-build` for tests of the existing build).
+
+### Updating dependencies
+
+For an intentional dependency or framework update, change the relevant project references or target framework, then use the pinned SDK and approved configuration to regenerate locks locally:
+
+```powershell
+dotnet restore SyncKusto.sln --use-lock-file --force-evaluate --configfile NuGet.Config -p:NuGetInteractive=false
+```
+
+Review all five lock files together with the project changes: explain every direct/transitive version change and unexpected hash change, and never hand-edit package hashes. To review a genuinely clean resolution, point `NUGET_PACKAGES` and `NUGET_HTTP_CACHE_PATH` at new disposable folders rather than clearing shared caches.
+
+Repeat the normal locked restore, build, and appropriate offline tests; the reviewed locks must remain unchanged. Include the updated locks in the dependency-update commit. SDK servicing updates must deliberately update `global.json` and verify the locks with that SDK. Never delete locks, use `--force-evaluate`, or retry unlocked in CI to bypass a failure.
 
 ## Maintainers
 Sync Kusto is lovingly maintained by:

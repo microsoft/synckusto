@@ -14,28 +14,7 @@ Assuming that the user already has a Kusto database with functions and tables, s
 The general usage pattern on our team is to make changes in a Kusto dev database which starts with a schema that mirrors the production database. Once the developer is satisfied with the changes, they use Sync Kusto with the development database as the source and their local file system as the target. The changes are committed to source control and a pull request is sent out for review. After the request is approved and the code merges to master, the developer syncs the master branch and uses Sync Kusto to sync from their local file system to the production Kusto database. This is a more flexible/manual version of the [Azure Data Explorer task for Azure Dev Ops](https://docs.microsoft.com/en-us/azure/data-explorer/devops). We've had great success with this process and use the tool daily to help with our development and for deploying to production assets.
 
 ## Sync Kusto Binaries
-The release can be downloaded from the [GitHub Releases](https://github.com/microsoft/synckusto/releases) page. Individual builds can also be found in the [GitHub Actions](https://github.com/microsoft/synckusto/actions/workflows/official.yml) page, or the repo can be cloned and built in Visual Studio.
-
-## Dependency Restore and Build
-Use Windows with MSBuild/Visual Studio supporting the .NET 8 and Windows Desktop SDKs. Both build workflows use [NuGet CLI 7.9.0](https://dist.nuget.org/win-x86-commandline/v7.9.0/nuget.exe). Run these commands from the repository root in a Developer PowerShell with that version of `nuget.exe` on `PATH`:
-
-```powershell
-nuget restore SyncKusto.sln -LockedMode -ConfigFile NuGet.Config -NonInteractive
-if ($LASTEXITCODE -ne 0) { throw "Dependency restore failed" }
-msbuild.exe SyncKusto.sln /t:Build /p:Configuration=Release
-```
-
-`NuGet.Config` approves only the HTTPS NuGet.org v3 feed and clears inherited package sources and fallback package folders. `Directory.Build.props` also disables the SDK's implicit fallback and workload `library-packs` feeds. Do not add user/runner feeds, fallback folders, or source overrides to work around restore failures. NuGet's existing signature verification remains enabled; this policy does not introduce trusted-signer certificate pinning or require all packages to be signed.
-
-All five solution projects have a reviewed `packages.lock.json` containing resolved direct/transitive versions and package content hashes. CI checks that every lock file exists before restoring, fails on dependency or content-hash drift, and builds only after a successful locked restore. `/t:Build` does not perform another restore. Any subsequent `dotnet build` or `dotnet test` command must use `--no-restore` (and `--no-build` for tests of the existing build).
-
-For an intentional dependency update, change the relevant `PackageReference`, then use the same NuGet version and approved configuration to regenerate locks locally:
-
-```powershell
-nuget restore SyncKusto.sln -UseLockFile -ForceEvaluate -ConfigFile NuGet.Config -NonInteractive
-```
-
-Review all five lock files together with the project changes: explain every direct/transitive version change and unexpected hash change, and never hand-edit package hashes. To review a genuinely clean resolution, point `NUGET_PACKAGES` and `NUGET_HTTP_CACHE_PATH` at new disposable folders rather than clearing shared caches. Repeat the normal locked restore, build, and appropriate offline tests; the reviewed locks must remain unchanged. Include the updated locks in the dependency-update commit. Never delete locks, use `-ForceEvaluate`, or retry unlocked in CI to bypass a failure.
+The release can be downloaded from the [GitHub Releases](https://github.com/microsoft/synckusto/releases) page. Individual builds can also be found in the [GitHub Actions](https://github.com/microsoft/synckusto/actions/workflows/official.yml) page, or the repo can be cloned and built in Visual Studio. The framework-dependent Windows application requires the [.NET 10 Windows Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) matching the application's architecture.
 
 ## Settings
 Changes take effect as soon as you successfully click **OK**; restarting the app is not required. If any settings changed, the previous comparison is cleared and you must click **Compare** again before **Update**. Canceling, failing validation, or declining the temporary-database warning does not save changes. Settings cannot be changed while a comparison or update is running.
@@ -68,4 +47,4 @@ For Microsoft Entra ID user authentication, this field is optional. Leave it bla
 - Use legacy `.csl` file extensions - Kusto originally used files with `.csl` file extensions. This extension has since been deprecated and replaced with the `.kql` file extension. This setting tells synckusto which file extension should be used for reading _and_ writing all files. The default state is checked, which means synckusto will consume and emit files with the `.csl` file extension.
 
 ## Contributing
-Issues, additional features, and tests are all welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+Issues, additional features, and tests are all welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and contribution guidelines.

@@ -315,22 +315,22 @@ namespace SyncKusto
         /// <param name="e"></param>
         private void tvComparison_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            if (_sourceSchema == null || _targetSchema == null)
+            if (_sourceSchema == null || _targetSchema == null || e.Node is not { } node)
             {
                 return;
             }
 
-            string objectName = e.Node.Text;
+            string objectName = node.Text;
             string sourceText = "";
             string targetText = "";
             var settings = _settingsProvider.GetSyncKustoSettings();
 
-            if (_sourceSchema.Functions.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_functionTreeNodeText))
+            if (_sourceSchema.Functions.ContainsKey(objectName) && node.FullPath.StartsWith(_functionTreeNodeText))
             {
                 sourceText = CslCommandGenerator.GenerateCreateOrAlterFunctionCommand(_sourceSchema.Functions[objectName], true);
             }
 
-            if (_sourceSchema.Tables.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_tablesTreeNodeText))
+            if (_sourceSchema.Tables.ContainsKey(objectName) && node.FullPath.StartsWith(_tablesTreeNodeText))
             {
                 sourceText = SyncKusto.Kusto.Services.FormattedCslCommandGenerator.GenerateTableCreateCommand(
                     _sourceSchema.Tables[objectName],
@@ -340,12 +340,12 @@ namespace SyncKusto
                     settings.LineEndingMode);
             }
 
-            if (_targetSchema.Functions.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_functionTreeNodeText))
+            if (_targetSchema.Functions.ContainsKey(objectName) && node.FullPath.StartsWith(_functionTreeNodeText))
             {
                 targetText = CslCommandGenerator.GenerateCreateOrAlterFunctionCommand(_targetSchema.Functions[objectName], true);
             }
 
-            if (_targetSchema.Tables.ContainsKey(objectName) && e.Node.FullPath.StartsWith(_tablesTreeNodeText))
+            if (_targetSchema.Tables.ContainsKey(objectName) && node.FullPath.StartsWith(_tablesTreeNodeText))
             {
                 targetText = SyncKusto.Kusto.Services.FormattedCslCommandGenerator.GenerateTableCreateCommand(
                     _targetSchema.Tables[objectName],
@@ -429,7 +429,8 @@ namespace SyncKusto
             {
                 // Get selected differences
                 var selectedDifferences = selectedNodes
-                    .Select(node => (SchemaDifference)node.Tag);
+                    .Select(node => node.Tag as SchemaDifference ??
+                        throw new InvalidOperationException("Selected comparison node does not contain a schema difference."));
 
                 // Synchronize with progress reporting
                 var progress = new Progress<SyncProgress>(p =>
