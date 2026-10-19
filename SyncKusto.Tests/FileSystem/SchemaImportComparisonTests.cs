@@ -10,6 +10,7 @@ using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
 using SyncKusto.Core.Services;
 using SyncKusto.FileSystem.Repositories;
+using SyncKusto.Kusto.Exceptions;
 using SyncKusto.Kusto.Services;
 using SyncKusto.Services;
 
@@ -45,45 +46,51 @@ public class SchemaImportComparisonTests
     [TearDown]
     public void TearDown() => Directory.Delete(_root, true);
 
-    [TestCase("Source", false)]
-    [TestCase("Source", true)]
-    [TestCase("Target", false)]
-    [TestCase("Target", true)]
-    public void InvalidSide_IncludingValidBeforeInvalid_ConstructsNoClientsAndSubmitsNothing(
-        string side, bool function)
+    [Test]
+    public async Task RejectedFiles_AreReportedWithoutSubmittingTheirContents(
+        [Values("Source", "Target")] string side,
+        [Values(false, true)] bool function,
+        [Values("kql", "csl")] string extension)
     {
-        Write(_source, "a valid.kql", ".create table valid(x:long)");
-        Write(_target, "a valid.kql", ".create table valid(x:long)");
+        Write(_source, "a valid." + extension, ".create table valid(x:long)");
+        Write(_target, "a valid." + extension, ".create table valid(x:long)");
         if (function)
         {
-            Write(_source, "0 valid table.kql", ".create table valid(x:long)");
-            Write(_target, "0 valid table.kql", ".create table valid(x:long)");
-            Write(_source, @"Functions\a valid.kql", ".create-or-alter function valid() {T}");
-            Write(_target, @"Functions\a valid.kql", ".create-or-alter function valid() {T}");
+            Write(_source, @"Functions\a valid." + extension, ".create-or-alter function valid() {T}");
+            Write(_target, @"Functions\a valid." + extension, ".create-or-alter function valid() {T}");
         }
-        string relative = function ? @"Functions\z invalid.kql" : "z invalid.kql";
+        string relative = (function ? @"Functions\z invalid." : "z invalid.") + extension;
         Write(side == "Source" ? _source : _target, relative, ".drop database private_payload");
+        Write(side == "Source" ? _source : _target, "zz valid." + extension, ".create table after(x:long)");
 
-        var error = Assert.ThrowsAsync<SchemaInputException>(() => Service().CompareAsync(
-            Repository(_source), Repository(_target)))!;
-        Assert.That(error.Side, Is.EqualTo(side));
-        Assert.That(error.RelativePath, Is.EqualTo(relative));
-        Assert.That(_constructions, Is.Zero);
-        Assert.That(_mutations, Is.Zero);
-        Assert.That(_commands, Is.Empty);
+        var result = await Service().CompareAsync(Repository(_source, extension), Repository(_target, extension));
+
+        Assert.That(result.SkippedFiles.Count, Is.EqualTo(1));
+        Assert.That(result.SkippedFiles[0].Side, Is.EqualTo(side));
+        Assert.That(result.SkippedFiles[0].RelativePath, Is.EqualTo(relative));
+        Assert.That(result.SkippedFiles[0].Message, Does.Not.Contain("private_payload"));
+        Assert.That(_constructions, Is.EqualTo(2));
+        Assert.That(_commands.Count, Is.EqualTo(function ? 5 : 3));
+        Assert.That(_commands.All(c => !c.Command.Contains("private_payload")), Is.True);
+        Assert.That(_commands.Any(c => c.Command.Contains("after")), Is.True);
     }
 
     [Test]
-    public void BothInvalid_ReportsSourceFirstAndStableRelativePathOrder()
+    public async Task BothRejected_ReportsEveryFileSourceFirstAndInStableRelativePathOrder()
     {
         Write(_source, @"Functions\z last.kql", ".drop table t");
         Write(_source, @"Functions\a first.kql", ".drop table t");
         Write(_target, @"Functions\a first.kql", ".drop table t");
-        var error = Assert.ThrowsAsync<SchemaInputException>(() => Service().CompareAsync(
-            Repository(_source), Repository(_target)))!;
-        Assert.That(error.Side, Is.EqualTo("Source"));
-        Assert.That(error.RelativePath, Is.EqualTo(@"Functions\a first.kql"));
-        Assert.That(_constructions, Is.Zero);
+        var result = await Service().CompareAsync(Repository(_source), Repository(_target));
+        Assert.That(result.SkippedFiles.Select(file => (file.Side, file.RelativePath)), Is.EqualTo(new[]
+        {
+            ("Source", @"Functions\a first.kql"),
+            ("Source", @"Functions\z last.kql"),
+            ("Target", @"Functions\a first.kql")
+        }));
+        Assert.That(result.Differences.AllDifferences, Is.Empty);
+        Assert.That(_commands, Is.Empty);
+        Assert.That(_constructions, Is.EqualTo(2));
     }
 
     [Test]
@@ -94,6 +101,7 @@ public class SchemaImportComparisonTests
         {
             var repository = new Mock<ISchemaRepository>(MockBehavior.Strict);
             var snapshot = new Mock<ISchemaSnapshot>(MockBehavior.Strict);
+            snapshot.SetupGet(s => s.SkippedFiles).Returns(Array.Empty<SkippedSchemaFile>());
             snapshot.Setup(s => s.Validate()).Callback(() => calls.Add(side + " validate"));
             snapshot.Setup(s => s.GetSchemaAsync(It.IsAny<CancellationToken>()))
                 .Callback(() => calls.Add(side + " load"))
@@ -114,6 +122,25 @@ public class SchemaImportComparisonTests
         }));
         source.Verify(s => s.GetSchemaAsync(It.IsAny<CancellationToken>()), Times.Never);
         target.Verify(s => s.GetSchemaAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task BothSelections_AreCompletelyValidatedBeforeAnyNormalization()
+    {
+        Write(_source, "a valid.kql", ".create table t(x:long)");
+        Write(_source, "z invalid.kql", ".drop table private_payload");
+        Write(_target, @"Materialized Views\Example.kql",
+            ".create materialized-view Example on table T { T | summarize count() }");
+        var target = Repository(_target);
+        var source = Repository(_source, onConstruct: () =>
+            Assert.That(target.SkippedFiles.Count, Is.EqualTo(1),
+                "Target preflight must finish before source normalization begins."));
+
+        var result = await Service().CompareAsync(source, target);
+
+        Assert.That(source.SkippedFiles.Count, Is.EqualTo(1));
+        Assert.That(result.SkippedFiles.Count, Is.EqualTo(2));
+        Assert.That(_commands.Single().File, Is.EqualTo("a valid.kql"));
     }
 
     [TestCase("kql")]
@@ -150,6 +177,7 @@ public class SchemaImportComparisonTests
         Assert.That(_commands.Where(c => c.Function).All(c => c.Command.Contains("skipvalidation = true")), Is.True);
         Assert.That(result.SourceSchema, Is.SameAs(comparedSource).And.SameAs(_schemas[0]));
         Assert.That(result.TargetSchema, Is.SameAs(comparedTarget).And.SameAs(_schemas[1]));
+        Assert.That(result.SkippedFiles, Is.Empty);
         comparison.Verify(c => c.CompareSchemas(It.IsAny<DatabaseSchema>(), It.IsAny<DatabaseSchema>()), Times.Once);
     }
 
@@ -170,10 +198,9 @@ public class SchemaImportComparisonTests
         Assert.That(_commands.Count, Is.EqualTo(2));
         Assert.That(_commands.All(c => c.Command.Contains("original")), Is.True);
         Assert.That(_commands.All(c => !c.Command.Contains("private_payload")), Is.True);
-        int constructions = _constructions, mutations = _mutations;
-        Assert.ThrowsAsync<SchemaInputException>(() => Service().CompareAsync(source, target));
-        Assert.That(_constructions, Is.EqualTo(constructions));
-        Assert.That(_mutations, Is.EqualTo(mutations));
+        var next = await Service().CompareAsync(source, target);
+        Assert.That(next.SkippedFiles.Count, Is.EqualTo(2));
+        Assert.That(_commands.Count, Is.EqualTo(2), "Edited, rejected content must never execute.");
     }
 
     [Test]
@@ -188,26 +215,34 @@ public class SchemaImportComparisonTests
     }
 
     [Test]
-    public void Snapshot_CannotLoadWithoutCompleteValidation()
+    public async Task Snapshot_CannotLoadBeforeValidation_ThenLoadsOnlyAcceptedFiles()
     {
         Write(_source, "a.kql", ".create table t(x:long)");
         Write(_source, "z.kql", ".drop table t");
         var snapshot = Repository(_source).CaptureSnapshot("Source");
         Assert.Throws<InvalidOperationException>(() => snapshot.GetSchemaAsync());
-        Assert.Throws<SchemaInputException>(() => snapshot.Validate());
-        Assert.Throws<InvalidOperationException>(() => snapshot.GetSchemaAsync());
         Assert.That(_constructions, Is.Zero);
-        Assert.That(_mutations, Is.Zero);
+        snapshot.Validate();
+        snapshot.Validate();
+        await snapshot.GetSchemaAsync();
+        Assert.That(snapshot.SkippedFiles.Single().RelativePath, Is.EqualTo("z.kql"));
+        Assert.That(_commands.Single().File, Is.EqualTo("a.kql"));
     }
 
     [Test]
-    public void DirectRepositoryLoad_AlsoPreflightsEntireBatch()
+    public async Task DirectRepositoryLoad_ReportsSkipsAndClearsThemOnTheNextCapture()
     {
         Write(_source, "a.kql", ".create table t(x:long)");
         Write(_source, @"Functions\z.kql", ".drop table t");
-        Assert.ThrowsAsync<SchemaInputException>(() => Repository(_source).GetSchemaAsync());
-        Assert.That(_constructions, Is.Zero);
-        Assert.That(_mutations, Is.Zero);
+        var repository = Repository(_source);
+        await repository.GetSchemaAsync();
+        Assert.That(repository.SkippedFiles.Single().RelativePath, Is.EqualTo(@"Functions\z.kql"));
+        Assert.That(repository.SkippedFiles.Single().Side, Is.EqualTo("Schema"));
+        Assert.That(_commands.Single().File, Is.EqualTo("a.kql"));
+        Write(_source, @"Functions\z.kql", ".create-or-alter function f() {T}");
+        await repository.GetSchemaAsync();
+        Assert.That(repository.SkippedFiles, Is.Empty);
+        Assert.That(_commands.Count, Is.EqualTo(3));
     }
 
     [Test]
@@ -217,15 +252,15 @@ public class SchemaImportComparisonTests
         string relative = Path.Combine("Functions", folder, "a long ' name.kql");
         Write(_source, relative, ".create-or-alter function ['not the filename']() {T}");
         Write(_target, relative, ".drop table t");
-        var error = Assert.ThrowsAsync<SchemaInputException>(() => Service().CompareAsync(
-            Repository(_source), Repository(_target)))!;
-        Assert.That(error.RelativePath, Is.EqualTo(relative));
-        Assert.That(error.Side, Is.EqualTo("Target"));
-        Assert.That(error.Message, Does.Contain(relative));
-        Assert.That(_constructions, Is.Zero);
+        var result = await Service().CompareAsync(Repository(_source), Repository(_target));
+        Assert.That(result.SkippedFiles.Single().RelativePath, Is.EqualTo(relative));
+        Assert.That(result.SkippedFiles.Single().Side, Is.EqualTo("Target"));
+        Assert.That(result.SkippedFiles.Single().Message, Does.Contain(relative));
+        Assert.That(_commands.Single().File, Is.EqualTo(relative));
         Write(_target, relative, ".create-or-alter function ['target function']() {T}");
-        await Service().CompareAsync(Repository(_source), Repository(_target));
-        Assert.That(_commands.Count, Is.EqualTo(2));
+        var corrected = await Service().CompareAsync(Repository(_source), Repository(_target));
+        Assert.That(corrected.SkippedFiles, Is.Empty);
+        Assert.That(_commands.Count, Is.EqualTo(3));
         Assert.That(_commands.All(c => c.File == relative), Is.True);
     }
 
@@ -244,14 +279,100 @@ public class SchemaImportComparisonTests
     }
 
     [Test]
-    public void InvalidFileTarget_PreventsEvenLoadingANonFileSource()
+    public async Task RejectedFileTarget_DoesNotPreventLoadingANonFileSource()
     {
         Write(_target, "t.kql", ".drop table t");
         var source = new Mock<ISchemaRepository>(MockBehavior.Strict);
-        Assert.ThrowsAsync<SchemaInputException>(() => Service().CompareAsync(source.Object, Repository(_target)));
-        source.VerifyNoOtherCalls();
-        Assert.That(_constructions, Is.Zero);
-        Assert.That(_mutations, Is.Zero);
+        source.Setup(s => s.GetSchemaAsync(default)).ReturnsAsync(new DatabaseSchema("source", ""));
+        var result = await Service().CompareAsync(source.Object, Repository(_target));
+        Assert.That(result.SkippedFiles.Single().Side, Is.EqualTo("Target"));
+        source.Verify(s => s.GetSchemaAsync(default), Times.Once);
+        Assert.That(_commands, Is.Empty);
+    }
+
+    [TestCase("Materialized Views\\Internal\\Example.csl",
+        ".create materialized-view Example on table T { T | summarize count() }")]
+    [TestCase("Unexpected.csl", ".drop database private_payload")]
+    [TestCase("Unexpected.csl", ".create table t(x:long); .drop table private_payload")]
+    [TestCase("Unexpected.csl", ".create table t(x:long)\n.create table u(y:string)")]
+    [TestCase("Unexpected.csl", ".execute database script <| .create table t(x:long)")]
+    [TestCase("Unexpected.csl", ".create table t(x:long) with (unknown='private_payload')")]
+    [TestCase("Unexpected.csl", ".create table private_payload(x:)")]
+    [TestCase("Unexpected.csl", ".create-or-alter function private_payload() {T}")]
+    [TestCase("Unexpected.csl", "")]
+    [TestCase("Unexpected.csl", "// private_payload")]
+    [TestCase("Functions\\Unexpected.csl", ".create-or-alter function f() {print private_payload =\n}")]
+    [TestCase("Functions\\Unexpected.csl", ".create-or-alter function f() {T}; .drop table private_payload")]
+    public async Task UnsupportedOrInvalidDefinitions_AreSkippedAsWholeFiles(string path, string text)
+    {
+        Write(_source, "Valid.csl", ".create table valid(x:long)");
+        Write(_target, path, text);
+        var result = await Service().CompareAsync(Repository(_source, "csl"), Repository(_target, "csl"));
+
+        Assert.That(result.SkippedFiles.Single().RelativePath, Is.EqualTo(path));
+        Assert.That(result.SkippedFiles.Single().Message, Does.Not.Contain("private_payload"));
+        Assert.That(_commands.Single().File, Is.EqualTo("Valid.csl"));
+        Assert.That(result.SourceSchema, Is.SameAs(_schemas[0]));
+        Assert.That(result.TargetSchema, Is.SameAs(_schemas[1]));
+    }
+
+    [Test]
+    public async Task EmptySelections_HaveNoSkippedFiles()
+    {
+        var result = await Service().CompareAsync(Repository(_source), Repository(_target));
+        Assert.That(result.SkippedFiles, Is.Empty);
+        Assert.That(result.Differences.AllDifferences, Is.Empty);
+        Assert.That(_commands, Is.Empty);
+    }
+
+    [Test]
+    public async Task SkippedSourceDefinitions_KeepExistingDeletionBehavior()
+    {
+        Write(_source, "t.kql", ".create table t(x:)");
+        var source = Repository(_source);
+        var target = new Mock<ISchemaRepository>(MockBehavior.Strict);
+        var targetSchema = new DatabaseSchema("target", "");
+        var table = new TableSchema("t", new[] { new ColumnSchema("x", "System.Int64") }, "", "");
+        targetSchema.Tables.Add("t", table);
+        target.Setup(t => t.GetSchemaAsync(default)).ReturnsAsync(targetSchema);
+        target.Setup(t => t.DeleteSchemaAsync(It.IsAny<IEnumerable<IKustoSchema>>(), default))
+            .Returns(Task.CompletedTask);
+        var service = Service();
+
+        var comparison = await service.CompareAsync(source, target.Object);
+        Assert.That(comparison.SkippedFiles.Count, Is.EqualTo(1));
+        var difference = comparison.Differences.AllDifferences.Single();
+        Assert.That(difference.Difference, Is.TypeOf<OnlyInTarget>());
+        var result = await service.SynchronizeAsync(source, target.Object, new[] { difference });
+
+        Assert.That(result.Success, Is.True);
+        target.Verify(t => t.DeleteSchemaAsync(
+            It.Is<IEnumerable<IKustoSchema>>(schemas => schemas.Single().Name == "t"), default), Times.Once);
+    }
+
+    [Test]
+    public void AcceptedDefinitionLoadFailure_StillStopsComparisonWithFileAttribution()
+    {
+        Write(_source, "a.kql", ".drop table private_payload");
+        Write(_source, "t.kql", ".create table t(x:long)");
+        var failure = new CreateOrAlterException("load failed", new InvalidOperationException("private_payload"), "t");
+        var error = Assert.ThrowsAsync<SchemaInputException>(() => Service().CompareAsync(
+            Repository(_source, loadFailure: failure), Repository(_target)))!;
+
+        Assert.That(error.Side, Is.EqualTo("Source"));
+        Assert.That(error.RelativePath, Is.EqualTo("t.kql"));
+        Assert.That(error.Message, Does.Contain("could not be loaded").And.Not.Contain("private_payload"));
+        Assert.That(_constructions, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void TemporaryConnectionFailure_StillStopsComparison()
+    {
+        Write(_source, "t.kql", ".create table t(x:long)");
+        Assert.ThrowsAsync<SchemaLoadException>(() => Service().CompareAsync(
+            Repository(_source, onConstruct: () => throw new InvalidOperationException("connection unavailable")),
+            Repository(_target)));
+        Assert.That(_commands, Is.Empty);
     }
 
     [Test]
@@ -276,7 +397,8 @@ public class SchemaImportComparisonTests
         Assert.That(_constructions, Is.Zero);
     }
 
-    private FileSystemSchemaRepository Repository(string root, string extension = "kql", Action? onConstruct = null) =>
+    private FileSystemSchemaRepository Repository(
+        string root, string extension = "kql", Action? onConstruct = null, Exception? loadFailure = null) =>
         new(root, extension, "unused", "scratch", "unused", _settings, () =>
         {
             _constructions++;
@@ -290,13 +412,13 @@ public class SchemaImportComparisonTests
                 {
                     _commands.Add((false, command, file));
                     _mutations++;
-                }).Returns(Task.CompletedTask);
+                }).Returns(() => loadFailure == null ? Task.CompletedTask : Task.FromException(loadFailure));
             engine.Setup(q => q.CreateOrAlterFunctionAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .Callback<string, string>((command, file) =>
                 {
                     _commands.Add((true, command, file));
                     _mutations++;
-                }).Returns(Task.CompletedTask);
+                }).Returns(() => loadFailure == null ? Task.CompletedTask : Task.FromException(loadFailure));
             engine.Setup(q => q.GetDatabaseSchema()).Returns(schema);
             engine.Setup(q => q.Dispose());
             return engine.Object;

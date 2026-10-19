@@ -15,8 +15,9 @@ namespace SyncKusto.Tests.Services;
 [Category("SchemaImport")]
 public class SchemaImportPresenterTests
 {
-    [Test]
-    public async Task FailureInvalidatesPreviousSynchronizationAndCorrectionAllowsRetry()
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task FailureInvalidatesPreviousSynchronizationAndCorrectionAllowsRetry(bool withSkippedFiles)
     {
         var sourceInfo = new SchemaSourceInfo(SourceSelection.FilePath(), "source");
         var targetInfo = new SchemaSourceInfo(SourceSelection.FilePath(), "target");
@@ -29,7 +30,12 @@ public class SchemaImportPresenterTests
         var sync = new Mock<ISchemaSyncService>(MockBehavior.Strict);
         var result = new ComparisonResult(
             new SchemaDifferenceResult(Array.Empty<SchemaDifference>(), Array.Empty<SchemaDifference>()),
-            new DatabaseSchema("source", ""), new DatabaseSchema("target", ""));
+            new DatabaseSchema("source", ""), new DatabaseSchema("target", ""))
+        {
+            SkippedFiles = withSkippedFiles
+                ? new[] { new SkippedSchemaFile("Source", "unsupported.kql", "is unsupported", "Use a supported definition.") }
+                : Array.Empty<SkippedSchemaFile>()
+        };
         var error = new SchemaInputException("Target", @"Functions\f.kql", "must contain one definition",
             "Remove other commands and compare again.", new InvalidOperationException("private_payload"));
         sync.SetupSequence(s => s.CompareAsync(source.Object, target.Object, null, default))

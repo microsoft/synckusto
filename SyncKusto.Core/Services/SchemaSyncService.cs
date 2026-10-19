@@ -80,7 +80,13 @@ public class SchemaSyncService : ISchemaSyncService
                 100,
                 SyncProgressStage.Complete));
 
-            return new ComparisonResult(result, sourceSchema, targetSchema);
+            return new ComparisonResult(result, sourceSchema, targetSchema)
+            {
+                SkippedFiles = Array.AsReadOnly(
+                    (sourceSnapshot?.SkippedFiles ?? Array.Empty<SkippedSchemaFile>())
+                    .Concat(targetSnapshot?.SkippedFiles ?? Array.Empty<SkippedSchemaFile>())
+                    .ToArray())
+            };
         }
         catch (SchemaLoadException)
         {

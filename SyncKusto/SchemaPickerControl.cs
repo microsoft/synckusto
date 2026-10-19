@@ -22,6 +22,7 @@ namespace SyncKusto
         private const string ENTRA_ID_APP_SNI = "Microsoft Entra ID App (SubjectName/Issuer)";
 
         private ISettingsProvider? _settingsProvider;
+        private bool _reloadingRecentValues;
 
         /// <summary>
         /// Default constructor to make the Windows Forms designer happy
@@ -40,6 +41,18 @@ namespace SyncKusto
 
             SourceSelection = SourceSelection.FilePath();
             ProgressMessageState = new Stack<(string, SourceSelection)>();
+
+            foreach (Control input in new Control[]
+            {
+                txtFilePath, cbCluster, cbDatabase, cbAppId, txtAppKey, cbAppIdSni, txtCertificate
+            })
+            {
+                input.TextChanged += (_, _) =>
+                {
+                    if (!_reloadingRecentValues)
+                        ResetMainFormValueHolders?.Invoke();
+                };
+            }
         }
 
         /// <summary>
@@ -163,14 +176,27 @@ namespace SyncKusto
         {
             if (_settingsProvider == null) return;
 
-            this.cbCluster.Items.Clear();
-            this.cbCluster.Items.AddRange(_settingsProvider.GetRecentValues("RecentClusters").ToArray());
-            this.cbDatabase.Items.Clear();
-            this.cbDatabase.Items.AddRange(_settingsProvider.GetRecentValues("RecentDatabases").ToArray());
-            this.cbAppId.Items.Clear();
-            this.cbAppId.Items.AddRange(_settingsProvider.GetRecentValues("RecentAppIds").ToArray());
-            this.cbAppIdSni.Items.Clear();
-            this.cbAppIdSni.Items.AddRange(_settingsProvider.GetRecentValues("RecentAppIds").ToArray());
+            // Refreshing dropdown history must not invalidate the comparison that just completed.
+            _reloadingRecentValues = true;
+            try
+            {
+                ReloadRecentValues(cbCluster, _settingsProvider.GetRecentValues("RecentClusters"));
+                ReloadRecentValues(cbDatabase, _settingsProvider.GetRecentValues("RecentDatabases"));
+                ReloadRecentValues(cbAppId, _settingsProvider.GetRecentValues("RecentAppIds"));
+                ReloadRecentValues(cbAppIdSni, _settingsProvider.GetRecentValues("RecentAppIds"));
+            }
+            finally
+            {
+                _reloadingRecentValues = false;
+            }
+        }
+
+        private static void ReloadRecentValues(ComboBox input, IEnumerable<string> recentValues)
+        {
+            string text = input.Text;
+            input.Items.Clear();
+            input.Items.AddRange(recentValues.ToArray());
+            input.Text = text;
         }
 
         // UI Event Handlers
@@ -178,6 +204,7 @@ namespace SyncKusto
         {
             pnlApplicationAuthentication.Visible = GetAuthenticationMode() == AuthenticationMode.AadApplication;
             pnlApplicationSniAuthentication.Visible = GetAuthenticationMode() == AuthenticationMode.AadApplicationSni;
+            ResetMainFormValueHolders?.Invoke();
         }
 
         private void rbKusto_CheckedChanged(object sender, EventArgs e) =>
@@ -234,6 +261,7 @@ namespace SyncKusto
                 }
 
                 SourceSelection = source;
+                ResetMainFormValueHolders?.Invoke();
                 (string message, SourceSelection _) = ProgressMessageState.FirstOrDefault(x => x.source == SourceSelection);
                 ReportProgress(message ?? string.Empty);
             }

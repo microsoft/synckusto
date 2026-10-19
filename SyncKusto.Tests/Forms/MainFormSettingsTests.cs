@@ -80,6 +80,144 @@ public class MainFormSettingsTests
             It.IsAny<IProgress<SyncProgress>>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Test]
+    public void PartialCompare_ShowsAndReopensReport_ThenUpdatesNormally()
+    {
+        ConfigureTemporaryDatabase();
+        _comparison = CreateComparison() with
+        {
+            SkippedFiles = new[]
+            {
+                new SkippedSchemaFile("Source", @"Materialized Views\Example.csl",
+                    "must contain a single table definition", "Use a supported definition."),
+                new SkippedSchemaFile("Target", @"Functions\Broken.csl",
+                    "has a syntax error", "Complete the expression.", 3, 4)
+            }
+        };
+        int reports = 0;
+        void CloseReport(SkippedFilesForm report)
+        {
+            reports++;
+            var text = report.Controls.Find("txtSkippedFiles", true).Cast<TextBox>().Single().Text;
+            foreach (var file in _comparison.SkippedFiles)
+                Assert.That(text, Does.Contain(file.Message));
+            report.DialogResult = DialogResult.OK;
+        }
+
+        WithModal<SkippedFilesForm>(() => Field<ToolStripButton>(_form, "btnCompare").PerformClick(), CloseReport);
+        Assert.That(reports, Is.EqualTo(1));
+        var skipped = Field<ToolStripButton>(_form, "btnSkippedFiles");
+        Assert.That(skipped.Visible, Is.True);
+        Assert.That(skipped.Enabled, Is.True);
+        Assert.That(skipped.Text, Is.EqualTo("Skipped files (2)"));
+        Assert.That(Field<GroupBox>(_form, "grpComparison").Text, Is.EqualTo("Comparison (incomplete)"));
+        Assert.That(Field<ToolStripButton>(_form, "btnUpdate").Enabled, Is.True);
+
+        WithModal<SkippedFilesForm>(() => skipped.PerformClick(), CloseReport);
+        Assert.That(reports, Is.EqualTo(2));
+        Assert.That(Field<ComparisonResult>(_form, "_lastComparison"), Is.SameAs(_comparison));
+        DifferenceNode().Checked = true;
+        WithMessageBox(() => Field<ToolStripButton>(_form, "btnUpdate").PerformClick(),
+            "Complete", DialogResult.OK, "Target update is complete.");
+        _presenter.Verify(p => p.SynchronizeAsync(
+            It.Is<IEnumerable<SchemaDifference>>(differences =>
+                differences.Single().Name == "SettingsProbe"),
+            It.IsAny<IProgress<SyncProgress>>(), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.That(skipped.Visible, Is.False);
+        Assert.That(skipped.Enabled, Is.False);
+        Assert.That(Field<GroupBox>(_form, "grpComparison").Text, Is.EqualTo("Comparison"));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void PartialComparison_SelectionOrSavedSettingsClearsSkippedReport(bool changeSettings)
+    {
+        ConfigureTemporaryDatabase();
+        _comparison = CreateComparison() with
+        {
+            SkippedFiles = new[]
+            {
+                new SkippedSchemaFile("Source", "unsupported.csl",
+                    "must contain a single table definition", "Use a supported definition.")
+            }
+        };
+        WithModal<SkippedFilesForm>(() => Field<ToolStripButton>(_form, "btnCompare").PerformClick(),
+            report => report.DialogResult = DialogResult.OK);
+
+        if (changeSettings)
+        {
+            WithModal<SettingsForm>(() => Field<ToolStripButton>(_form, "btnSettings").PerformClick(), settings =>
+            {
+                Field<CheckBox>(settings, "cbCreateMerge").Checked = true;
+                Field<Button>(settings, "btnOk").PerformClick();
+            });
+        }
+        else
+        {
+            Field<TextBox>(Field<SchemaPickerControl>(_form, "spcSource"), "txtFilePath").Text = @"C:\new-source";
+        }
+
+        Assert.That(Field<ComparisonResult?>(_form, "_lastComparison"), Is.Null);
+        Assert.That(Field<ToolStripButton>(_form, "btnSkippedFiles").Visible, Is.False);
+        Assert.That(Field<ToolStripButton>(_form, "btnSkippedFiles").Enabled, Is.False);
+        Assert.That(Field<GroupBox>(_form, "grpComparison").Text, Is.EqualTo("Comparison"));
+        Assert.That(Field<ToolStripButton>(_form, "btnUpdate").Enabled, Is.False);
+    }
+
+    [TestCase("spcSource", "cbCluster")]
+    [TestCase("spcTarget", "cbDatabase")]
+    [TestCase("spcTarget", "txtFilePath")]
+    [TestCase("spcSource", "cmbAuthentication")]
+    [TestCase("spcTarget", "rbKusto")]
+    public void PartialComparison_EditingSelectionClearsSkippedReport(string pickerName, string inputName)
+    {
+        _comparison = CreateComparison() with
+        {
+            SkippedFiles = new[]
+            {
+                new SkippedSchemaFile("Source", "unsupported.csl", "is unsupported", "Use a supported definition.")
+            }
+        };
+        _form.CompareSchemasAsync(new SchemaSourceInfo(SourceSelection.FilePath(), @"C:\source"),
+            new SchemaSourceInfo(SourceSelection.FilePath(), @"C:\target")).GetAwaiter().GetResult();
+        var picker = Field<SchemaPickerControl>(_form, pickerName);
+        if (inputName == "cmbAuthentication")
+            Field<ComboBox>(picker, inputName).SelectedIndex = 1;
+        else if (inputName == "rbKusto")
+            Field<RadioButton>(picker, inputName).Checked = true;
+        else
+            Field<Control>(picker, inputName).Text = "changed";
+
+        Assert.That(Field<ComparisonResult?>(_form, "_lastComparison"), Is.Null);
+        Assert.That(Field<ToolStripButton>(_form, "btnSkippedFiles").Visible, Is.False);
+        Assert.That(Field<ToolStripButton>(_form, "btnUpdate").Enabled, Is.False);
+    }
+
+    [Test]
+    public void Comparing_RefreshesHistoryWithoutChangingSelectionsOrClearingWarnings()
+    {
+        var picker = Field<SchemaPickerControl>(_form, "spcSource");
+        _provider.AddRecentValue("RecentClusters", "https://selected.invalid");
+        picker.ReloadRecentValues();
+        var cluster = Field<ComboBox>(picker, "cbCluster");
+        cluster.SelectedIndex = 0;
+        _comparison = CreateComparison() with
+        {
+            SkippedFiles = new[]
+            {
+                new SkippedSchemaFile("Source", "unsupported.csl", "is unsupported", "Use a supported definition.")
+            }
+        };
+
+        _form.CompareSchemasAsync(new SchemaSourceInfo(SourceSelection.FilePath(), @"C:\source"),
+            new SchemaSourceInfo(SourceSelection.FilePath(), @"C:\target")).GetAwaiter().GetResult();
+
+        Assert.That(cluster.Text, Is.EqualTo("https://selected.invalid"));
+        Assert.That(Field<ComparisonResult>(_form, "_lastComparison"), Is.SameAs(_comparison));
+        Assert.That(Field<ToolStripButton>(_form, "btnSkippedFiles").Visible, Is.True);
+        Assert.That(Field<ToolStripButton>(_form, "btnUpdate").Enabled, Is.True);
+    }
+
     [TestCase(true, true)]
     [TestCase(true, false)]
     [TestCase(false, true)]
