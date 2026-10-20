@@ -126,7 +126,7 @@ namespace SyncKusto
             var sourceValidation = _sourceAdapter.Validate();
             if (!sourceValidation.IsValid)
             {
-                MessageBox.Show(@"Source schema is not correctly specified.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, @"Source schema is not correctly specified.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 spcSource.ReportProgress(string.Empty);
                 return;
             }
@@ -134,7 +134,7 @@ namespace SyncKusto
             var targetValidation = _targetAdapter.Validate();
             if (!targetValidation.IsValid)
             {
-                MessageBox.Show(@"Target schema is not correctly specified.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, @"Target schema is not correctly specified.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 spcSource.ReportProgress(string.Empty);
                 return;
             }
@@ -147,7 +147,7 @@ namespace SyncKusto
             var settingsValidation = _presenter.ValidateSettings(sourceInfo, targetInfo);
             if (!settingsValidation.IsValid)
             {
-                MessageBox.Show(settingsValidation.ErrorMessage, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, settingsValidation.ErrorMessage, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 spcSource.ReportProgress(string.Empty);
                 return;
             }
@@ -159,8 +159,7 @@ namespace SyncKusto
             }
             catch (Exception ex)
             {
-                var errorMessage = _errorMessageResolver.ResolveErrorMessage(ex);
-                MessageBox.Show($@"Failed to compare schemas: {errorMessage}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowOperationError(ex, "Couldn't compare schemas.", "Failed to compare schemas:");
             }
         }
 
@@ -174,6 +173,8 @@ namespace SyncKusto
 
             try
             {
+                RememberFilePath(sourceInfo);
+                RememberFilePath(targetInfo);
                 var progress = new Progress<SyncProgress>(p =>
                 {
                     if (!comparing)
@@ -228,6 +229,25 @@ namespace SyncKusto
                 this.Cursor = previousCursor;
                 SetOperationInProgress(false);
             }
+        }
+
+        private void RememberFilePath(SchemaSourceInfo info)
+        {
+            if (info.SourceType == SourceSelection.FilePath() && !string.IsNullOrWhiteSpace(info.FilePath))
+                _settingsProvider.SetSetting("PreviousFilePath", info.FilePath);
+        }
+
+        private void ShowOperationError(Exception exception, string heading, string prefix)
+        {
+            if (KustoErrorDetails.Format(exception) is { } details)
+            {
+                using var dialog = new ErrorDetailsForm(heading, details);
+                dialog.ShowDialog(this);
+                return;
+            }
+
+            var message = _errorMessageResolver.ResolveErrorMessage(exception);
+            MessageBox.Show(this, $"{prefix} {message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         private void btnSkippedFiles_Click(object sender, EventArgs e) => ShowSkippedFilesWarning();
@@ -422,7 +442,7 @@ namespace SyncKusto
         {
             if (_lastComparison == null)
             {
-                MessageBox.Show(@"No comparison available. Please compare schemas first.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, @"No comparison available. Please compare schemas first.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -435,15 +455,20 @@ namespace SyncKusto
 
             if (!selectedNodes.Any())
             {
-                MessageBox.Show(@"No differences were selected. Nothing to update in the target.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, @"No differences were selected. Nothing to update in the target.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
             var targetInfo = _targetAdapter.GetSourceInfo();
+            if (!_targetAdapter.Validate().IsValid)
+            {
+                MessageBox.Show(this, "Target schema is not correctly specified.", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
             var previousCursor = this.Cursor;
             this.Cursor = Cursors.WaitCursor;
-            rtbSourceText.Clear();
             SetOperationInProgress(true);
 
             try
@@ -469,19 +494,32 @@ namespace SyncKusto
 
                 if (result == null)
                 {
-                    MessageBox.Show("Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, "Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
 
                 if (!result.Success)
                 {
-                    var errorMessage = string.Join(Environment.NewLine, result.Errors);
-                    MessageBox.Show($@"Synchronization completed with errors:{Environment.NewLine}{errorMessage}",
-                        @"Partial Success", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    var failure = new AggregateException(result.Exceptions);
+                    if (KustoErrorDetails.Format(failure) is { } details)
+                    {
+                        var messages = Core.Exceptions.SchemaInputException.Find(failure) == null
+                            ? string.Join(Environment.NewLine, result.Errors) + Environment.NewLine + Environment.NewLine
+                            : string.Empty;
+                        using var dialog = new ErrorDetailsForm("Couldn't update the target schema.",
+                            messages + details);
+                        dialog.ShowDialog(this);
+                    }
+                    else
+                    {
+                        var errorMessage = string.Join(Environment.NewLine, result.Errors);
+                        MessageBox.Show(this, $@"Synchronization completed with errors:{Environment.NewLine}{errorMessage}",
+                            @"Partial Success", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
                 }
                 else
                 {
-                    MessageBox.Show(@"Target update is complete.", @"Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, @"Target update is complete.", @"Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
 
                 // Clear the comparison
@@ -490,16 +528,21 @@ namespace SyncKusto
                 spcSource.ReportProgress(string.Empty);
                 spcTarget.ReportProgress(string.Empty);
             }
+            catch (Core.Exceptions.KustoSettingsException ex)
+            {
+                MessageBox.Show(this, ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
             catch (Exception ex)
             {
                 ResetValueHoldersOnChange();
-                var errorMessage = _errorMessageResolver.ResolveErrorMessage(ex);
-                MessageBox.Show($@"Failed to synchronize schemas: {errorMessage}", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowOperationError(ex, "Couldn't update the target schema.", "Failed to synchronize schemas:");
                 spcSource.ReportProgress(string.Empty);
                 spcTarget.ReportProgress(string.Empty);
             }
             finally
             {
+                spcSource.ReportProgress(string.Empty);
+                spcTarget.ReportProgress(string.Empty);
                 this.Cursor = previousCursor;
                 SetOperationInProgress(false);
             }
@@ -520,7 +563,7 @@ namespace SyncKusto
                 return null;
             }
 
-            return await _presenter.SynchronizeAsync(differences, progress);
+            return await _presenter.SynchronizeAsync(differences, targetInfo, progress);
         }
 
         /// <summary>

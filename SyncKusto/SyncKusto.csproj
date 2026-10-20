@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
+    <ApplicationIcon>icons\SchemaCompare.ico</ApplicationIcon>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
@@ -54,7 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="icons\LibrarySetting_16x.png" />
-    <Content Include="icons\SchemaCompare.ico" />
+    <EmbeddedResource Include="icons\SchemaCompare.ico" />
     <Content Include="icons\SyncArrow_16x.png" />
     <Content Include="icons\UploadFile_16x.png" />
   </ItemGroup>

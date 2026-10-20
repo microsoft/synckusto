@@ -3,6 +3,7 @@
 
 using Kusto.Data.Common;
 using NUnit.Framework;
+using Moq;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
@@ -322,6 +323,32 @@ public class SchemaSyncServiceTests
         // Assert
         Assert.That(result.Success, Is.False);
         Assert.That(result.Errors.Count, Is.GreaterThan(0));
+    }
+
+    [Test]
+    public async Task SynchronizeAsync_SaveAndDeleteFailures_RetainsEveryOriginalExceptionInOrder()
+    {
+        var save = new SchemaSyncException("Save failed",
+            new AggregateException(new UnauthorizedAccessException("403-Forbidden"), new IOException("save diagnostic")));
+        var delete = new SchemaSyncException("Delete failed", new IOException("delete diagnostic"));
+        var target = new Mock<ISchemaRepository>(MockBehavior.Strict);
+        target.Setup(r => r.SaveSchemaAsync(It.IsAny<IEnumerable<IKustoSchema>>(), default)).ThrowsAsync(save);
+        target.Setup(r => r.DeleteSchemaAsync(It.IsAny<IEnumerable<IKustoSchema>>(), default)).ThrowsAsync(delete);
+
+        var result = await _schemaSyncService.SynchronizeAsync(Mock.Of<ISchemaRepository>(), target.Object, new[]
+        {
+            new TableSchemaDifference(new OnlyInSource(), new TestKustoSchema("SaveMe")),
+            new TableSchemaDifference(new OnlyInTarget(), new TestKustoSchema("DeleteMe"))
+        });
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Errors, Is.EqualTo(new[] { "Failed to save schemas: Save failed", "Failed to delete schemas: Delete failed" }));
+        Assert.That(result.Exceptions, Is.EqualTo(new[] { save, delete }));
+        Assert.That(result.Exceptions[0], Is.SameAs(save));
+        Assert.That(result.Exceptions[1], Is.SameAs(delete));
+        target.VerifyAll();
+        Assert.That(SyncResult.Successful(1).Exceptions, Is.Empty);
+        Assert.That(SyncResult.Failed(new[] { "Legacy error" }).Exceptions, Is.Empty);
     }
 
     // Test helper classes

@@ -9,6 +9,10 @@ using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Models;
 using SyncKusto.Core.Services;
 using SyncKusto.Kusto.Models;
+using SyncKusto.Tests.ErrorHandling;
+using SyncKusto.Core.Exceptions;
+using SyncKusto.Services;
+using SyncKusto.ErrorHandling;
 using System.Reflection;
 using static SyncKusto.Tests.Forms.FormsTestHelper;
 
@@ -44,6 +48,7 @@ public class MainFormSettingsTests
                 It.IsAny<IProgress<SyncProgress>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _comparison);
         _presenter.Setup(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(),
+                It.IsAny<SchemaSourceInfo>(),
                 It.IsAny<IProgress<SyncProgress>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(SyncResult.Successful(1));
         var errorResolver = new Mock<IErrorMessageResolver>();
@@ -100,7 +105,12 @@ public class MainFormSettingsTests
             reports++;
             var text = report.Controls.Find("txtSkippedFiles", true).Cast<TextBox>().Single().Text;
             foreach (var file in _comparison.SkippedFiles)
-                Assert.That(text, Does.Contain(file.Message));
+            {
+                Assert.That(text, Does.Contain($"{file.Side}: {file.RelativePath}"));
+                Assert.That(text, Does.Contain(file.Reason).And.Contain(file.Hint));
+                if (file.Line.HasValue)
+                    Assert.That(text, Does.Contain($"line {file.Line}, column {file.Column}"));
+            }
             report.DialogResult = DialogResult.OK;
         }
 
@@ -122,6 +132,7 @@ public class MainFormSettingsTests
         _presenter.Verify(p => p.SynchronizeAsync(
             It.Is<IEnumerable<SchemaDifference>>(differences =>
                 differences.Single().Name == "SettingsProbe"),
+            It.IsAny<SchemaSourceInfo>(),
             It.IsAny<IProgress<SyncProgress>>(), It.IsAny<CancellationToken>()), Times.Once);
         Assert.That(skipped.Visible, Is.False);
         Assert.That(skipped.Enabled, Is.False);
@@ -167,7 +178,6 @@ public class MainFormSettingsTests
     [TestCase("spcSource", "cbCluster")]
     [TestCase("spcTarget", "cbDatabase")]
     [TestCase("spcTarget", "txtFilePath")]
-    [TestCase("spcSource", "cmbAuthentication")]
     [TestCase("spcTarget", "rbKusto")]
     public void PartialComparison_EditingSelectionClearsSkippedReport(string pickerName, string inputName)
     {
@@ -181,9 +191,7 @@ public class MainFormSettingsTests
         _form.CompareSchemasAsync(new SchemaSourceInfo(SourceSelection.FilePath(), @"C:\source"),
             new SchemaSourceInfo(SourceSelection.FilePath(), @"C:\target")).GetAwaiter().GetResult();
         var picker = Field<SchemaPickerControl>(_form, pickerName);
-        if (inputName == "cmbAuthentication")
-            Field<ComboBox>(picker, inputName).SelectedIndex = 1;
-        else if (inputName == "rbKusto")
+        if (inputName == "rbKusto")
             Field<RadioButton>(picker, inputName).Checked = true;
         else
             Field<Control>(picker, inputName).Text = "changed";
@@ -293,6 +301,7 @@ public class MainFormSettingsTests
         Assert.That(Field<ComparisonResult?>(_form, "_lastComparison"), Is.Null);
         Assert.That(Field<ToolStripButton>(_form, "btnUpdate").Enabled, Is.False);
         _presenter.Verify(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(),
+            It.IsAny<SchemaSourceInfo>(),
             It.IsAny<IProgress<SyncProgress>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -333,6 +342,7 @@ public class MainFormSettingsTests
             "Complete", DialogResult.OK, "Target update is complete.");
 
         _presenter.Verify(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(),
+            It.IsAny<SchemaSourceInfo>(),
             It.IsAny<IProgress<SyncProgress>>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -376,6 +386,7 @@ public class MainFormSettingsTests
         DifferenceNode().Checked = true;
         var pending = new TaskCompletionSource<SyncResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         _presenter.Setup(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(),
+                It.IsAny<SchemaSourceInfo>(),
                 It.IsAny<IProgress<SyncProgress>>(), It.IsAny<CancellationToken>()))
             .Returns(pending.Task);
 
@@ -395,6 +406,209 @@ public class MainFormSettingsTests
         AssertIdle();
         Assert.That(Field<ToolStripButton>(_form, "btnUpdate").Enabled, Is.False);
         Assert.That(Field<ComparisonResult?>(_form, "_lastComparison"), Is.Null);
+    }
+
+    private static IEnumerable<TestCaseData> CredentialEdits() =>
+        from picker in new[] { "spcSource", "spcTarget" }
+        from field in new[] { "cmbAuthentication", "cbAppId", "txtAppKey", "cbAppIdSni", "txtCertificate" }
+        select new TestCaseData(picker, field);
+
+    [TestCaseSource(nameof(CredentialEdits))]
+    public void AuthenticationEdits_PreserveComparisonSelectionsDiffAndSkippedState(string pickerName, string inputName)
+    {
+        _comparison = CreateComparison() with
+        {
+            SkippedFiles = new[] { new SkippedSchemaFile("Source", "skipped.csl", "is unsupported", "Use a supported definition.") }
+        };
+        _form.CompareSchemasAsync(new SchemaSourceInfo(SourceSelection.FilePath(), @"C:\source"),
+            new SchemaSourceInfo(SourceSelection.FilePath(), @"C:\target")).GetAwaiter().GetResult();
+        var node = DifferenceNode();
+        node.Checked = true;
+        var tree = Field<TreeView>(_form, "tvComparison");
+        tree.SelectedNode = node;
+        var diff = Field<RichTextBox>(_form, "rtbSourceText");
+        diff.Text = "Compared schema text";
+        var picker = Field<SchemaPickerControl>(_form, pickerName);
+
+        if (inputName == "cmbAuthentication")
+            Field<ComboBox>(picker, inputName).SelectedIndex = 2;
+        else
+            Field<Control>(picker, inputName).Text = "new value";
+
+        Assert.That(Field<ComparisonResult>(_form, "_lastComparison"), Is.SameAs(_comparison));
+        Assert.That(Field<DatabaseSchema>(_form, "_sourceSchema"), Is.SameAs(_comparison.SourceSchema));
+        Assert.That(Field<DatabaseSchema>(_form, "_targetSchema"), Is.SameAs(_comparison.TargetSchema));
+        Assert.That(DifferenceNode(), Is.SameAs(node));
+        Assert.That(node.Checked, Is.True);
+        Assert.That(tree.SelectedNode, Is.SameAs(node));
+        Assert.That(diff.Text, Is.EqualTo("Compared schema text"));
+        Assert.That(Field<ToolStripButton>(_form, "btnUpdate").Enabled, Is.True);
+        Assert.That(Field<ToolStripButton>(_form, "btnSkippedFiles").Enabled, Is.True);
+        Assert.That(Field<ToolStripButton>(_form, "btnSkippedFiles").Text, Is.EqualTo("Skipped files (1)"));
+        Assert.That(Field<GroupBox>(_form, "grpComparison").Text, Is.EqualTo("Comparison (incomplete)"));
+        _presenter.Verify(p => p.CompareAsync(It.IsAny<SchemaSourceInfo>(), It.IsAny<SchemaSourceInfo>(),
+            It.IsAny<IProgress<SyncProgress>>(), default), Times.Once);
+    }
+
+    [Test]
+    public void Update_IncompleteEditedCredentials_LeavesComparisonAndDoesNotCallPresenter()
+    {
+        ConfigureTemporaryDatabase();
+        var target = Field<SchemaPickerControl>(_form, "spcTarget");
+        Field<RadioButton>(target, "rbKusto").Checked = true;
+        Field<ComboBox>(target, "cbCluster").Text = Cluster;
+        Field<ComboBox>(target, "cbDatabase").Text = Database;
+        Field<ToolStripButton>(_form, "btnCompare").PerformClick();
+        DifferenceNode().Checked = true;
+        Field<ComboBox>(target, "cmbAuthentication").SelectedIndex = 1;
+        Field<ComboBox>(target, "cbAppId").Text = "offline-app";
+
+        WithMessageBox(() => Field<ToolStripButton>(_form, "btnUpdate").PerformClick(),
+            "Error", DialogResult.OK, "Target schema is not correctly specified.");
+
+        Assert.That(Field<ComparisonResult>(_form, "_lastComparison"), Is.SameAs(_comparison));
+        Assert.That(DifferenceNode().Checked, Is.True);
+        Assert.That(Field<ToolStripButton>(_form, "btnUpdate").Enabled, Is.True);
+        _presenter.Verify(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(), It.IsAny<SchemaSourceInfo>(),
+            It.IsAny<IProgress<SyncProgress>>(), default), Times.Never);
+        AssertIdle();
+    }
+
+    [TestCase("compare")]
+    [TestCase("update")]
+    [TestCase("result")]
+    [TestCase("mixed-result")]
+    public void KustoFailure_ActualOperationShowsFullOwnedDiagnosticsAndRecoversControls(string operation)
+    {
+        ConfigureTemporaryDatabase();
+        var failure = KustoErrorDetailsTests.Forbidden();
+        if (operation == "compare")
+        {
+            _presenter.Setup(p => p.CompareAsync(It.IsAny<SchemaSourceInfo>(), It.IsAny<SchemaSourceInfo>(),
+                It.IsAny<IProgress<SyncProgress>>(), default)).ThrowsAsync(new SchemaLoadException("Compare failed", failure));
+        }
+        else
+        {
+            Field<ToolStripButton>(_form, "btnCompare").PerformClick();
+            DifferenceNode().Checked = true;
+            var setup = _presenter.Setup(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(),
+                It.IsAny<SchemaSourceInfo>(), It.IsAny<IProgress<SyncProgress>>(), default));
+            if (operation == "update")
+                setup.ThrowsAsync(failure);
+            else if (operation == "mixed-result")
+                setup.ReturnsAsync(SyncResult.Failed(new[] { "Wrapper rejected_file_payload" },
+                    new[] { failure, new SchemaLoadException("Wrapper rejected_file_payload",
+                        new SchemaInputException("Target", "bad.csl", "has a syntax error", "Complete the expression.",
+                            new InvalidOperationException("rejected_file_payload"))) }));
+            else
+                setup.ReturnsAsync(SyncResult.Failed(new[] { "Save failed", "Delete failed" },
+                    new[] { failure, KustoErrorDetailsTests.Forbidden("SecondTable") }));
+        }
+
+        WithModal<ErrorDetailsForm>(() => Field<ToolStripButton>(_form,
+            operation == "compare" ? "btnCompare" : "btnUpdate").PerformClick(), dialog =>
+        {
+            Assert.That(dialog.Owner, Is.SameAs(_form));
+            Assert.That(dialog.Controls.Find("lblHeading", true).Single().Text,
+                Is.EqualTo(operation == "compare" ? "Couldn't compare schemas." : "Couldn't update the target schema."));
+            var details = dialog.Controls.Find("txtErrorDetails", true).Single().Text;
+            Assert.That(details, Does.Contain(failure.ToString()).And.Contain("Failed object: FailedTable"));
+            Assert.That(details, Does.Contain("403-Forbidden").And.Contain("activity-id=offline-probe"));
+            if (operation == "result")
+                Assert.That(details, Does.Contain("Failed object: SecondTable"));
+            if (operation == "mixed-result")
+                Assert.That(details, Does.Contain("Target file 'bad.csl' has a syntax error.")
+                    .And.Not.Contain("rejected_file_payload"));
+            dialog.DialogResult = DialogResult.OK;
+        });
+
+        AssertIdle();
+        Assert.That(Field<ComparisonResult?>(_form, "_lastComparison"), Is.Null);
+        Assert.That(Field<ToolStripButton>(_form, "btnUpdate").Enabled, Is.False);
+    }
+
+    [Test]
+    public void Compare_SchemaInputFailure_ShowsConciseSafeMessage()
+    {
+        ConfigureTemporaryDatabase();
+        var input = new SchemaInputException("Target", @"Functions\bad.csl", "has a syntax error",
+            "Complete the expression.", new InvalidOperationException("rejected_file_payload"));
+        _presenter.Setup(p => p.CompareAsync(It.IsAny<SchemaSourceInfo>(), It.IsAny<SchemaSourceInfo>(),
+            It.IsAny<IProgress<SyncProgress>>(), default)).ThrowsAsync(new SchemaLoadException("outer", input));
+        using var form = new MainForm(_presenter.Object, ErrorMessageResolverFactory.CreateDefault(),
+            _provider, Mock.Of<ISchemaValidationService>(), Mock.Of<IKustoValidationService>());
+        form.Show();
+        foreach (var name in new[] { "spcSource", "spcTarget" })
+            Field<TextBox>(Field<SchemaPickerControl>(form, name), "txtFilePath").Text = @"C:\schema";
+
+        WithMessageBox(() => Field<ToolStripButton>(form, "btnCompare").PerformClick(),
+            "Error", DialogResult.OK, "Failed to compare schemas: " + input.Message);
+        Assert.That(Application.OpenForms.OfType<ErrorDetailsForm>(), Is.Empty);
+    }
+
+    [TestCase("")]
+    [TestCase("   ")]
+    public void Compare_EmptyFolderDoesNotOverwriteHistoryOrCallPresenter(string empty)
+    {
+        ConfigureTemporaryDatabase();
+        _provider.SetSetting("PreviousFilePath", @"C:\previous");
+        Field<TextBox>(Field<SchemaPickerControl>(_form, "spcSource"), "txtFilePath").Text = empty;
+
+        WithMessageBox(() => Field<ToolStripButton>(_form, "btnCompare").PerformClick(),
+            "Error", DialogResult.OK, "Source schema is not correctly specified.");
+
+        Assert.That(_provider.GetSetting("PreviousFilePath"), Is.EqualTo(@"C:\previous"));
+        _presenter.Verify(p => p.CompareAsync(It.IsAny<SchemaSourceInfo>(), It.IsAny<SchemaSourceInfo>(),
+            It.IsAny<IProgress<SyncProgress>>(), default), Times.Never);
+    }
+
+    [TestCase(true, false, false)]
+    [TestCase(false, true, false)]
+    [TestCase(true, true, false)]
+    [TestCase(true, false, true)]
+    [TestCase(true, true, true)]
+    [TestCase(false, false, true)]
+    public void Compare_RemembersUsedFoldersBeforeFailure_AndRestoresSharedValueOnNextLaunch(
+        bool sourceFile, bool targetFile, bool fail)
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"SyncKustoHistory_{Guid.NewGuid()}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var path = Path.Combine(directory, "settings.json");
+            var provider = new JsonFileSettingsProvider(path);
+            provider.SetSetting("PreviousFilePath", @"C:\previous");
+            if (fail)
+                _presenter.Setup(p => p.CompareAsync(It.IsAny<SchemaSourceInfo>(), It.IsAny<SchemaSourceInfo>(),
+                    It.IsAny<IProgress<SyncProgress>>(), default)).ThrowsAsync(new InvalidOperationException("offline failure"));
+            using var form = new MainForm(_presenter.Object, Mock.Of<IErrorMessageResolver>(), provider,
+                Mock.Of<ISchemaValidationService>(), Mock.Of<IKustoValidationService>());
+            var source = new SchemaSourceInfo(sourceFile ? SourceSelection.FilePath() : SourceSelection.Kusto(), @"C:\source");
+            var target = new SchemaSourceInfo(targetFile ? SourceSelection.FilePath() : SourceSelection.Kusto(), @"C:\target");
+            _presenter.Setup(p => p.CompareAsync(source, target, It.IsAny<IProgress<SyncProgress>>(), default))
+                .Callback(() => Assert.That(new JsonFileSettingsProvider(path).GetSetting("PreviousFilePath"),
+                    Is.EqualTo(targetFile ? @"C:\target" : sourceFile ? @"C:\source" : @"C:\previous")))
+                .Returns(() => fail ? Task.FromException<ComparisonResult>(new InvalidOperationException("offline failure")) :
+                    Task.FromResult(_comparison));
+
+            if (fail)
+                Assert.Throws<InvalidOperationException>(() => form.CompareSchemasAsync(source, target).GetAwaiter().GetResult());
+            else
+                form.CompareSchemasAsync(source, target).GetAwaiter().GetResult();
+
+            foreach (var name in new[] { "spcSource", "spcTarget" })
+                Assert.That(Field<TextBox>(Field<SchemaPickerControl>(form, name), "txtFilePath").Text, Is.EqualTo(@"C:\previous"),
+                    "Saving history must not change either current picker.");
+            using var restarted = new MainForm(_presenter.Object, Mock.Of<IErrorMessageResolver>(),
+                new JsonFileSettingsProvider(path), Mock.Of<ISchemaValidationService>(), Mock.Of<IKustoValidationService>());
+            foreach (var name in new[] { "spcSource", "spcTarget" })
+                Assert.That(Field<TextBox>(Field<SchemaPickerControl>(restarted, name), "txtFilePath").Text,
+                    Is.EqualTo(targetFile ? @"C:\target" : sourceFile ? @"C:\source" : @"C:\previous"));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
     }
 
     private void ConfigureTemporaryDatabase()

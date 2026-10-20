@@ -4,6 +4,7 @@
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Models;
 using SyncKusto.Kusto.Exceptions;
+using SyncKusto.ErrorHandling;
 using System;
 using System.Linq;
 using System.Windows.Forms;
@@ -180,23 +181,19 @@ namespace SyncKusto
             }
             catch (Core.Exceptions.KustoSettingsException ex)
             {
-                MessageBox.Show(ex.Message, "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            catch (KustoPermissionException ex)
-            {
-                MessageBox.Show(ex.Message, "Error Validating Permissions", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            catch (KustoClusterException ex)
-            {
-                MessageBox.Show(ex.Message, "Error Validating Cluster", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            catch (KustoAuthenticationException ex)
-            {
-                MessageBox.Show(ex.Message, "Error Authenticating", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, ex.Message, "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unknown error: {ex.Message}", "Error Validating Settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (KustoErrorDetails.Format(ex) is { } details)
+                {
+                    using var dialog = new ErrorDetailsForm("Couldn't validate Kusto settings.", details);
+                    dialog.ShowDialog(this);
+                }
+                else
+                {
+                    MessageBox.Show(this, $"Unknown error: {ex.Message}", "Error Validating Settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             finally
             {

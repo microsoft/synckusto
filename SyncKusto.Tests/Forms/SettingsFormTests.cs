@@ -181,6 +181,39 @@ public class SettingsFormTests
         Assert.That(_provider.GetSetting("TempDatabase"), Is.EqualTo(Database));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public void KustoValidationFailure_ShowsFullDetailsWithoutSavingAndRestoresControls(bool checkingEmpty)
+    {
+        var failure = new KustoPermissionException(Cluster, Database, "Validation failed",
+            ErrorHandling.KustoErrorDetailsTests.Forbidden());
+        if (checkingEmpty)
+            _validation.Setup(v => v.CheckDatabaseEmptyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ThrowsAsync(failure);
+        else
+            _validation.Setup(v => v.ValidateKustoSettingsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ThrowsAsync(new AggregateException(new InvalidOperationException("First branch"), failure));
+        using var form = new SettingsForm(_provider, _validation.Object);
+        form.Show();
+        FillSettings(form);
+
+        WithModal<ErrorDetailsForm>(() => Field<Button>(form, "btnOk").PerformClick(), dialog =>
+        {
+            Assert.That(dialog.Owner, Is.SameAs(form));
+            Assert.That(dialog.Controls.Find("lblHeading", true).Single().Text, Is.EqualTo("Couldn't validate Kusto settings."));
+            var details = dialog.Controls.Find("txtErrorDetails", true).Single().Text;
+            Assert.That(details, Does.Contain(failure.ToString()).And.Contain("Failed object: FailedTable"));
+            Assert.That(details, Does.Contain("403-Forbidden").And.Contain("activity-id=offline-probe"));
+            dialog.DialogResult = DialogResult.OK;
+        });
+
+        Assert.That(File.Exists(_settingsPath), Is.False);
+        Assert.That(Field<Button>(form, "btnOk").Enabled, Is.True);
+        Assert.That(Field<Button>(form, "btnCancel").Enabled, Is.True);
+        Assert.That(Field<TabControl>(form, "tabControl").Enabled, Is.True);
+        Assert.That(form.Visible, Is.True);
+    }
+
     private static void FillSettings(SettingsForm form)
     {
         Field<TextBox>(form, "txtKustoCluster").Text = "temp";
