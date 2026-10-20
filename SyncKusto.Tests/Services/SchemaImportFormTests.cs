@@ -86,7 +86,8 @@ public class SchemaImportFormTests
         _ = text.Handle;
 
         Assert.That(text.Text, Is.EqualTo(string.Join(Environment.NewLine + Environment.NewLine,
-            files.Select(file => file.Message))));
+            files.Select(file => $"{file.Side}: {file.RelativePath}{Environment.NewLine}" +
+                $"  {file.Reason}. (line 3, column 4){Environment.NewLine}  {file.Hint}"))));
         Assert.That(text.TextLength, Is.GreaterThan(32767));
         Assert.That(text.MaxLength, Is.Zero);
         Assert.That(text.ReadOnly, Is.True);
@@ -141,6 +142,7 @@ public class SchemaImportFormTests
         Assert.That(update.Enabled, Is.True);
         Assert.That(Field<object?>(form, "_lastComparison"), Is.SameAs(result));
         presenter.Verify(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(),
+            It.IsAny<SchemaSourceInfo>(),
             It.IsAny<IProgress<SyncProgress>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -151,7 +153,7 @@ public class SchemaImportFormTests
         var presenter = new Mock<IMainFormPresenter>(MockBehavior.Strict);
         var drop = new TableSchemaDifference(new OnlyInTarget(),
             new KustoTableSchema(new TableSchema("t", new[] { new ColumnSchema("x", "System.Int64") }, "", "")));
-        presenter.Setup(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(), null, default))
+        presenter.Setup(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(), It.IsAny<SchemaSourceInfo>(), null, default))
             .ReturnsAsync(SyncResult.Successful(1));
         using var form = new MainForm(presenter.Object, ErrorMessageResolverFactory.CreateDefault(),
             new InMemorySettingsProvider(), Mock.Of<ISchemaValidationService>(), Mock.Of<IKustoValidationService>());
@@ -163,7 +165,7 @@ public class SchemaImportFormTests
         Assert.That(prompts, Is.EqualTo(1));
         Assert.That(result?.Success, confirmed ? Is.True : Is.Null);
         presenter.Verify(p => p.SynchronizeAsync(
-            It.Is<IEnumerable<SchemaDifference>>(selected => selected.Single() == drop), null, default),
+            It.Is<IEnumerable<SchemaDifference>>(selected => selected.Single() == drop), It.IsAny<SchemaSourceInfo>(), null, default),
             confirmed ? Times.Once : Times.Never);
     }
 
@@ -173,7 +175,7 @@ public class SchemaImportFormTests
         var presenter = new Mock<IMainFormPresenter>(MockBehavior.Strict);
         var update = new TableSchemaDifference(new Modified(),
             new KustoTableSchema(new TableSchema("t", new[] { new ColumnSchema("x", "System.Int64") }, "", "")));
-        presenter.Setup(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(), null, default))
+        presenter.Setup(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(), It.IsAny<SchemaSourceInfo>(), null, default))
             .ReturnsAsync(SyncResult.Successful(1));
         using var form = new MainForm(presenter.Object, ErrorMessageResolverFactory.CreateDefault(),
             new InMemorySettingsProvider(), Mock.Of<ISchemaValidationService>(), Mock.Of<IKustoValidationService>());
@@ -184,7 +186,7 @@ public class SchemaImportFormTests
 
         Assert.That(result!.Success, Is.True);
         presenter.Verify(p => p.SynchronizeAsync(
-            It.Is<IEnumerable<SchemaDifference>>(selected => selected.Single() == update), null, default), Times.Once);
+            It.Is<IEnumerable<SchemaDifference>>(selected => selected.Single() == update), It.IsAny<SchemaSourceInfo>(), null, default), Times.Once);
     }
 
     private static T Field<T>(object instance, string name) =>

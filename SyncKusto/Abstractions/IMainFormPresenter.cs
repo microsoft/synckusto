@@ -29,6 +29,7 @@ public interface IMainFormPresenter
     /// </summary>
     Task<SyncResult> SynchronizeAsync(
         IEnumerable<SchemaDifference> selectedDifferences,
+        SchemaSourceInfo target,
         IProgress<SyncProgress>? progress = null,
         CancellationToken cancellationToken = default);
 

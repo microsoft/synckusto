@@ -42,7 +42,7 @@ jobs:
         }
 
     - name: Restore Packages
-      run: dotnet restore SyncKusto.sln --locked-mode --configfile NuGet.Config -p:NuGetInteractive=false
+      run: dotnet restore SyncKusto.sln --locked-mode --configfile .github\NuGet.Config -p:NuGetInteractive=false
 
     - name: Build Solution
       run: dotnet build SyncKusto.sln --configuration Release --no-restore

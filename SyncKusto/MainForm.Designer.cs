@@ -215,7 +215,7 @@ namespace SyncKusto
             this.Controls.Add(this.spcSource);
             this.Controls.Add(this.grpComparison);
             this.Controls.Add(this.toolStrip1);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Icon = AppIcon.Value;
             this.MinimumSize = new System.Drawing.Size(655, 815);
             this.Name = "MainForm";
             this.Text = "SyncKusto";

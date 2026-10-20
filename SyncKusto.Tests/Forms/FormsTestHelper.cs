@@ -128,6 +128,59 @@ internal static class FormsTestHelper
         Assert.That(text, Does.Contain(expectedText));
     }
 
+    public static void WithNativeDialog(Action show, string expectedTitle, Action<nint> inspect)
+    {
+        Exception? error = null;
+        bool handled = false;
+        var captions = new HashSet<string>();
+        var stopwatch = Stopwatch.StartNew();
+        using var timer = new System.Windows.Forms.Timer { Interval = 50 };
+        timer.Tick += (_, _) =>
+        {
+            nint dialog = 0;
+            EnumWindows((window, _) =>
+            {
+                GetWindowThreadProcessId(window, out var processId);
+                if (processId == Environment.ProcessId && IsWindowVisible(window))
+                {
+                    string caption = WindowText(window);
+                    captions.Add(caption);
+                    if (caption == expectedTitle)
+                        dialog = window;
+                }
+                return true;
+            }, 0);
+            if (dialog == 0 && stopwatch.Elapsed < TimeSpan.FromSeconds(10))
+                return;
+
+            timer.Stop();
+            if (dialog == 0)
+            {
+                error = new TimeoutException($"The '{expectedTitle}' native dialog did not open. Visible captions: {string.Join(", ", captions)}");
+                CloseModalForms();
+                return;
+            }
+
+            handled = true;
+            try
+            {
+                inspect(dialog);
+            }
+            catch (Exception ex)
+            {
+                error = ex;
+            }
+            finally
+            {
+                PostMessage(dialog, 0x0010, 0, 0);
+            }
+        };
+        timer.Start();
+        show();
+        Assert.That(error, Is.Null);
+        Assert.That(handled, Is.True, $"The '{expectedTitle}' native dialog did not open.");
+    }
+
     private static void CloseModalForms()
     {
         foreach (var dialog in Application.OpenForms.Cast<Form>().Where(f => f.Modal).ToArray())
