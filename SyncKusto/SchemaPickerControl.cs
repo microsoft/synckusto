@@ -44,7 +44,7 @@ namespace SyncKusto
 
             foreach (Control input in new Control[]
             {
-                txtFilePath, cbCluster, cbDatabase, cbAppId, txtAppKey, cbAppIdSni, txtCertificate
+                txtFilePath, cbCluster, cbDatabase
             })
             {
                 input.TextChanged += (_, _) =>
@@ -204,7 +204,6 @@ namespace SyncKusto
         {
             pnlApplicationAuthentication.Visible = GetAuthenticationMode() == AuthenticationMode.AadApplication;
             pnlApplicationSniAuthentication.Visible = GetAuthenticationMode() == AuthenticationMode.AadApplicationSni;
-            ResetMainFormValueHolders?.Invoke();
         }
 
         private void rbKusto_CheckedChanged(object sender, EventArgs e) =>
@@ -215,18 +214,21 @@ namespace SyncKusto
 
         private void btnChooseDirectory_Click(object sender, EventArgs e)
         {
-            var fbd = new FolderBrowserDialog
+            using var fbd = new FolderBrowserDialog
             {
                 ShowNewFolderButton = false,
-                Description = "Select the directory that contains the full schema for the Kusto database.",
+                Description = "Select schema folder",
+                UseDescriptionForTitle = true,
                 SelectedPath = txtFilePath.Text
             };
 
-            if (fbd.ShowDialog() == DialogResult.OK)
+            if (ShowFolderDialog(fbd) == DialogResult.OK)
             {
                 txtFilePath.Text = fbd.SelectedPath;
             }
         }
+
+        protected virtual DialogResult ShowFolderDialog(FolderBrowserDialog dialog) => dialog.ShowDialog(this);
 
         private void btnCertificate_Click(object sender, EventArgs e)
         {

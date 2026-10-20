@@ -130,6 +130,7 @@ public class SchemaSyncService : ISchemaSyncService
             var schemasToSave = new List<IKustoSchema>();
             var schemasToDelete = new List<IKustoSchema>();
             var errors = new List<string>();
+            var exceptions = new List<Exception>();
             int processedCount = 0;
 
             // Categorize differences into save vs delete operations
@@ -174,6 +175,7 @@ public class SchemaSyncService : ISchemaSyncService
                 catch (Exception ex)
                 {
                     errors.Add($"Failed to save schemas: {ex.Message}");
+                    exceptions.Add(ex);
                 }
             }
 
@@ -192,6 +194,7 @@ public class SchemaSyncService : ISchemaSyncService
                 catch (Exception ex)
                 {
                     errors.Add($"Failed to delete schemas: {ex.Message}");
+                    exceptions.Add(ex);
                 }
             }
 
@@ -202,7 +205,7 @@ public class SchemaSyncService : ISchemaSyncService
 
             if (errors.Any())
             {
-                return SyncResult.Failed(errors);
+                return SyncResult.Failed(errors, exceptions.AsReadOnly());
             }
 
             return SyncResult.Successful(differencesList.Count);
