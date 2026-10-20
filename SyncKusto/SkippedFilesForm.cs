@@ -16,6 +16,7 @@ public sealed class SkippedFilesForm : Form
     {
         ArgumentNullException.ThrowIfNull(skippedFiles);
 
+        Icon = AppIcon.Value;
         Text = $"Comparison incomplete: {skippedFiles.Count} file(s) skipped";
         StartPosition = FormStartPosition.CenterParent;
         AutoScaleDimensions = new SizeF(7, 15);

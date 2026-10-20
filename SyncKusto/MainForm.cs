@@ -126,7 +126,7 @@ namespace SyncKusto
             var sourceValidation = _sourceAdapter.Validate();
             if (!sourceValidation.IsValid)
             {
-                MessageBox.Show(@"Source schema is not correctly specified.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, @"Source schema is not correctly specified.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 spcSource.ReportProgress(string.Empty);
                 return;
             }
@@ -134,7 +134,7 @@ namespace SyncKusto
             var targetValidation = _targetAdapter.Validate();
             if (!targetValidation.IsValid)
             {
-                MessageBox.Show(@"Target schema is not correctly specified.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, @"Target schema is not correctly specified.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 spcSource.ReportProgress(string.Empty);
                 return;
             }
@@ -147,7 +147,7 @@ namespace SyncKusto
             var settingsValidation = _presenter.ValidateSettings(sourceInfo, targetInfo);
             if (!settingsValidation.IsValid)
             {
-                MessageBox.Show(settingsValidation.ErrorMessage, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, settingsValidation.ErrorMessage, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 spcSource.ReportProgress(string.Empty);
                 return;
             }
@@ -442,7 +442,7 @@ namespace SyncKusto
         {
             if (_lastComparison == null)
             {
-                MessageBox.Show(@"No comparison available. Please compare schemas first.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, @"No comparison available. Please compare schemas first.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -455,7 +455,7 @@ namespace SyncKusto
 
             if (!selectedNodes.Any())
             {
-                MessageBox.Show(@"No differences were selected. Nothing to update in the target.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, @"No differences were selected. Nothing to update in the target.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -494,7 +494,7 @@ namespace SyncKusto
 
                 if (result == null)
                 {
-                    MessageBox.Show("Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, "Operation has been canceled", "Canceled", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
 
@@ -519,7 +519,7 @@ namespace SyncKusto
                 }
                 else
                 {
-                    MessageBox.Show(@"Target update is complete.", @"Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, @"Target update is complete.", @"Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
 
                 // Clear the comparison

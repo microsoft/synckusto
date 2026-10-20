@@ -181,7 +181,7 @@ namespace SyncKusto
             }
             catch (Core.Exceptions.KustoSettingsException ex)
             {
-                MessageBox.Show(ex.Message, "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, ex.Message, "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch (Exception ex)
             {

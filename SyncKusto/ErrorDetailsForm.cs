@@ -10,6 +10,7 @@ public sealed class ErrorDetailsForm : Form
 {
     public ErrorDetailsForm(string heading, string details)
     {
+        Icon = AppIcon.Value;
         Text = "Kusto error";
         AutoScaleDimensions = new SizeF(7, 15);
         AutoScaleMode = AutoScaleMode.Font;

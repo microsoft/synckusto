@@ -228,7 +228,10 @@ namespace SyncKusto
             }
         }
 
-        protected virtual DialogResult ShowFolderDialog(FolderBrowserDialog dialog) => dialog.ShowDialog(this);
+        protected virtual DialogResult ShowFolderDialog(FolderBrowserDialog dialog) =>
+            dialog.ShowDialog(DialogOwner);
+
+        internal IWin32Window DialogOwner => (IWin32Window?)FindForm() ?? this;
 
         private void btnCertificate_Click(object sender, EventArgs e)
         {
@@ -237,7 +240,8 @@ namespace SyncKusto
                 CertificateStore.GetAllCertificates(certificateLocation),
                 "Select a certificate",
                 "Choose a certificate for authentication",
-                X509SelectionFlag.SingleSelection);
+                X509SelectionFlag.SingleSelection,
+                DialogOwner.Handle);
 
             if (selectedCertificateCollection != null && selectedCertificateCollection.Count == 1)
             {
