@@ -57,7 +57,7 @@ public class SchemaRepositoryFactory
                 CertificateThumbprint: sourceInfo.KustoInfo.CertificateThumbprint,
                 CertificateLocation: settings.CertificateLocation);
 
-            var connectionString = (global::Kusto.Data.KustoConnectionStringBuilder)_kustoConnectionFactory.CreateConnectionString(options);
+            var connectionString = _kustoConnectionFactory.CreateConnectionString(options);
 
             return new KustoSchemaRepository(connectionString, settings.LineEndingMode);
         }

@@ -16,7 +16,7 @@ namespace SyncKusto.Tests.Kusto;
 [Category("Kusto")]
 public class KustoConnectionFactoryTests
 {
-    private KustoConnectionFactory _factory = null!;
+    private IKustoConnectionFactory _factory = null!;
 
     [SetUp]
     public void SetUp()
@@ -204,12 +204,11 @@ public class KustoConnectionFactoryTests
             "https://login.microsoftonline.com/common");
 
         // Act
-        var result = _factory.CreateConnectionString(options);
-        var connString = result as global::Kusto.Data.KustoConnectionStringBuilder;
+        var connString = _factory.CreateConnectionString(options);
 
         // Assert
         connString.Should().NotBeNull();
-        connString!.DataSource.Should().Be("https://mycluster.eastus2.kusto.windows.net");
+        connString.DataSource.Should().Be("https://mycluster.eastus2.kusto.windows.net");
     }
 
     [Test]
@@ -259,7 +258,7 @@ public class KustoConnectionFactoryTests
             authority!);
 
         // Act
-        var connection = (global::Kusto.Data.KustoConnectionStringBuilder)_factory.CreateConnectionString(options);
+        var connection = _factory.CreateConnectionString(options);
 
         // Assert
         connection.Authority.Should().Be(new global::Kusto.Data.KustoConnectionStringBuilder("https://mycluster.kusto.windows.net").Authority);
@@ -271,7 +270,7 @@ public class KustoConnectionFactoryTests
         var options = new KustoConnectionOptions(
             "mycluster", "mydatabase", AuthenticationMode.AadFederated, "contoso.com");
 
-        var connection = (global::Kusto.Data.KustoConnectionStringBuilder)_factory.CreateConnectionString(options);
+        var connection = _factory.CreateConnectionString(options);
 
         connection.Authority.Should().Be("contoso.com");
     }
@@ -326,12 +325,11 @@ public class KustoConnectionFactoryTests
             AppKey: "app-secret-key");
 
         // Act
-        var result = _factory.CreateConnectionString(options);
-        var connString = result as global::Kusto.Data.KustoConnectionStringBuilder;
+        var connString = _factory.CreateConnectionString(options);
 
         // Assert
         connString.Should().NotBeNull();
-        connString!.ApplicationClientId.Should().Be("app-id-guid");
+        connString.ApplicationClientId.Should().Be("app-id-guid");
         connString.ApplicationKey.Should().Be("app-secret-key");
     }
 
@@ -444,12 +442,11 @@ public class KustoConnectionFactoryTests
             "https://login.microsoftonline.com/common");
 
         // Act
-        var result = _factory.CreateConnectionString(options);
-        var connString = result as global::Kusto.Data.KustoConnectionStringBuilder;
+        var connString = _factory.CreateConnectionString(options);
 
         // Assert
         connString.Should().NotBeNull();
-        connString!.DataSource.Should().Be("https://mycluster.westeurope.kusto.windows.net");
+        connString.DataSource.Should().Be("https://mycluster.westeurope.kusto.windows.net");
     }
 
     [Test]
@@ -467,12 +464,11 @@ public class KustoConnectionFactoryTests
                 "https://login.microsoftonline.com/common");
 
             // Act
-            var result = _factory.CreateConnectionString(options);
-            var connString = result as global::Kusto.Data.KustoConnectionStringBuilder;
+            var connString = _factory.CreateConnectionString(options);
 
             // Assert
             connString.Should().NotBeNull();
-            connString!.DataSource.Should().Be($"https://mycluster.{region}.kusto.windows.net");
+            connString.DataSource.Should().Be($"https://mycluster.{region}.kusto.windows.net");
         }
     }
 
