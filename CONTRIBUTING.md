@@ -10,10 +10,10 @@ or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any addi
 
 ## Building the project
 Dependencies:
-- Windows and the .NET SDK version pinned in `global.json` (currently `10.0.402`).
+- Windows and a .NET SDK compatible with `global.json`: `10.0.402` or a newer servicing patch in the `10.0.4xx` feature band.
 - For IDE development and the WinForms designer, a supported [Visual Studio 2026](https://visualstudio.microsoft.com/vs/) installation with the .NET desktop development workload.
 
-Both build workflows install the pinned SDK and use its bundled NuGet client. SDK roll-forward and prerelease selection are disabled to keep local and CI dependency resolution aligned.
+Both build workflows install the baseline SDK specified in `global.json`. Local and CI SDK resolution use `latestPatch`, selecting the newest installed servicing patch in that same feature band, and use its bundled NuGet client. Older SDKs, other feature bands, minor/major roll-forward, and prerelease versions are not allowed. Locked restores continue to enforce the reviewed dependency graph and package hashes.
 
 Local development:
 1. Clone the Sync Kusto repo to your local machine
@@ -35,6 +35,22 @@ The CI regression tests run offline; they do not validate live Kusto authenticat
 
 The main window shows a date-based build version in `Build YYYYMMDD` format (currently `Build 20261020`, for October 20, 2026). To update the displayed date, change `label2.Text` in `SyncKusto\MainForm.Designer.cs`.
 
+### Refreshing the README screenshot
+
+On Windows, install PowerShell 7.2 or newer and an SDK compatible with `global.json`, then run:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Update-ReadmeScreenshot.ps1
+```
+
+The script resolves the repository from its own location, so it also works when invoked by absolute path from another working directory. It performs a locked restore using your normal trusted NuGet configuration, builds the application and test project in Release, and runs only the explicitly selected screenshot fixture. Package restore may require network access; the capture itself is completely offline.
+
+The fixture opens the real main form without requesting activation, with in-memory settings and a fake presenter supplying a fictional modified `CurrentTime` function. It never uses live Kusto connections, credentials, saved settings, or schema files. Windows renders only that window, including its native rich-text diff; no desktop pixels or unrelated windows are captured. A Windows desktop session is required; this is not a browser or headless cross-platform renderer.
+
+The command replaces root `screenshot.png` only after capture succeeds and the PNG passes content and size checks. Capture has a timeout, and failures leave the existing image unchanged. Normal test runs do not regenerate the image, and no CI or scheduled regeneration is configured.
+
+Inspect the result before including it with your changes: the current build label, source and target pickers, expanded comparison, checked function, and red/yellow diff should be visible. The demo content and window dimensions are fixed, but native window chrome, fonts, and theme can vary between Windows environments; byte-identical output across machines is not guaranteed. Agents should follow the refresh guidance in `AGENTS.md`.
+
 ### Dependency restore policy
 
 Local development and CI deliberately select sources differently:
@@ -52,7 +68,7 @@ An approved mirror must supply packages matching the reviewed content hashes. Ch
 
 ### Updating dependencies
 
-For an intentional dependency or framework update, change the relevant project references or target framework, then use the pinned SDK and approved configuration to regenerate locks locally:
+For an intentional dependency or framework update, change the relevant project references or target framework, then use an SDK compatible with `global.json` and approved configuration to regenerate locks locally:
 
 ```powershell
 dotnet restore SyncKusto.sln --use-lock-file --force-evaluate
@@ -62,7 +78,7 @@ This uses the same inherited local source settings as normal development. Depend
 
 Review all five lock files together with the project changes: explain every direct/transitive version change and unexpected hash change, and never hand-edit package hashes. To review a genuinely clean resolution, point `NUGET_PACKAGES` and `NUGET_HTTP_CACHE_PATH` at new disposable folders rather than clearing shared caches.
 
-Repeat the normal locked restore, build, and appropriate offline tests; the reviewed locks must remain unchanged. Include the updated locks in the dependency-update commit. SDK servicing updates must deliberately update `global.json` and verify the locks with that SDK. Never delete locks, use `--force-evaluate`, or retry unlocked in CI to bypass a failure.
+Repeat the normal locked restore, build, and appropriate offline tests; the reviewed locks must remain unchanged. Include the updated locks in the dependency-update commit. Servicing patches within the allowed feature band do not require editing `global.json`; raising the minimum SDK version or changing feature bands does. Verify the locks when changing the SDK, and never regenerate them just to accommodate a roll-forward failure. Never delete locks, use `--force-evaluate`, or retry unlocked in CI to bypass a failure.
 
 ## Maintainers
 Sync Kusto is lovingly maintained by:
