@@ -5,7 +5,7 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SyncKusto.Core.Abstractions;
-using SyncKusto.Services;
+using SyncKusto.Kusto.Services;
 
 namespace SyncKusto.Tests.ErrorHandling;
 

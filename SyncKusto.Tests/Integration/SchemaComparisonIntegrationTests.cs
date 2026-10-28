@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using NUnit.Framework;
-using SyncKusto.Services;
+using SyncKusto.Kusto.Services;
 
 namespace SyncKusto.Tests.Integration;
 
