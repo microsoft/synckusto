@@ -37,6 +37,11 @@ public class FileSystemErrorMessageResolver : IErrorMessageResolver
             FileSchemaException fileEx =>
                 $"File system error: {fileEx.Message}",
 
+            FileSystemSchemaException => "Failed to load schema from file system.",
+            DirectoryNotFoundException => "The folder path provided could not be found.",
+            FileNotFoundException => "The specified file could not be found.",
+            UnauthorizedAccessException => "Access to the file system path was denied.",
+
             _ => null
         };
     }

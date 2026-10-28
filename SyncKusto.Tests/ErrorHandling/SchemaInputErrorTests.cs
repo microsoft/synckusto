@@ -7,6 +7,7 @@ using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
 using SyncKusto.Core.Services;
 using SyncKusto.ErrorHandling;
+using SyncKusto.FileSystem.Exceptions;
 using SyncKusto.Kusto.Exceptions;
 using SyncKusto.Kusto.Services;
 
@@ -57,6 +58,8 @@ public class SchemaInputErrorTests
         {
             input,
             new SchemaLoadException("outer private_payload", input),
+            new FileSchemaException("outer private_payload", input),
+            new FileSystemSchemaException("outer private_payload", input),
             new AggregateException(new SchemaLoadException("outer private_payload", new AggregateException(input))),
             new InvalidOperationException("outer private_payload",
                 new AggregateException(new InvalidOperationException("unrelated"), input))
@@ -65,7 +68,6 @@ public class SchemaInputErrorTests
         {
             ErrorMessageResolverFactory.CreateDefault(),
             new SyncKusto.FileSystem.Services.FileSystemErrorMessageResolver(),
-            new SyncKusto.ErrorHandling.FileSystemErrorMessageResolver(),
             new AggregateExceptionResolver(new CompositeErrorMessageResolver(new IErrorMessageResolver[]
             {
                 new KustoErrorMessageResolver(), new SyncKusto.FileSystem.Services.FileSystemErrorMessageResolver()
@@ -108,8 +110,63 @@ public class SchemaInputErrorTests
     [Test]
     public void DefaultFactory_AlsoResolvesOrdinaryDirectFailures()
     {
-        Assert.That(ErrorMessageResolverFactory.CreateDefault().ResolveErrorMessage(new DirectoryNotFoundException()),
-            Is.EqualTo("The folder path provided could not be found."));
+        var resolver = ErrorMessageResolverFactory.CreateDefault();
+        var cases = new (Exception Error, string Message)[]
+        {
+            (new FileSystemSchemaException("Load failed"), "Failed to load schema from file system."),
+            (new DirectoryNotFoundException(), "The folder path provided could not be found."),
+            (new FileNotFoundException(), "The specified file could not be found."),
+            (new UnauthorizedAccessException(), "Access to the file system path was denied.")
+        };
+
+        foreach (var (error, message) in cases)
+            Assert.That(resolver.ResolveErrorMessage(error), Is.EqualTo(message));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void DefaultFactory_FileErrors_UseLibraryDiagnostics(bool aggregate)
+    {
+        var resolver = ErrorMessageResolverFactory.CreateDefault();
+        var cases = new (Exception Error, string Message)[]
+        {
+            (new FileSchemaException("Write failed", new UnauthorizedAccessException()), "Access denied to file system: Write failed"),
+            (new FileSchemaException("Read failed", new DirectoryNotFoundException()), "Directory not found: Read failed"),
+            (new FileSchemaException("Read failed", new FileNotFoundException()), "File not found: Read failed"),
+            (new FileSchemaException("Write failed", new IOException()), "File system I/O error: Write failed"),
+            (new FileSchemaException("Write failed"), "File system error: Write failed"),
+            (new SchemaParseException("Parse failed", new[] { "Orders", "Summary" }),
+                "Failed to parse the following schema objects:\nOrders\nSummary\n\nCorrect the definitions and compare again.")
+        };
+
+        foreach (var (error, message) in cases)
+        {
+            Exception wrapped = aggregate ? new AggregateException(new AggregateException(error)) : error;
+            Assert.That(resolver.ResolveErrorMessage(wrapped), Is.EqualTo(message));
+        }
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void DefaultFactory_PreservesKustoResolutionAndUnrelatedFallback(bool aggregate)
+    {
+        var resolver = ErrorMessageResolverFactory.CreateDefault();
+        var cases = new (Exception Error, string Message)[]
+        {
+            (new KustoClusterException("Cluster failed"), "The specified Kusto cluster could not be found or accessed."),
+            (new InvalidOperationException("Sequence contains no elements"), "No schema found. Check database permissions."),
+            (new InvalidOperationException("Unrelated failure"), "Unrelated failure")
+        };
+
+        foreach (var (error, message) in cases)
+        {
+            Exception wrapped = aggregate ? new AggregateException(new AggregateException(error)) : error;
+            Assert.That(resolver.ResolveErrorMessage(wrapped), Is.EqualTo(message));
+        }
+
+        var multiple = new AggregateException(
+            new InvalidOperationException("First failure"), new DirectoryNotFoundException());
+        Assert.That(resolver.ResolveErrorMessage(multiple), Is.EqualTo("First failure"));
     }
 
     [Test]
@@ -122,8 +179,7 @@ public class SchemaInputErrorTests
         IErrorMessageResolver[] resolvers =
         {
             ErrorMessageResolverFactory.CreateDefault(),
-            new SyncKusto.FileSystem.Services.FileSystemErrorMessageResolver(),
-            new SyncKusto.ErrorHandling.FileSystemErrorMessageResolver()
+            new SyncKusto.FileSystem.Services.FileSystemErrorMessageResolver()
         };
 
         foreach (var resolver in resolvers)
