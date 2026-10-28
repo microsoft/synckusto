@@ -233,6 +233,7 @@ public class MainFormSettingsTests
     {
         ConfigureTemporaryDatabase();
         Field<ToolStripButton>(_form, "btnCompare").PerformClick();
+        _presenter.Invocations.Clear();
 
         WithModal<SettingsForm>(() => Field<ToolStripButton>(_form, "btnSettings").PerformClick(), settings =>
         {
@@ -241,6 +242,7 @@ public class MainFormSettingsTests
         });
 
         var invalidated = changeSettings && save;
+        _presenter.Verify(p => p.ClearComparison(), invalidated ? Times.Once() : Times.Never());
         Assert.That(Field<ToolStripButton>(_form, "btnUpdate").Enabled, Is.EqualTo(!invalidated));
         Assert.That(Field<ComparisonResult?>(_form, "_lastComparison"),
             invalidated ? Is.Null : Is.SameAs(_comparison));

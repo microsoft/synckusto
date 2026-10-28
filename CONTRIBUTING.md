@@ -80,6 +80,16 @@ The Settings dialog asks for a temporary cluster and database to use during the 
 ### Swap Source and Target
 Users frequently set up a comparison between a source and a target but then they want to reverse the comparison. Instead of making them type everything in, there could be a button to swap the settings.
 
+## Repository ownership
+
+`SchemaRepositoryFactory` transfers ownership of created repositories to its caller.
+`MainFormPresenter` retains comparison repositories until the comparison is replaced
+or invalidated, and releases newly acquired repositories if comparison fails.
+Resetting or disposing the presenter defers cleanup until any active operation finishes.
+Update's fresh Kusto target is owned only for that operation. The application disposes
+its DI container at shutdown; the container owns the presenter, not the form receiving it.
+Tests that construct a presenter directly must dispose it themselves.
+
 ## Submitting Pull Requests
 
 - **DO** submit issues for features. This facilitates discussion of a feature separately from its implementation, and increases the acceptance rates for pull requests.

@@ -164,7 +164,7 @@ public class SchemaImportComparisonTests
         var targetInfo = new SchemaSourceInfo(SourceSelection.FilePath(), _target);
         factory.Setup(f => f.CreateRepository(sourceInfo)).Returns(Repository(_source, extension));
         factory.Setup(f => f.CreateRepository(targetInfo)).Returns(Repository(_target, extension));
-        var presenter = new MainFormPresenter(new SchemaSyncService(comparison.Object),
+        using var presenter = new MainFormPresenter(new SchemaSyncService(comparison.Object),
             Mock.Of<ISchemaValidationService>(), factory.Object);
 
         var result = await presenter.CompareAsync(sourceInfo, targetInfo);

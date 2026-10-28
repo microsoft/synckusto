@@ -62,7 +62,7 @@ public class AuthenticationSwitchFlowTests
                 })
             .ReturnsAsync(SyncResult.Successful(1));
         var validation = new SchemaValidationService(settings);
-        var presenter = new MainFormPresenter(sync.Object, validation, factory);
+        using var presenter = new MainFormPresenter(sync.Object, validation, factory);
         using var form = new MainForm(presenter, ErrorMessageResolverFactory.CreateDefault(), settings,
             validation, Mock.Of<IKustoValidationService>());
         form.Show();
@@ -119,8 +119,7 @@ public class AuthenticationSwitchFlowTests
         sync.Verify(s => s.SynchronizeAsync(It.IsAny<ISchemaRepository>(), It.IsAny<ISchemaRepository>(),
             It.IsAny<IEnumerable<SchemaDifference>>(), It.IsAny<IProgress<SyncProgress>>(), default), Times.Once);
         Assert.That(Field<ComparisonResult?>(form, "_lastComparison"), Is.Null);
-        foreach (var repository in factory.Repositories.OfType<IDisposable>())
-            repository.Dispose();
+        Assert.That(Field<bool>(factory.Repositories[1], "_disposed"), Is.True);
     }
 
     [Test]
@@ -148,7 +147,8 @@ public class AuthenticationSwitchFlowTests
             It.Is<IEnumerable<SchemaDifference>>(selected => selected.Single() == difference),
             It.IsAny<IProgress<SyncProgress>>(), default)).ReturnsAsync(SyncResult.Successful(1));
         var validation = new SchemaValidationService(settings);
-        using var form = new MainForm(new MainFormPresenter(sync.Object, validation, factory.Object),
+        using var presenter = new MainFormPresenter(sync.Object, validation, factory.Object);
+        using var form = new MainForm(presenter,
             ErrorMessageResolverFactory.CreateDefault(), settings, validation, Mock.Of<IKustoValidationService>());
         form.Show();
         var sourcePicker = Field<SchemaPickerControl>(form, "spcSource");

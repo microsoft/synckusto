@@ -16,6 +16,11 @@ namespace SyncKusto.Abstractions;
 public interface IMainFormPresenter
 {
     /// <summary>
+    /// Invalidates the comparison and releases its repositories when no operation is using them.
+    /// </summary>
+    void ClearComparison();
+
+    /// <summary>
     /// Compare source and target schemas
     /// </summary>
     Task<ComparisonResult> CompareAsync(
