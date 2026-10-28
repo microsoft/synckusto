@@ -14,9 +14,9 @@ namespace SyncKusto.Kusto.Services;
 public class KustoConnectionFactory : IKustoConnectionFactory
 {
     /// <summary>
-    /// Creates a Kusto connection string based on the provided options
+    /// Creates a typed Kusto connection builder based on the provided options.
     /// </summary>
-    public object CreateConnectionString(KustoConnectionOptions options)
+    public KustoConnectionStringBuilder CreateConnectionString(KustoConnectionOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentException.ThrowIfNullOrWhiteSpace(options.Cluster);
