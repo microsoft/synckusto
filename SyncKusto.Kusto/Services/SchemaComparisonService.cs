@@ -9,7 +9,7 @@ using SyncKusto.Kusto.Extensions;
 using System;
 using System.Linq;
 
-namespace SyncKusto.Services;
+namespace SyncKusto.Kusto.Services;
 
 /// <summary>
 /// Service for comparing database schemas and identifying differences

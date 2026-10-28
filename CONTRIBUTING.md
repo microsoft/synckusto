@@ -64,6 +64,13 @@ Review all five lock files together with the project changes: explain every dire
 
 Repeat the normal locked restore, build, and appropriate offline tests; the reviewed locks must remain unchanged. Include the updated locks in the dependency-update commit. SDK servicing updates must deliberately update `global.json` and verify the locks with that SDK. Never delete locks, use `--force-evaluate`, or retry unlocked in CI to bypass a failure.
 
+## Project responsibilities
+
+Core holds contracts, difference models, and sync orchestration. The Kusto library
+owns SDK adapters and the pure `SchemaComparisonService`; comparison needs no live
+cluster. The filesystem library handles schema files, and the desktop application
+composes these services through dependency injection.
+
 ## Maintainers
 Sync Kusto is lovingly maintained by:
 - **@benmartens**
