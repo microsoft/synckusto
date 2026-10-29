@@ -10,10 +10,10 @@ or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any addi
 
 ## Building the project
 Dependencies:
-- Windows and the .NET SDK version pinned in `global.json` (currently `10.0.402`).
+- Windows and a stable .NET 10 SDK at or above the minimum in `global.json` (currently `10.0.402`).
 - For IDE development and the WinForms designer, a supported [Visual Studio 2026](https://visualstudio.microsoft.com/vs/) installation with the .NET desktop development workload.
 
-Both build workflows install the pinned SDK and use its bundled NuGet client. SDK roll-forward and prerelease selection are disabled to keep local and CI dependency resolution aligned.
+Local builds select the highest installed stable .NET 10.0 SDK at or above that minimum using `rollForward: latestFeature`. Newer patches and feature bands are accepted; prerelease SDKs and SDKs from later major versions are not. Both build workflows install the latest stable `10.0.x` SDK and use its bundled NuGet client.
 
 Local development:
 1. Clone the Sync Kusto repo to your local machine
@@ -52,7 +52,7 @@ An approved mirror must supply packages matching the reviewed content hashes. Ch
 
 ### Updating dependencies
 
-For an intentional dependency or framework update, change the relevant project references or target framework, then use the pinned SDK and approved configuration to regenerate locks locally:
+For an intentional dependency or framework update, change the relevant project references or target framework, then use a supported SDK selected by `global.json` and approved configuration to regenerate locks locally:
 
 ```powershell
 dotnet restore SyncKusto.sln --use-lock-file --force-evaluate
@@ -62,7 +62,7 @@ This uses the same inherited local source settings as normal development. Depend
 
 Review all five lock files together with the project changes: explain every direct/transitive version change and unexpected hash change, and never hand-edit package hashes. To review a genuinely clean resolution, point `NUGET_PACKAGES` and `NUGET_HTTP_CACHE_PATH` at new disposable folders rather than clearing shared caches.
 
-Repeat the normal locked restore, build, and appropriate offline tests; the reviewed locks must remain unchanged. Include the updated locks in the dependency-update commit. SDK servicing updates must deliberately update `global.json` and verify the locks with that SDK. Never delete locks, use `--force-evaluate`, or retry unlocked in CI to bypass a failure.
+Repeat the normal locked restore, build, and appropriate offline tests; the reviewed locks must remain unchanged. Include the updated locks in the dependency-update commit. Compatible SDK servicing and feature-band updates do not require editing `global.json`; change it only when intentionally changing the minimum SDK or supported SDK line. SDK changes can affect dependency resolution, so a newer SDK must still pass locked restore, build, and tests. Investigate lock conflicts rather than automatically regenerating locks. Never delete locks, use `--force-evaluate`, or retry unlocked in CI to bypass a failure.
 
 ## Maintainers
 Sync Kusto is lovingly maintained by:
