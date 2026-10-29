@@ -47,9 +47,11 @@ The script resolves the repository from its own location, so it also works when 
 
 The fixture opens the real main form without requesting activation, with in-memory settings and a fake presenter supplying a fictional modified `CurrentTime` function. It never uses live Kusto connections, credentials, saved settings, or schema files. Windows renders only that window, including its native rich-text diff; no desktop pixels or unrelated windows are captured. A Windows desktop session is required; this is not a browser or headless cross-platform renderer.
 
+Screenshots intentionally omit the entire build-version label, regardless of its value. This is limited to the capture fixture and does not change the production UI. Build-label changes alone do not require refreshing the screenshot.
+
 The command replaces root `screenshot.png` only after capture succeeds and the PNG passes content and size checks. Capture has a timeout, and failures leave the existing image unchanged. Normal test runs do not regenerate the image, and no CI or scheduled regeneration is configured.
 
-Inspect the result before including it with your changes: the current build label, source and target pickers, expanded comparison, checked function, and red/yellow diff should be visible. The demo content and window dimensions are fixed, but native window chrome, fonts, and theme can vary between Windows environments; byte-identical output across machines is not guaranteed. Agents should follow the refresh guidance in `AGENTS.md`.
+Inspect the result before including it with your changes: the build-version label should be absent, and the source and target pickers, expanded comparison, checked function, and red/yellow diff should be visible. The demo content and window dimensions are fixed, but native window chrome, fonts, and theme can vary between Windows environments; byte-identical output across machines is not guaranteed. Agents should follow the refresh guidance in `AGENTS.md`.
 
 ### Dependency restore policy
 

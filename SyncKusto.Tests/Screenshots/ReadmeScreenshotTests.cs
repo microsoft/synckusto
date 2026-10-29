@@ -64,6 +64,7 @@ public class ReadmeScreenshotTests
         Field<RadioButton>(targetPicker, "rbKusto").Checked = true;
         Field<ComboBox>(targetPicker, "cbCluster").Text = "https://demo.kusto.windows.net";
         Field<ComboBox>(targetPicker, "cbDatabase").Text = "Weather";
+        form.MainField<Label>("label2").Visible = false;
         form.Show();
 
         var compare = form.CompareSchemasAsync(sourcePicker.GetSourceInfo(), targetPicker.GetSourceInfo());
@@ -94,6 +95,7 @@ public class ReadmeScreenshotTests
         presenter.VerifyNoOtherCalls();
         kustoValidation.VerifyNoOtherCalls();
 
+        Assert.That(form.MainField<Label>("label2").Visible, Is.False, "Screenshots must omit the build-version label.");
         using var bitmap = new Bitmap(form.Width, form.Height, PixelFormat.Format32bppArgb);
         using (var graphics = Graphics.FromImage(bitmap))
         {
