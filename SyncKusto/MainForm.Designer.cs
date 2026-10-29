@@ -161,7 +161,7 @@ namespace SyncKusto
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(81, 13);
             this.label2.TabIndex = 6;
-            this.label2.Text = "Build 20261020";
+            this.label2.Text = "Build 20261029";
             // 
             // spcTargetHolder
             // 

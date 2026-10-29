@@ -33,7 +33,7 @@ Local restores use the [normal NuGet configuration hierarchy](https://learn.micr
 
 The CI regression tests run offline; they do not validate live Kusto authentication or sync operations.
 
-The main window shows a date-based build version in `Build YYYYMMDD` format (currently `Build 20261020`, for October 20, 2026). To update the displayed date, change `label2.Text` in `SyncKusto\MainForm.Designer.cs`.
+The main window shows a date-based build version in `Build YYYYMMDD` format (currently `Build 20261029`, for October 29, 2026). To update the displayed date, change `label2.Text` in `SyncKusto\MainForm.Designer.cs`.
 
 ### Dependency restore policy
 
