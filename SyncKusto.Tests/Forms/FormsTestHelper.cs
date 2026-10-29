@@ -68,62 +68,91 @@ internal static class FormsTestHelper
     {
         string? title = null;
         string? text = null;
-        var timedOut = false;
+        string? failure = null;
+        var handled = false;
+        var threadId = GetCurrentThreadId();
         var stopwatch = Stopwatch.StartNew();
-        using var cancellation = new CancellationTokenSource();
-        var watcher = Task.Run(() =>
+        using var timer = new System.Windows.Forms.Timer { Interval = 10 };
+        timer.Tick += (_, _) =>
         {
-            while (!cancellation.IsCancellationRequested)
+            if (handled || failure != null)
+                return;
+
+            nint dialog = 0;
+            EnumWindows((window, _) =>
             {
-                EnumWindows((window, _) =>
+                var windowThreadId = GetWindowThreadProcessId(window, out var processId);
+                if (processId != Environment.ProcessId || windowThreadId != threadId || !IsWindowVisible(window))
+                    return true;
+                var className = new StringBuilder(256);
+                GetClassName(window, className, className.Capacity);
+                if (className.ToString() != "#32770")
+                    return true;
+
+                dialog = window;
+                return false;
+            }, 0);
+
+            nint button = 0;
+            nint fallbackButton = 0;
+            if (dialog != 0)
+            {
+                title = WindowText(dialog);
+                var children = new List<string>();
+                EnumChildWindows(dialog, (child, _) =>
                 {
-                    GetWindowThreadProcessId(window, out var processId);
-                    if (processId != Environment.ProcessId || !IsWindowVisible(window))
-                        return true;
-                    if (stopwatch.Elapsed > TimeSpan.FromSeconds(10))
-                    {
-                        timedOut = true;
-                        if (GetWindow(window, 4) != 0)
-                            PostMessage(window, 0x0010, 0, 0);
-                    }
+                    var childText = WindowText(child);
+                    children.Add(childText);
                     var className = new StringBuilder(256);
-                    GetClassName(window, className, className.Capacity);
-                    if (className.ToString() != "#32770")
+                    GetClassName(child, className, className.Capacity);
+                    if (className.ToString() != "Button")
                         return true;
 
-                    title = WindowText(window);
-                    var children = new List<string>();
-                    nint button = 0;
-                    EnumChildWindows(window, (child, _) =>
-                    {
-                        var childText = WindowText(child);
-                        children.Add(childText);
-                        if (string.Equals(childText.Replace("&", ""), response.ToString(), StringComparison.OrdinalIgnoreCase))
-                        {
-                            button = child;
-                        }
-                        return true;
-                    }, 0);
-                    text = string.Join(" | ", children);
-                    if (button != 0)
-                    {
-                        PostMessage(button, 0x00F5, 0, 0);
-                    }
+                    fallbackButton = child;
+                    if (string.Equals(childText.Replace("&", ""), response.ToString(), StringComparison.OrdinalIgnoreCase))
+                        button = child;
                     return true;
                 }, 0);
-                Thread.Sleep(10);
+                text = string.Join(" | ", children);
             }
-        });
+
+            if (button != 0)
+            {
+                // Freeze the snapshot before dismissal; never inspect a closing dialog.
+                handled = true;
+                timer.Stop();
+                if (!PostMessage(button, 0x00F5, 0, 0))
+                    failure = $"Could not dismiss the '{title}' message box (Win32 error {Marshal.GetLastWin32Error()}).";
+            }
+            else if (stopwatch.Elapsed > TimeSpan.FromSeconds(10))
+            {
+                timer.Stop();
+                failure = dialog == 0
+                    ? $"The '{expectedTitle}' message box did not open."
+                    : $"The '{title}' message box did not provide the '{response}' response. Contents: {text}";
+                if (dialog != 0)
+                    PostMessage(fallbackButton != 0 ? fallbackButton : dialog, fallbackButton != 0 ? 0x00F5u : 0x0010u, 0, 0);
+                else
+                {
+                    foreach (var form in Application.OpenForms.Cast<Form>().Where(f => !f.InvokeRequired && f.Modal).ToArray())
+                    {
+                        form.DialogResult = DialogResult.Cancel;
+                        form.Close();
+                    }
+                }
+            }
+        };
+        timer.Start();
         try
         {
             action();
         }
         finally
         {
-            cancellation.Cancel();
-            watcher.GetAwaiter().GetResult();
+            timer.Stop();
         }
-        Assert.That(timedOut, Is.False, "An unexpected modal dialog blocked the operation.");
+        Assert.That(failure, Is.Null);
+        Assert.That(handled, Is.True, $"The '{expectedTitle}' message box did not open.");
         Assert.That(title, Is.EqualTo(expectedTitle));
         Assert.That(text, Does.Contain(expectedText));
     }
@@ -200,10 +229,10 @@ internal static class FormsTestHelper
     private delegate bool WindowCallback(nint window, nint parameter);
     [DllImport("user32.dll")] private static extern bool EnumWindows(WindowCallback callback, nint parameter);
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(nint window, out int processId);
+    [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(nint window);
-    [DllImport("user32.dll")] private static extern nint GetWindow(nint window, uint command);
     [DllImport("user32.dll")] private static extern bool EnumChildWindows(nint window, WindowCallback callback, nint parameter);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowText(nint window, StringBuilder text, int count);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(nint window, StringBuilder text, int count);
-    [DllImport("user32.dll")] private static extern bool PostMessage(nint window, uint message, nint wParam, nint lParam);
+    [DllImport("user32.dll", SetLastError = true)] private static extern bool PostMessage(nint window, uint message, nint wParam, nint lParam);
 }
