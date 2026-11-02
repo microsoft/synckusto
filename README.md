@@ -14,7 +14,7 @@ Assuming that the user already has a Kusto database with functions and tables, s
 The general usage pattern on our team is to make changes in a Kusto dev database which starts with a schema that mirrors the production database. Once the developer is satisfied with the changes, they use Sync Kusto with the development database as the source and their local file system as the target. The changes are committed to source control and a pull request is sent out for review. After the request is approved and the code merges to master, the developer syncs the master branch and uses Sync Kusto to sync from their local file system to the production Kusto database. This is a more flexible/manual version of the [Azure Data Explorer task for Azure Dev Ops](https://docs.microsoft.com/en-us/azure/data-explorer/devops). We've had great success with this process and use the tool daily to help with our development and for deploying to production assets.
 
 ## Sync Kusto Binaries
-The release can be downloaded from the [GitHub Releases](https://github.com/microsoft/synckusto/releases) page.
+The release can be downloaded from the [GitHub Releases](https://github.com/microsoft/synckusto/releases) page. Extract `synckusto.zip` and run `SyncKusto.exe`. [.NET 10 Windows Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) is required.
 
 ## Settings
 

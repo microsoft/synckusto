@@ -1,0 +1,122 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_date:
+        description: 'Optional YYYYMMDD override (defaults to the current UTC date)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: synckusto-release
+  queue: max
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Require master
+      if: github.ref != 'refs/heads/master'
+      run: throw 'Run this workflow from master. No release was created.'
+
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        ref: ${{ github.sha }}
+        persist-credentials: false
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Test release automation
+      run: .\.github\scripts\Test-Release.ps1
+
+    - name: Assign release number
+      id: version
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RELEASE_DATE: ${{ inputs.release_date }}
+      run: |
+        . .\.github\scripts\Release.ps1
+        $date = $env:RELEASE_DATE
+        if ([string]::IsNullOrEmpty($date)) {
+          $date = [datetime]::UtcNow.ToString('yyyyMMdd', [cultureinfo]::InvariantCulture)
+        }
+        $version = Get-ReleaseVersion -Date $date -ExistingTags @(Get-ReservedReleaseTags -Repository $env:GITHUB_REPOSITORY)
+        Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "version=$version"
+        Add-Content -LiteralPath $env:GITHUB_ENV -Value "RELEASE_VERSION=$version"
+
+    - name: Verify dependency lock files
+      run: |
+        $lockFiles = @(
+          'SyncKusto\packages.lock.json'
+          'SyncKusto.Core\packages.lock.json'
+          'SyncKusto.Kusto\packages.lock.json'
+          'SyncKusto.FileSystem\packages.lock.json'
+          'SyncKusto.Tests\packages.lock.json'
+        )
+        foreach ($lockFile in $lockFiles) {
+          if (-not (Test-Path -LiteralPath $lockFile -PathType Leaf)) {
+            throw "Required dependency lock file is missing: $lockFile"
+          }
+        }
+
+    - name: Restore Packages
+      run: dotnet restore SyncKusto.sln --locked-mode --configfile .github\NuGet.Config -p:NuGetInteractive=false
+
+    - name: Build Solution
+      run: dotnet build SyncKusto.sln --configuration Release --no-restore "-p:BuildVersion=$env:RELEASE_VERSION"
+
+    - name: Test offline regressions and embedded version
+      env:
+        EXPECTED_BUILD_VERSION: ${{ steps.version.outputs.version }}
+      run: dotnet test SyncKusto.Tests\SyncKusto.Tests.csproj --configuration Release --no-build --no-restore --filter "TestCategory=SchemaImport|TestCategory=Kusto|FullyQualifiedName~SyncKusto.Tests.Forms" -- RunConfiguration.TreatNoTestsAsError=true
+
+    - name: Publish tested application
+      run: dotnet publish SyncKusto\SyncKusto.csproj --configuration Release --no-build --no-restore --self-contained false --output "$env:RUNNER_TEMP\synckusto-publish" "-p:BuildVersion=$env:RELEASE_VERSION"
+
+    - name: Package and verify binaries
+      run: |
+        . .\.github\scripts\Release.ps1
+        New-ReleaseArchive -PublishDirectory "$env:RUNNER_TEMP\synckusto-publish" `
+          -TestedAssembly 'SyncKusto\bin\Release\net10.0-windows\SyncKusto.dll' `
+          -Destination 'artifacts\synckusto.zip'
+
+    - name: Retain release ZIP
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: release-${{ steps.version.outputs.version }}
+        path: artifacts\synckusto.zip
+        if-no-files-found: error
+
+    - name: Create draft with binaries
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        . .\.github\scripts\Release.ps1
+        $release = New-DraftRelease -Repository $env:GITHUB_REPOSITORY `
+          -Version $env:RELEASE_VERSION -Commit $env:GITHUB_SHA -Archive 'artifacts\synckusto.zip'
+        @(
+          "## Draft release ready"
+          ""
+          "[$($release.tagName)]($($release.url))"
+          ""
+          "Source commit: $env:GITHUB_SHA"
+          ""
+          "Attached binary: synckusto.zip"
+          ""
+          "Review the notes and binaries, then publish the draft manually."
+        ) | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY

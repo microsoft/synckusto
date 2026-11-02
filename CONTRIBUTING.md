@@ -13,7 +13,7 @@ Dependencies:
 - Windows and a stable .NET 10 SDK at or above the minimum in `global.json` (currently `10.0.402`).
 - For IDE development and the WinForms designer, a supported [Visual Studio 2026](https://visualstudio.microsoft.com/vs/) installation with the .NET desktop development workload.
 
-Local builds select the highest installed stable .NET 10.0 SDK at or above that minimum using `rollForward: latestFeature`. Newer patches and feature bands are accepted; prerelease SDKs and SDKs from later major versions are not. Both build workflows install the latest stable `10.0.x` SDK and use its bundled NuGet client.
+Local builds select the highest installed stable .NET 10.0 SDK at or above that minimum using `rollForward: latestFeature`. Newer patches and feature bands are accepted; prerelease SDKs and SDKs from later major versions are not. All build workflows install the latest stable `10.0.x` SDK and use its bundled NuGet client.
 
 Local development:
 1. Clone the Sync Kusto repo to your local machine
@@ -33,7 +33,31 @@ Local restores use the [normal NuGet configuration hierarchy](https://learn.micr
 
 The CI regression tests run offline; they do not validate live Kusto authentication or sync operations.
 
-The main window shows a date-based build version in `Build YYYYMMDD` format (currently `Build 20261020`, for October 20, 2026). To update the displayed date, change `label2.Text` in `SyncKusto\MainForm.Designer.cs`.
+The main window reads its build label from assembly metadata generated during compilation. Local builds (including the Release configuration), PR builds, and ordinary official builds show **Build dev**. No release date is stored in the form's source code, and releases never edit or commit a version number. Even a normal local build from a release tag shows **Build dev**.
+
+To explicitly reproduce a release stamp locally, pass `-p:BuildVersion=20261029.1` to `dotnet build` (and to `dotnet publish` if publishing). Set `EXPECTED_BUILD_VERSION` to the same value when running tests of that stamped build; otherwise the tests expect `dev`. A subsequent normal build regenerates the metadata as `dev`, without needing to clean the project. This display version is separate from the numeric CLR assembly/file versions.
+
+### Preparing a release
+
+1. Open **Actions > release > Run workflow** and select **master**. Leave `release_date` empty to use the UTC date when version preparation starts, or enter a real calendar date in `YYYYMMDD` format.
+2. The workflow checks out the exact commit captured when it was dispatched, performs the locked restore, builds and runs the offline regressions, and packages the tested application. Later check-ins cannot change that release's contents; there is no special last version-bump commit or PR.
+3. Open the draft link in the successful workflow's summary. The draft already contains **synckusto.zip**, with the application and its dependencies at the archive root, plus generated release notes and the source commit SHA. Review/edit the notes, download and check the binaries, then **publish the draft manually**. No manual binary attachment is needed.
+
+Release tags are `vYYYYMMDD` for the first release on a date, then `vYYYYMMDD.1`, `.2`, and so on. The application displays the matching **Build YYYYMMDD[.N]** label. Both drafts and existing Git tags reserve numbers. The workflow queues release runs and chooses the next highest numeric suffix, including suffixes above nine.
+
+The ZIP remains a framework-dependent Windows application, requiring the matching .NET 10 Windows Desktop Runtime. It is also retained as an Actions artifact named `release-<version>`. PR and ordinary official builds do not create GitHub releases.
+
+Any restore, test, packaging, GitHub API, or upload error fails the workflow. A draft is only created after the tested ZIP is ready, and its tag is atomically reserved at the tested commit first. A failure during creation/upload may leave a reserved tag or incomplete draft: inspect it before publishing anything. The workflow never overwrites existing releases/assets, moves tags, deletes incomplete results, or publishes automatically. A new complete run or full rerun allocates a fresh number; it does not repair or replace an earlier draft.
+
+The release job explicitly requests `contents: write` for `GITHUB_TOKEN`; no PAT or repository-wide token-permission change is required. Repository/organization policies must allow that job permission and creation of release tags.
+
+The dependency-free release automation regressions also run in PR CI. Run them locally with PowerShell 7:
+
+```powershell
+.\.github\scripts\Test-Release.ps1
+```
+
+These regressions use a fake GitHub CLI and temporary files; they never create actual tags or releases.
 
 ### Refreshing the README screenshot
 
