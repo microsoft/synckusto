@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 
 using Kusto.Data.Common;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using NUnit.Framework;
+using SyncKusto.Abstractions;
 using SyncKusto.Core.Abstractions;
 using SyncKusto.Core.Exceptions;
 using SyncKusto.Core.Models;
@@ -42,7 +44,7 @@ public class SchemaImportPresenterTests
             .ReturnsAsync(result).ThrowsAsync(error).ReturnsAsync(result);
         sync.Setup(s => s.SynchronizeAsync(source.Object, target.Object,
             It.IsAny<IEnumerable<SchemaDifference>>(), null, default)).ReturnsAsync(SyncResult.Successful(0));
-        var presenter = new MainFormPresenter(sync.Object, Mock.Of<ISchemaValidationService>(), factory.Object);
+        using var presenter = new MainFormPresenter(sync.Object, Mock.Of<ISchemaValidationService>(), factory.Object);
 
         Assert.That(await presenter.CompareAsync(sourceInfo, targetInfo), Is.SameAs(result));
         Assert.ThrowsAsync<SchemaInputException>(() => presenter.CompareAsync(sourceInfo, targetInfo));
@@ -93,7 +95,7 @@ public class SchemaImportPresenterTests
             setup.ThrowsAsync(new SchemaSyncException("offline failure"));
         else
             setup.ReturnsAsync(SyncResult.Successful(1));
-        var presenter = new MainFormPresenter(sync.Object, Mock.Of<ISchemaValidationService>(), factory.Object);
+        using var presenter = new MainFormPresenter(sync.Object, Mock.Of<ISchemaValidationService>(), factory.Object);
 
         await presenter.CompareAsync(sourceInfo, comparedInfo);
         if (fail)
@@ -134,7 +136,7 @@ public class SchemaImportPresenterTests
         var sync = new Mock<ISchemaSyncService>();
         sync.Setup(s => s.SynchronizeAsync(It.IsAny<ISchemaRepository>(), It.IsAny<ISchemaRepository>(),
             It.IsAny<IEnumerable<SchemaDifference>>(), null, default)).ReturnsAsync(SyncResult.Successful(0));
-        var presenter = new MainFormPresenter(sync.Object, Mock.Of<ISchemaValidationService>(), factory.Object);
+        using var presenter = new MainFormPresenter(sync.Object, Mock.Of<ISchemaValidationService>(), factory.Object);
         await presenter.CompareAsync(sourceInfo, targetInfo);
 
         Assert.ThrowsAsync<KustoSettingsException>(() => presenter.SynchronizeAsync(Array.Empty<SchemaDifference>(), invalid));
@@ -168,7 +170,7 @@ public class SchemaImportPresenterTests
         var factory = new Mock<SchemaRepositoryFactory>(Mock.Of<ISettingsProvider>(), Mock.Of<IKustoConnectionFactory>());
         factory.Setup(f => f.CreateRepository(It.IsAny<SchemaSourceInfo>())).Returns(Mock.Of<ISchemaRepository>());
         var sync = new Mock<ISchemaSyncService>();
-        var presenter = new MainFormPresenter(sync.Object, Mock.Of<ISchemaValidationService>(), factory.Object);
+        using var presenter = new MainFormPresenter(sync.Object, Mock.Of<ISchemaValidationService>(), factory.Object);
         await presenter.CompareAsync(source, compared);
 
         var error = Assert.ThrowsAsync<InvalidOperationException>(() =>
@@ -178,5 +180,225 @@ public class SchemaImportPresenterTests
         factory.Verify(f => f.CreateRepository(It.IsAny<SchemaSourceInfo>()), Times.Exactly(2));
         sync.Verify(s => s.SynchronizeAsync(It.IsAny<ISchemaRepository>(), It.IsAny<ISchemaRepository>(),
             It.IsAny<IEnumerable<SchemaDifference>>(), null, default), Times.Never);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task ClearComparisonAndDispose_ReleaseEachOwnedRepositoryOnce(bool shared)
+    {
+        var source = DisposableRepository();
+        var target = shared ? source : DisposableRepository();
+        using var presenter = Presenter(source, target, out _, out _);
+        await presenter.CompareAsync(Source, Target);
+        VerifyDisposal(source, Times.Never());
+        VerifyDisposal(target, Times.Never());
+
+        presenter.ClearComparison();
+        presenter.ClearComparison();
+        presenter.Dispose();
+
+        VerifyDisposal(source, Times.Once());
+        VerifyDisposal(target, Times.Once());
+        Assert.ThrowsAsync<ObjectDisposedException>(() => presenter.CompareAsync(Source, Target));
+    }
+
+    [Test]
+    public async Task NewComparison_ReleasesPreviousRepositoriesButRetainsNewOnes()
+    {
+        var oldSource = DisposableRepository();
+        var oldTarget = DisposableRepository();
+        var source = DisposableRepository();
+        var target = DisposableRepository();
+        using var presenter = Presenter(oldSource, oldTarget, out var factory, out _);
+        await presenter.CompareAsync(Source, Target);
+        factory.Setup(f => f.CreateRepository(Source)).Returns(() =>
+        {
+            VerifyDisposal(oldSource, Times.Once());
+            VerifyDisposal(oldTarget, Times.Once());
+            return source.Object;
+        });
+        factory.Setup(f => f.CreateRepository(Target)).Returns(target.Object);
+
+        await presenter.CompareAsync(Source, Target);
+
+        VerifyDisposal(source, Times.Never());
+        VerifyDisposal(target, Times.Never());
+        presenter.Dispose();
+        VerifyDisposal(source, Times.Once());
+        VerifyDisposal(target, Times.Once());
+    }
+
+    [Test]
+    public async Task TargetConstructionFailure_ReleasesSourceAndAllowsRetry()
+    {
+        var source = DisposableRepository();
+        var target = DisposableRepository();
+        using var presenter = Presenter(source, target, out var factory, out _);
+        factory.Setup(f => f.CreateRepository(Target)).Throws(new InvalidOperationException("construction failed"));
+
+        Assert.ThrowsAsync<InvalidOperationException>(() => presenter.CompareAsync(Source, Target));
+        VerifyDisposal(source, Times.Once());
+        VerifyDisposal(target, Times.Never());
+        Assert.ThrowsAsync<InvalidOperationException>(() =>
+            presenter.SynchronizeAsync(Array.Empty<SchemaDifference>(), Target));
+
+        var retrySource = DisposableRepository();
+        factory.Setup(f => f.CreateRepository(Source)).Returns(retrySource.Object);
+        factory.Setup(f => f.CreateRepository(Target)).Returns(target.Object);
+        await presenter.CompareAsync(Source, Target);
+        VerifyDisposal(retrySource, Times.Never());
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void FailedOrCanceledComparison_ReleasesBothRepositories(bool canceled)
+    {
+        var source = DisposableRepository();
+        var target = DisposableRepository();
+        using var presenter = Presenter(source, target, out _, out var sync);
+        Exception failure = canceled ? new OperationCanceledException() : new SchemaLoadException("load failed");
+        sync.Setup(s => s.CompareAsync(source.Object, target.Object, null, default)).ThrowsAsync(failure);
+
+        Assert.That(Assert.CatchAsync<Exception>(() => presenter.CompareAsync(Source, Target)), Is.SameAs(failure));
+
+        VerifyDisposal(source, Times.Once());
+        VerifyDisposal(target, Times.Once());
+        Assert.ThrowsAsync<InvalidOperationException>(() =>
+            presenter.SynchronizeAsync(Array.Empty<SchemaDifference>(), Target));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ClearOrDisposeDuringCompare_DefersCleanupAndNeverPublishesStaleState(bool dispose)
+    {
+        var source = DisposableRepository();
+        var target = DisposableRepository();
+        using var presenter = Presenter(source, target, out _, out var sync);
+        var completion = new TaskCompletionSource<ComparisonResult>();
+        sync.Setup(s => s.CompareAsync(source.Object, target.Object, null, default)).Returns(completion.Task);
+        var pending = presenter.CompareAsync(Source, Target);
+
+        if (dispose)
+            presenter.Dispose();
+        else
+            presenter.ClearComparison();
+        VerifyDisposal(source, Times.Never());
+        VerifyDisposal(target, Times.Never());
+        completion.SetResult(EmptyComparison());
+        Assert.CatchAsync<OperationCanceledException>(() => pending);
+
+        VerifyDisposal(source, Times.Once());
+        VerifyDisposal(target, Times.Once());
+        Assert.CatchAsync<InvalidOperationException>(() =>
+            presenter.SynchronizeAsync(Array.Empty<SchemaDifference>(), Target));
+    }
+
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public async Task ClearOrDisposeDuringUpdate_KeepsRepositoriesAliveUntilCompletion(bool dispose, bool kusto)
+    {
+        var source = DisposableRepository();
+        var comparedTarget = DisposableRepository();
+        var freshTarget = DisposableRepository();
+        var targetInfo = kusto ? new SchemaSourceInfo(SourceSelection.Kusto(), KustoInfo: new(
+            "https://target.invalid", "db", AuthenticationMode.AadFederated, "")) : Target;
+        using var presenter = Presenter(source, comparedTarget, out var factory, out var sync, targetInfo);
+        await presenter.CompareAsync(Source, targetInfo);
+        if (kusto)
+            factory.Setup(f => f.CreateRepository(targetInfo)).Returns(freshTarget.Object);
+        var completion = new TaskCompletionSource<SyncResult>();
+        sync.Setup(s => s.SynchronizeAsync(source.Object,
+                kusto ? freshTarget.Object : comparedTarget.Object,
+                It.IsAny<IEnumerable<SchemaDifference>>(), null, default)).Returns(completion.Task);
+        var pending = presenter.SynchronizeAsync(Array.Empty<SchemaDifference>(), targetInfo);
+
+        if (dispose)
+            presenter.Dispose();
+        else
+            presenter.ClearComparison();
+        VerifyDisposal(source, Times.Never());
+        VerifyDisposal(comparedTarget, Times.Never());
+        VerifyDisposal(freshTarget, Times.Never());
+        completion.SetResult(SyncResult.Successful(0));
+        await pending;
+
+        VerifyDisposal(source, Times.Once());
+        VerifyDisposal(comparedTarget, Times.Once());
+        VerifyDisposal(freshTarget, kusto ? Times.Once() : Times.Never());
+    }
+
+    [Test]
+    public async Task OverlappingOperation_IsRejectedWithoutInvalidatingActiveComparison()
+    {
+        var source = DisposableRepository();
+        var target = DisposableRepository();
+        using var presenter = Presenter(source, target, out _, out var sync);
+        var completion = new TaskCompletionSource<ComparisonResult>();
+        sync.Setup(s => s.CompareAsync(source.Object, target.Object, null, default)).Returns(completion.Task);
+        var pending = presenter.CompareAsync(Source, Target);
+
+        Assert.ThrowsAsync<InvalidOperationException>(() => presenter.CompareAsync(Source, Target));
+        VerifyDisposal(source, Times.Never());
+        completion.SetResult(EmptyComparison());
+        await pending;
+        VerifyDisposal(source, Times.Never());
+    }
+
+    [Test]
+    public async Task ContainerShutdown_DisposesResolvedPresenterAndItsRepositories()
+    {
+        var source = DisposableRepository();
+        var target = DisposableRepository();
+        var factory = new Mock<SchemaRepositoryFactory>(Mock.Of<ISettingsProvider>(), Mock.Of<IKustoConnectionFactory>());
+        factory.Setup(f => f.CreateRepository(Source)).Returns(source.Object);
+        factory.Setup(f => f.CreateRepository(Target)).Returns(target.Object);
+        var sync = new Mock<ISchemaSyncService>();
+        sync.Setup(s => s.CompareAsync(source.Object, target.Object, null, default)).ReturnsAsync(EmptyComparison());
+        using var provider = new ServiceCollection()
+            .AddSingleton(factory.Object)
+            .AddSingleton(sync.Object)
+            .AddSingleton(Mock.Of<ISchemaValidationService>())
+            .AddSingleton<IMainFormPresenter, MainFormPresenter>()
+            .BuildServiceProvider();
+        var presenter = provider.GetRequiredService<IMainFormPresenter>();
+        await presenter.CompareAsync(Source, Target);
+
+        provider.Dispose();
+
+        VerifyDisposal(source, Times.Once());
+        VerifyDisposal(target, Times.Once());
+    }
+
+    private static readonly SchemaSourceInfo Source = new(SourceSelection.FilePath(), "owned-source");
+    private static readonly SchemaSourceInfo Target = new(SourceSelection.FilePath(), "owned-target");
+
+    private static ComparisonResult EmptyComparison() => new(
+        new SchemaDifferenceResult(Array.Empty<SchemaDifference>(), Array.Empty<SchemaDifference>()),
+        new DatabaseSchema("source", ""), new DatabaseSchema("target", ""));
+
+    private static Mock<ISchemaRepository> DisposableRepository()
+    {
+        var repository = new Mock<ISchemaRepository>(MockBehavior.Strict);
+        repository.As<IDisposable>().Setup(d => d.Dispose());
+        return repository;
+    }
+
+    private static void VerifyDisposal(Mock<ISchemaRepository> repository, Times times) =>
+        repository.As<IDisposable>().Verify(d => d.Dispose(), times);
+
+    private static MainFormPresenter Presenter(
+        Mock<ISchemaRepository> source, Mock<ISchemaRepository> target,
+        out Mock<SchemaRepositoryFactory> factory, out Mock<ISchemaSyncService> sync,
+        SchemaSourceInfo? targetInfo = null)
+    {
+        factory = new Mock<SchemaRepositoryFactory>(Mock.Of<ISettingsProvider>(), Mock.Of<IKustoConnectionFactory>());
+        factory.Setup(f => f.CreateRepository(Source)).Returns(source.Object);
+        factory.Setup(f => f.CreateRepository(targetInfo ?? Target)).Returns(target.Object);
+        sync = new Mock<ISchemaSyncService>(MockBehavior.Strict);
+        sync.Setup(s => s.CompareAsync(It.IsAny<ISchemaRepository>(), It.IsAny<ISchemaRepository>(), null, default))
+            .ReturnsAsync(EmptyComparison());
+        return new MainFormPresenter(sync.Object, Mock.Of<ISchemaValidationService>(), factory.Object);
     }
 }

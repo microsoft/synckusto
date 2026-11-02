@@ -26,6 +26,7 @@ public class SchemaRepositoryFactory
     /// <summary>
     /// Create a repository based on the source information
     /// </summary>
+    /// <remarks>The caller owns the returned repository and must dispose it when it implements IDisposable.</remarks>
     public virtual ISchemaRepository CreateRepository(SchemaSourceInfo sourceInfo)
     {
         ArgumentNullException.ThrowIfNull(sourceInfo);
@@ -57,7 +58,7 @@ public class SchemaRepositoryFactory
                 CertificateThumbprint: sourceInfo.KustoInfo.CertificateThumbprint,
                 CertificateLocation: settings.CertificateLocation);
 
-            var connectionString = (global::Kusto.Data.KustoConnectionStringBuilder)_kustoConnectionFactory.CreateConnectionString(options);
+            var connectionString = _kustoConnectionFactory.CreateConnectionString(options);
 
             return new KustoSchemaRepository(connectionString, settings.LineEndingMode);
         }

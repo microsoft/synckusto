@@ -89,6 +89,7 @@ namespace SyncKusto
         /// </summary>
         private void ResetValueHoldersOnChange()
         {
+            _presenter?.ClearComparison();
             tvComparison.Nodes.Clear();
             rtbSourceText.Clear();
             _sourceSchema = null;

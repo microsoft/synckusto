@@ -82,6 +82,13 @@ Review all five lock files together with the project changes: explain every dire
 
 Repeat the normal locked restore, build, and appropriate offline tests; the reviewed locks must remain unchanged. Include the updated locks in the dependency-update commit. Compatible SDK servicing and feature-band updates do not require editing `global.json`; change it only when intentionally changing the minimum SDK or supported SDK line. SDK changes can affect dependency resolution, so a newer SDK must still pass locked restore, build, and tests. Investigate lock conflicts rather than automatically regenerating locks. Never delete locks, use `--force-evaluate`, or retry unlocked in CI to bypass a failure.
 
+## Project responsibilities
+
+Core holds contracts, difference models, and sync orchestration. The Kusto library
+owns SDK adapters and the pure `SchemaComparisonService`; comparison needs no live
+cluster. The filesystem library handles schema files, and the desktop application
+composes these services through dependency injection.
+
 ## Maintainers
 Sync Kusto is lovingly maintained by:
 - **@benmartens**
@@ -97,6 +104,16 @@ The Settings dialog asks for a temporary cluster and database to use during the 
 3) Host a Kusto cluster locally in memory
 ### Swap Source and Target
 Users frequently set up a comparison between a source and a target but then they want to reverse the comparison. Instead of making them type everything in, there could be a button to swap the settings.
+
+## Repository ownership
+
+`SchemaRepositoryFactory` transfers ownership of created repositories to its caller.
+`MainFormPresenter` retains comparison repositories until the comparison is replaced
+or invalidated, and releases newly acquired repositories if comparison fails.
+Resetting or disposing the presenter defers cleanup until any active operation finishes.
+Update's fresh Kusto target is owned only for that operation. The application disposes
+its DI container at shutdown; the container owns the presenter, not the form receiving it.
+Tests that construct a presenter directly must dispose it themselves.
 
 ## Submitting Pull Requests
 

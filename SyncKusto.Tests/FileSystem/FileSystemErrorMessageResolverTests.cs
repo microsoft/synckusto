@@ -175,6 +175,21 @@ public class FileSystemErrorMessageResolverTests
     #region Other Exceptions Tests
 
     [Test]
+    public void ResolveErrorMessage_DirectFailures_PreserveDesktopMessages()
+    {
+        var cases = new (Exception Error, string Message)[]
+        {
+            (new FileSystemSchemaException("Load failed"), "Failed to load schema from file system."),
+            (new DirectoryNotFoundException(), "The folder path provided could not be found."),
+            (new FileNotFoundException(), "The specified file could not be found."),
+            (new UnauthorizedAccessException(), "Access to the file system path was denied.")
+        };
+
+        foreach (var (error, message) in cases)
+            _resolver.ResolveErrorMessage(error).Should().Be(message);
+    }
+
+    [Test]
     public void ResolveErrorMessage_UnrelatedSyncKustoException_ReturnsNull()
     {
         // Arrange

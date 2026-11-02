@@ -15,7 +15,7 @@ namespace SyncKusto.Services;
 /// <summary>
 /// Presenter implementation for the main form
 /// </summary>
-public class MainFormPresenter : IMainFormPresenter
+public class MainFormPresenter : IMainFormPresenter, IDisposable
 {
     private readonly ISchemaSyncService _syncService;
     private readonly ISchemaValidationService _validationService;
@@ -25,6 +25,9 @@ public class MainFormPresenter : IMainFormPresenter
     private ISchemaRepository? _lastSourceRepository;
     private ISchemaRepository? _lastTargetRepository;
     private SchemaSourceInfo? _lastTargetInfo;
+    private bool _operationInProgress;
+    private bool _disposed;
+    private int _comparisonVersion;
 
     public MainFormPresenter(
         ISchemaSyncService syncService,
@@ -48,25 +51,39 @@ public class MainFormPresenter : IMainFormPresenter
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(target);
 
-        _lastSourceRepository = null;
-        _lastTargetRepository = null;
-        _lastTargetInfo = null;
+        BeginOperation();
+        ISchemaRepository? sourceRepository = null, targetRepository = null;
+        try
+        {
+            ClearComparison();
+            ReleaseRepositories();
+            int version = _comparisonVersion;
+            sourceRepository = _repositoryFactory.CreateRepository(source);
+            targetRepository = _repositoryFactory.CreateRepository(target);
 
-        // Create repositories
-        var sourceRepository = _repositoryFactory.CreateRepository(source);
-        var targetRepository = _repositoryFactory.CreateRepository(target);
+            var result = await _syncService.CompareAsync(
+                sourceRepository, targetRepository, progress, cancellationToken);
 
-        // Load schemas and compare
-        var result = await _syncService.CompareAsync(
-            sourceRepository,
-            targetRepository,
-            progress,
-            cancellationToken);
+            if (_disposed || version != _comparisonVersion)
+                throw new OperationCanceledException("The comparison was cleared before it completed.");
 
-        _lastSourceRepository = sourceRepository;
-        _lastTargetRepository = targetRepository;
-        _lastTargetInfo = target;
-        return result;
+            _lastSourceRepository = sourceRepository;
+            _lastTargetRepository = targetRepository;
+            _lastTargetInfo = target;
+            sourceRepository = targetRepository = null;
+            return result;
+        }
+        finally
+        {
+            try
+            {
+                DisposeRepositories(sourceRepository, targetRepository);
+            }
+            finally
+            {
+                EndOperation();
+            }
+        }
     }
 
     /// <summary>
@@ -81,20 +98,20 @@ public class MainFormPresenter : IMainFormPresenter
         ArgumentNullException.ThrowIfNull(selectedDifferences);
         ArgumentNullException.ThrowIfNull(target);
 
-        if (_lastSourceRepository == null || _lastTargetRepository == null || _lastTargetInfo == null)
-        {
-            throw new InvalidOperationException("Must compare before synchronizing");
-        }
-
-        if (!HasSameLocation(_lastTargetInfo, target))
-            throw new InvalidOperationException("The target location has changed. Compare schemas again before updating.");
-
-        ValidateTargetCredentials(target);
-        var targetRepository = target.SourceType == SourceSelection.Kusto()
-            ? _repositoryFactory.CreateRepository(target)
-            : _lastTargetRepository;
+        BeginOperation();
+        ISchemaRepository? targetRepository = null;
         try
         {
+            if (_lastSourceRepository == null || _lastTargetRepository == null || _lastTargetInfo == null)
+                throw new InvalidOperationException("Must compare before synchronizing");
+
+            if (!HasSameLocation(_lastTargetInfo, target))
+                throw new InvalidOperationException("The target location has changed. Compare schemas again before updating.");
+
+            ValidateTargetCredentials(target);
+            targetRepository = target.SourceType == SourceSelection.Kusto()
+                ? _repositoryFactory.CreateRepository(target)
+                : _lastTargetRepository;
             return await _syncService.SynchronizeAsync(
                 _lastSourceRepository,
                 targetRepository,
@@ -104,9 +121,72 @@ public class MainFormPresenter : IMainFormPresenter
         }
         finally
         {
-            if (target.SourceType == SourceSelection.Kusto())
-                (targetRepository as IDisposable)?.Dispose();
+            try
+            {
+                if (target.SourceType == SourceSelection.Kusto())
+                    (targetRepository as IDisposable)?.Dispose();
+            }
+            finally
+            {
+                EndOperation();
+            }
         }
+    }
+
+    public void ClearComparison()
+    {
+        _comparisonVersion++;
+        _lastTargetInfo = null;
+        if (!_operationInProgress)
+            ReleaseRepositories();
+    }
+
+    private void BeginOperation()
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(MainFormPresenter));
+        if (_operationInProgress)
+            throw new InvalidOperationException("Another schema operation is already in progress.");
+        _operationInProgress = true;
+    }
+
+    private void EndOperation()
+    {
+        _operationInProgress = false;
+        if (_lastTargetInfo == null)
+            ReleaseRepositories();
+    }
+
+    private void ReleaseRepositories()
+    {
+        var source = _lastSourceRepository;
+        var target = _lastTargetRepository;
+        _lastSourceRepository = _lastTargetRepository = null;
+        _lastTargetInfo = null;
+        DisposeRepositories(source, target);
+    }
+
+    private static void DisposeRepositories(ISchemaRepository? source, ISchemaRepository? target)
+    {
+        try
+        {
+            (source as IDisposable)?.Dispose();
+        }
+        finally
+        {
+            if (!ReferenceEquals(source, target))
+                (target as IDisposable)?.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _disposed = true;
+            ClearComparison();
+        }
+        GC.SuppressFinalize(this);
     }
 
     private static bool HasSameLocation(SchemaSourceInfo compared, SchemaSourceInfo current) =>

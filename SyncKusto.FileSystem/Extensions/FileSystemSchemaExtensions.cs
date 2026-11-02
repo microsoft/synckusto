@@ -4,6 +4,7 @@
 using Kusto.Data.Common;
 using SyncKusto.Core.Models;
 using SyncKusto.FileSystem.Exceptions;
+using SyncKusto.Kusto.Services;
 
 namespace SyncKusto.FileSystem.Extensions;
 
@@ -208,27 +209,4 @@ public static class FileSystemSchemaExtensions
         }
     }
 
-    /// <summary>
-    /// Helper class for generating formatted CSL commands
-    /// This is a simplified version that calls the real implementation in SyncKusto.Kusto
-    /// </summary>
-    private static class FormattedCslCommandGenerator
-    {
-        public static string GenerateTableCreateCommand(
-            TableSchema tableSchema,
-            bool forceNormalizeColumnName,
-            bool createMergeEnabled,
-            bool tableFieldsOnNewLine,
-            LineEndingMode lineEndingMode)
-        {
-            // We need to reference the actual implementation from SyncKusto.Kusto
-            // For now, this is a placeholder that will be replaced with proper dependency injection
-            return SyncKusto.Kusto.Services.FormattedCslCommandGenerator.GenerateTableCreateCommand(
-                tableSchema,
-                forceNormalizeColumnName,
-                createMergeEnabled,
-                tableFieldsOnNewLine,
-                lineEndingMode);
-        }
-    }
 }

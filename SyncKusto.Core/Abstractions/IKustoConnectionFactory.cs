@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Kusto.Data;
 using SyncKusto.Core.Models;
 
 namespace SyncKusto.Core.Abstractions;
@@ -11,9 +12,9 @@ namespace SyncKusto.Core.Abstractions;
 public interface IKustoConnectionFactory
 {
     /// <summary>
-    /// Creates a Kusto connection string based on the provided options
+    /// Creates a typed Kusto connection builder based on the provided options.
     /// </summary>
-    object CreateConnectionString(KustoConnectionOptions options);
+    KustoConnectionStringBuilder CreateConnectionString(KustoConnectionOptions options);
 }
 
 /// <summary>
