@@ -29,6 +29,8 @@ Changing a cluster, database, folder, or source type still clears the comparison
 ### Kusto errors
 Compare, Update, and Kusto settings-validation failures show a short operation heading with always-visible, read-only, scrollable error details. Select and copy the original Kusto diagnostics, including inner/aggregate errors and failed object names, without opening a separate Details section. Long errors stay within a resizable window. Diagnostics do not append picker credentials or settings; rejected-file input messages remain concise and do not include rejected file contents.
 
+File-system diagnostics distinguish missing folders/files, access denials, and wrapped I/O errors. Schema parse failures list the affected objects with guidance to correct their definitions and compare again.
+
 ### Window icons
 The main window, Kusto error details, skipped-file report, Settings, and Drop Warning use the same SyncKusto icon as the executable. Folder and certificate pickers and ordinary message boxes remain Windows-native and are owned by the calling SyncKusto window. Their APIs do not expose a custom caption-icon option: Windows controls whether they inherit the owner's icon, show a native icon, or show no caption icon. Standard error, warning, information, and question symbols in message content are unchanged.
 

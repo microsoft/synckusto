@@ -4,8 +4,11 @@
 using FluentAssertions;
 using Kusto.Data.Common;
 using NUnit.Framework;
+using SyncKusto.Core.Models;
 using SyncKusto.FileSystem.Exceptions;
 using SyncKusto.FileSystem.Extensions;
+using SyncKusto.Kusto.Services;
+using System.Text;
 
 namespace SyncKusto.Tests.FileSystem;
 
@@ -291,6 +294,24 @@ public class FileSystemSchemaExtensionsTests
     #endregion
 
     #region TableSchema WriteToFile Tests
+
+    [Test]
+    public void WriteToFile_Table_PreservesSharedFormatterBytes(
+        [Values("kql", "csl")] string extension,
+        [Values] bool createMerge,
+        [Values] bool fieldsOnNewLine,
+        [Values(LineEndingMode.WindowsStyle, LineEndingMode.UnixStyle)] LineEndingMode lineEndings)
+    {
+        var table = CreateTestTable("TestTable", string.Empty);
+        var expected = FormattedCslCommandGenerator.GenerateTableCreateCommand(
+            table, forceNormalizeColumnName: true, createMergeEnabled: createMerge,
+            tableFieldsOnNewLine: fieldsOnNewLine, lineEndingMode: lineEndings);
+
+        table.WriteToFile(_testDirectory, extension, createMerge, fieldsOnNewLine, lineEndings);
+
+        File.ReadAllBytes(Path.Combine(_testDirectory, $"TestTable.{extension}"))
+            .Should().Equal(Encoding.UTF8.GetBytes(expected));
+    }
 
     [Test]
     public void WriteToFile_Table_CreatesFileInRootFolder()
