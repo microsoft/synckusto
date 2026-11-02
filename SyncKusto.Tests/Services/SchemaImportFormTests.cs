@@ -26,6 +26,7 @@ public class SchemaImportFormTests
     public void PartialComparison_KeepsUpdateAndSkippedReportAvailable_AndClearsStaleWarnings()
     {
         var presenter = new Mock<IMainFormPresenter>(MockBehavior.Strict);
+        presenter.Setup(p => p.ClearComparison());
         var source = new SchemaSourceInfo(SourceSelection.FilePath(), "source");
         var target = new SchemaSourceInfo(SourceSelection.FilePath(), "target");
         var clean = new ComparisonResult(
@@ -103,6 +104,7 @@ public class SchemaImportFormTests
     public void FailedCompare_ClearsResultsUpdateAndBusyState_ThenCorrectionCanBeCompared()
     {
         var presenter = new Mock<IMainFormPresenter>(MockBehavior.Strict);
+        presenter.Setup(p => p.ClearComparison());
         var source = new SchemaSourceInfo(SourceSelection.FilePath(), "source");
         var target = new SchemaSourceInfo(SourceSelection.FilePath(), "target");
         var result = new ComparisonResult(
@@ -151,6 +153,7 @@ public class SchemaImportFormTests
     public void KustoDrops_RequireConfirmationBeforeSynchronizing(bool confirmed)
     {
         var presenter = new Mock<IMainFormPresenter>(MockBehavior.Strict);
+        presenter.Setup(p => p.ClearComparison());
         var drop = new TableSchemaDifference(new OnlyInTarget(),
             new KustoTableSchema(new TableSchema("t", new[] { new ColumnSchema("x", "System.Int64") }, "", "")));
         presenter.Setup(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(), It.IsAny<SchemaSourceInfo>(), null, default))
@@ -173,6 +176,7 @@ public class SchemaImportFormTests
     public void GeneratedUpdates_DoNotAddANewDropConfirmation()
     {
         var presenter = new Mock<IMainFormPresenter>(MockBehavior.Strict);
+        presenter.Setup(p => p.ClearComparison());
         var update = new TableSchemaDifference(new Modified(),
             new KustoTableSchema(new TableSchema("t", new[] { new ColumnSchema("x", "System.Int64") }, "", "")));
         presenter.Setup(p => p.SynchronizeAsync(It.IsAny<IEnumerable<SchemaDifference>>(), It.IsAny<SchemaSourceInfo>(), null, default))

@@ -42,7 +42,7 @@ namespace SyncKusto
             services.AddSingleton<IMainFormPresenter, MainFormPresenter>();
 
             // Build service provider
-            var serviceProvider = services.BuildServiceProvider();
+            using var serviceProvider = services.BuildServiceProvider();
 
             // Revert some changes that came from the upgrade to .NET 8 regarding high DPI settings
             Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
@@ -52,7 +52,7 @@ namespace SyncKusto
             Application.SetCompatibleTextRenderingDefault(false);
 
             // Create MainForm with all dependencies
-            var mainForm = new MainForm(
+            using var mainForm = new MainForm(
                 serviceProvider.GetRequiredService<IMainFormPresenter>(),
                 serviceProvider.GetRequiredService<IErrorMessageResolver>(),
                 serviceProvider.GetRequiredService<ISettingsProvider>(),

@@ -26,6 +26,7 @@ public class SchemaRepositoryFactory
     /// <summary>
     /// Create a repository based on the source information
     /// </summary>
+    /// <remarks>The caller owns the returned repository and must dispose it when it implements IDisposable.</remarks>
     public virtual ISchemaRepository CreateRepository(SchemaSourceInfo sourceInfo)
     {
         ArgumentNullException.ThrowIfNull(sourceInfo);
