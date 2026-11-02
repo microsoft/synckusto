@@ -2,7 +2,7 @@
 
 The README embeds the root `screenshot.png`. Refresh it when requested or when visible main-window changes make the image stale (for example, picker layout, toolbar, comparison tree, or diff display). Screenshots intentionally omit the entire build-version label; build-label changes alone do not require a refresh.
 
-On Windows, with PowerShell 7.2 or newer, a desktop session, and an SDK compatible with `global.json` (`10.0.402` or a newer servicing patch in the `10.0.4xx` feature band), run from the repository root:
+On Windows, with PowerShell 7.2 or newer, a desktop session, and an SDK compatible with `global.json` (a stable .NET 10.0 SDK at or above `10.0.402`), run from the repository root:
 
 ```powershell
 pwsh -NoProfile -File .\scripts\Update-ReadmeScreenshot.ps1
