@@ -36,6 +36,10 @@ jobs:
           }
         }
 
+    - name: Test release automation
+      shell: pwsh
+      run: .\.github\scripts\Test-Release.ps1
+
     - name: Restore Packages
       run: dotnet restore SyncKusto.sln --locked-mode --configfile .github\NuGet.Config -p:NuGetInteractive=false
 

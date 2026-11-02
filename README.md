@@ -16,6 +16,8 @@ The general usage pattern on our team is to make changes in a Kusto dev database
 ## Sync Kusto Binaries
 The release can be downloaded from the [GitHub Releases](https://github.com/microsoft/synckusto/releases) page.
 
+Extract `synckusto.zip` and run `SyncKusto.exe`; the application requires the [.NET 10 Windows Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0). Maintainers can prepare version-stamped drafts with binaries attached using the [release workflow](CONTRIBUTING.md#preparing-a-release).
+
 ## Settings
 
 ### Temporary Databases

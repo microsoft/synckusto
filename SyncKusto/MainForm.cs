@@ -12,6 +12,7 @@ using SyncKusto.ErrorHandling;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace SyncKusto
@@ -38,6 +39,12 @@ namespace SyncKusto
         public MainForm()
         {
             InitializeComponent();
+
+            var buildVersion = typeof(MainForm).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+                .Single(attribute => attribute.Key == "BuildVersion").Value
+                ?? throw new InvalidOperationException("The assembly is missing its BuildVersion value.");
+            label2.Text = $"Build {buildVersion}";
+            label2.Left = ClientSize.Width - label2.Width - 13;
 
             _errorMessageResolver = ErrorMessageResolverFactory.CreateDefault();
 
