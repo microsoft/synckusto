@@ -4,6 +4,8 @@ The Sync Kusto tool was built to help create a maintainable development process 
 
 ![Screenshot](/screenshot.png)
 
+To regenerate this image automatically, see [Refreshing the README screenshot](CONTRIBUTING.md#refreshing-the-readme-screenshot).
+
 ## Scope
 This tool is intended specifically for the developer desktop scenario. It will not help if you need to build an automated syncing process, generate change scripts, sync policies, etc. For all of that, we recommend using [Delta Kusto](https://github.com/microsoft/delta-kusto). 
 
